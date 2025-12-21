@@ -1,0 +1,5 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+func nested(data: Map<String, Vec<Option<f32>>>) {}

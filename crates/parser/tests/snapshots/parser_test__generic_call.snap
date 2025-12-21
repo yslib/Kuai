@@ -1,0 +1,7 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: "error_messages.join(\"\\n\")"
+---
+[Error] at 13..14: Expected ';' at end of expression statement
+Backtrace:
+<disabled>

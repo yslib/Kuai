@@ -1,0 +1,5 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+x = .d.c.ba[(i32 0) ];

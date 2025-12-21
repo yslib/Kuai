@@ -1,0 +1,8 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+struct Point {
+  x: f32,
+  y: f32,
+}

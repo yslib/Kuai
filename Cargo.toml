@@ -1,9 +1,7 @@
-[package]
+[workspace]
 name = "tofu"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-bumpalo = "3.19.0"
-lasso = "0.7.3"
-logos = "0.16.0"
+members = [
+"crates/*",
+"tools/*",
+"tofu",
+]

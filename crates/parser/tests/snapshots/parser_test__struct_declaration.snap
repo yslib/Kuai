@@ -1,0 +1,10 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+@swizzle_set(chars: (str "\"xyzw\""), indices: [(i32 0), (i32 1), (i32 2), (i32 3)
+])
+struct Point<M, N, K> {
+  position: f32[(i32 4)],
+  color: f32[(i32 4)],
+}

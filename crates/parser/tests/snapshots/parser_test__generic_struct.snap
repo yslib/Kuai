@@ -1,0 +1,8 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+struct Container<T> {
+  value: T,
+  count: i32,
+}

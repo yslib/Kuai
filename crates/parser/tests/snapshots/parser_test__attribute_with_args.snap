@@ -1,0 +1,6 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+@kernel(threads: (i32 256))
+func compute() {}

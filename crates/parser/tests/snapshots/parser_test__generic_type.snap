@@ -1,0 +1,5 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+func use_generic(v: Vec<f32>, m: Map<String, i32>) {}

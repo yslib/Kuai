@@ -1,0 +1,16 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+import std::util::math;
+@swizzle_set(chars: (str "\"nchw\""), indices: [(i32 0), (i32 1), (i32 2), (i32 3)
+])
+struct Tensor {
+  data: f32,
+}
+@kernel(threads: (i32 256))
+func forward(input: f32[B, C, H, W]) -> f32[B, C, H, W] {
+  factor = [(f32 0.5), (f32 0.5), (f32 0.5) ];
+  result = (* .nchwinput, factor);
+  return result;
+}

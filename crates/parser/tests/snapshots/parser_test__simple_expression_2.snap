@@ -1,0 +1,5 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+(* (+ a, b), (- c, d));

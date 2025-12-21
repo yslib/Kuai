@@ -28,6 +28,30 @@ pub enum Token {
     #[token("return")]
     KwReturn,
 
+    #[token("let")]
+    KwLet,
+
+    #[token("if")]
+    KwIf,
+
+    #[token("else")]
+    KwElse,
+
+    #[token("for")]
+    KwFor,
+
+    #[token("in")]
+    KwIn,
+
+    #[token("step")]
+    KwStep,
+
+    #[token("break")]
+    KwBreak,
+
+    #[token("continue")]
+    KwContinue,
+
     // 基础类型关键字 (虽然是渐进类型，但基础类型通常作为关键字保留)
     #[token("f32")]
     TypeF32,
@@ -45,7 +69,7 @@ pub enum Token {
     Attribute,
 
     // ============================================
-    // 3. 字面量 (Literals)
+    // 3. Literals
     // ============================================
     // 浮点数：支持 1.0, 0.1, 1e10, 1.2e-5
     // 注意：必须放在 Integer 之前，或者是更贪婪的匹配
@@ -62,23 +86,29 @@ pub enum Token {
     StringLiteral,
 
     // ============================================
-    // 4. 标识符 (Identifiers)
+    // 4. Identifiers
     // ============================================
     // 包含变量名、函数名、Swizzle 分量名（如 .xyz 中的 xyz 部分会先被识别为 Dot 然后是 Ident）
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
     Identifier,
 
     // ============================================
-    // 5. 符号与操作符 (Symbols & Operators)
+    // 5. Symbols & Operators
     // ============================================
     #[token(".")]
     Dot, // 成员访问或 Swizzle 的开始
+
+    #[token("..")]
+    DoubleDot, // range
 
     #[token(",")]
     Comma,
 
     #[token(":")]
     Colon,
+
+    #[token("::")]
+    DoubleColon,
 
     #[token(";")]
     SemiColon,

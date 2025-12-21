@@ -1,0 +1,7 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+func tensor_func(input: f32[B, C, H, W]) -> f32[B, C, H, W] {
+  return input;
+}

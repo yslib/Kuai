@@ -1,0 +1,5 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+---
+result = (width: (i32 100), height: (i32 200) );
