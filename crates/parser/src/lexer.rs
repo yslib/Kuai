@@ -31,6 +31,9 @@ pub enum Token {
     #[token("let")]
     KwLet,
 
+    #[token("dim")]
+    KwDim,
+
     #[token("if")]
     KwIf,
 

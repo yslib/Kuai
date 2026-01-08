@@ -1,0 +1,8 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/tensor_type.tof
+---
+($func tensor_func -> <f32>[B, C, H, W] (<f32>[B, C, H, W] input)) {
+  return input;
+}

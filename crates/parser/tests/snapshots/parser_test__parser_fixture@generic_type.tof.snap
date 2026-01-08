@@ -1,0 +1,7 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/generic_type.tof
+---
+($func use_generic(Vec<<f32>> v), (Map<String, <i32>> m)) {}
+($func nested(Map<String, Vec<Option<<f32>>>> data)) {}

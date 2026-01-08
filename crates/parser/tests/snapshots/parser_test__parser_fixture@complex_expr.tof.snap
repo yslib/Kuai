@@ -1,0 +1,10 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/complex_expr.tof
+---
+result = (<+> (<+> (</> (<*> (<+> a, b), (<-> c, d)), e), (<*> (<dot> A, b),
+[(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)])), e[a, b, c, e, d]);
+result = (<+> (<+> (<+> (</> (<*> (<+> a, b), (<-> c, d)), e),
+(<*> (<dot> A, b), [(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)])),
+e[a, b, c, e, d]), (<(<(<foo> (a))> (b))> (c)));

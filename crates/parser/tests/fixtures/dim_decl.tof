@@ -1,0 +1,3 @@
+dim M, N; 
+dim BLOCK_SIZE = 32;
+dim TILE_M : 8 = 64;

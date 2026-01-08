@@ -1,0 +1,13 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/struct_decl.tof
+---
+struct Point {
+  x: <f32>,
+  y: <f32>,
+}
+struct Container<T> {
+  value: T,
+  count: <i32>,
+}

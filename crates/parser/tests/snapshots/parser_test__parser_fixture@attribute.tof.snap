@@ -1,0 +1,18 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/attribute.tof
+---
+@inline
+($func fast) {}
+@swizzle_set(chars: (<str> "\"xyzw\""), indices: [(<i32> 0), (<i32> 1), (<i32> 2), (<i32> 3)])
+struct Point<M, N, K> {
+  position: <f32>[(<i32> 4)],
+  color: <f32>[(<i32> 4)],
+}
+@kernel(threads: (<i32> 256))
+($func compute) {}
+@gpu
+@kernel(threads: (<i32> 128))
+@unroll(factor: (<i32> 4))
+($func heavy_compute(<f32>[N] data)) {}

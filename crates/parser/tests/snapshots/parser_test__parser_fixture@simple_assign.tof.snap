@@ -1,0 +1,9 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/simple_assign.tof
+---
+x = (<i32> 42);
+v = [(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)];
+v = [(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)];
+return (<+> x, y);

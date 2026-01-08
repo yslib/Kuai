@@ -270,12 +270,57 @@ impl<'source> Parser<'source> {
         parse_fn(self, attributes)
     }
 
+    fn parse_dim(&mut self) -> Vec<DimDecl> {
+        // 'dim' DimName [':' TypeExpr ] [ '=' Expr ] ;
+        let start_span = self.lexer.span().start;
+        self.expect(Token::KwDim, "Expected 'dim'");
+
+        let mut decls = Vec::new();
+
+        loop {
+            let inner_start = self.lexer.span().start;
+            let name = self.parse_identifier();
+
+            let mut bound = None;
+            let mut value = None;
+
+            // parse bound
+            if self.check(Token::Colon) {
+                self.advance();
+                bound = Some(self.parse_expr(0));
+            }
+
+            // assign value
+            if self.check(Token::Assign) {
+                self.advance();
+                value = Some(self.parse_expr(0));
+            }
+
+            decls.push(DimDecl {
+                name,
+                bound,
+                value,
+                span: inner_start..self.lexer.span().end,
+            });
+
+            if self.check(Token::Comma) {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        self.expect(Token::SemiColon, "Expected ';' after dim declaration");
+        decls
+    }
+
     fn parse_stmt(&mut self) -> Stmt {
         self.parse_with_attributes(|p, attrs| {
             match p.current_token {
                 Some(Token::KwFunc) => p.parse_func(attrs),
                 Some(Token::KwStruct) => p.parse_struct(attrs),
                 Some(Token::KwImport) => p.parse_import(),
+                Some(Token::KwDim) => Stmt::DimDecl(p.parse_dim()),
                 Some(Token::KwLet) => {
                     // 'let' var_name [: TypeExpr ] [= Expr ];
                     p.advance();
@@ -292,12 +337,12 @@ impl<'source> Parser<'source> {
                     } else {
                         None
                     };
-                    let var = Stmt::VarDecl {
+                    let var = Stmt::VarDecl(VarDecl {
                         name,
                         ty,
                         init,
                         span: p.lexer.span(),
-                    };
+                    });
                     if !p.expect(Token::SemiColon, "Expected ';' at end of let statement") {
                         p.synchronize();
                         Stmt::Error {

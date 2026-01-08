@@ -1,0 +1,6 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/access.tof
+---
+r = (<foo><T> (a, b));

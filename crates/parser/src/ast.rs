@@ -46,16 +46,28 @@ pub struct Path {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct DimDecl {
+    pub name: Ident,
+    pub bound: Option<Expr>, // dim M: 16, multiple 16
+    pub value: Option<Expr>, // dim M = 128
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VarDecl {
+    pub name: Ident,
+    pub ty: Option<TypeExpr>,
+    pub init: Option<Expr>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Import(Path),
     Function(FuncDecl),
     Struct(StructDecl),
-    VarDecl {
-        name: Ident,
-        ty: Option<TypeExpr>,
-        init: Option<Expr>,
-        span: Span,
-    },
+    DimDecl(Vec<DimDecl>), // support multi-dim declaration: dim M = 128, N = 256
+    VarDecl(VarDecl),
     Assignment {
         target: Expr,
         value: Expr,

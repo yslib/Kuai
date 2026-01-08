@@ -1,0 +1,11 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/simple_expr.tof
+---
+(<*> (<+> a, b), (<-> c, d));
+x = (<dot> obj, field);
+y = (<+> (<(<dot> (<i32> 1), cos)> ()), (<(<dot> (<str> "\"abcd\""), len)> ()));
+a = (<*> (<dot> t, nchw), b[i, j]);
+result = arr[(<i32> 0), (<i32> 1), (<i32> 2)];
+x = (<dot> (<dot> (<dot> a, b), c)[(<i32> 0)], d);

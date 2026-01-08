@@ -1,0 +1,9 @@
+---
+source: crates/parser/tests/parser_test.rs
+assertion_line: 13
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/dim_decl.tof
+---
+<dim to do>
+<dim to do>
+<dim to do>

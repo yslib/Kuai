@@ -1,0 +1,22 @@
+---
+source: crates/parser/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/complex_2.tof
+---
+import std::math;
+@module_attribute(version: (<str> "\"1.0\""))
+struct Config<T> {
+  value: T,
+  enabled: <bool>,
+}
+@inline
+($func helper -> <f32> (<f32> x)) {
+  return (<*> x, (<f32> 2));
+}
+@kernel(threads: (<i32> 256))
+@optimize(level: (<i32> 3))
+($func main_kernel<T: Numeric> -> T[N, M] (T[N, M] input), (Config<T> config)) {
+  temp = (<helper> (input[(<i32> 0), (<i32> 0)]));
+  result = (<*> (<dot> input, xy), temp);
+  return result;
+}
