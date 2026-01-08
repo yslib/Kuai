@@ -41,9 +41,14 @@ impl Pretty for PrimitiveType {
         D::Doc: Clone,
     {
         match self {
-            PrimitiveType::F32 => alloc.text("f32"),
-            PrimitiveType::I32 => alloc.text("i32"),
             PrimitiveType::Bool => alloc.text("bool"),
+            PrimitiveType::Char => alloc.text("char"),
+            PrimitiveType::I8 => alloc.text("i8"),
+            PrimitiveType::I16 => alloc.text("i16"),
+            PrimitiveType::I32 => alloc.text("i32"),
+            PrimitiveType::I64 => alloc.text("i64"),
+            PrimitiveType::F32 => alloc.text("f32"),
+            PrimitiveType::F64 => alloc.text("f64"),
         }
     }
 }
@@ -144,7 +149,7 @@ impl Pretty for Expr {
         D: DocAllocator<'a>,
         D::Doc: Clone,
     {
-        match self {
+        match &self {
             Expr::Literal(lit) => lit.to_doc(alloc),
             Expr::Variable(ident) => ident.to_doc(alloc),
             Expr::Binary { left, op, right } => alloc

@@ -3,6 +3,25 @@ use crate::diagnostic::*;
 use crate::lexer::Token;
 use logos::{Lexer, Logos};
 
+pub trait FromToken {
+    fn from_token(token: Token) -> Self;
+}
+
+impl PrimitiveType {
+    pub fn from_token(token: &Token) -> Option<Self> {
+        match token {
+            Token::TypeBool => Some(PrimitiveType::Bool),
+            Token::TypeChar => Some(PrimitiveType::Char),
+            Token::TypeI8 => Some(PrimitiveType::I8),
+            Token::TypeI16 => Some(PrimitiveType::I16),
+            Token::TypeI32 => Some(PrimitiveType::I32),
+            Token::TypeI64 => Some(PrimitiveType::I64),
+            Token::TypeF64 => Some(PrimitiveType::F64),
+            _ => None,
+        }
+    }
+}
+
 pub struct Parser<'source> {
     lexer: Lexer<'source, Token>,
     current_token: Option<Token>,
@@ -518,39 +537,63 @@ impl<'source> Parser<'source> {
         shape
     }
 
-    // TypeExpr = PrimitiveType | Ident [<GenericArgs>] | TypeExpr [ ShapeExpr ] ;
+    // ShapeExpr := '[', TypeExpr+, ']'
+    // GenericArgs := '<', TypeExpr+, '>'
+    // UserDefinedType := Ident [GenericArgs]
+    // TypeExpr := (UserDefinedType [ GenericArgs] [ ShapeExpr ]) | PrimitiveType [ ShapeExpr ]
     fn parse_type_expr(&mut self) -> TypeExpr {
         // base type  Primitive | Ident [<GenericArgs>]
-        let mut ty = match self.current_token {
-            Some(Token::TypeF32) => {
+
+        let mut ty = if let Some(token) = self.current_token.as_ref() {
+            if let Some(prim_type) = PrimitiveType::from_token(token) {
+                // fast path for primitive types
                 self.advance();
-                TypeExpr::Primitive(PrimitiveType::F32)
-            }
-            Some(Token::TypeI32) => {
-                self.advance();
-                TypeExpr::Primitive(PrimitiveType::I32)
-            }
-            Some(Token::TypeBool) => {
-                self.advance();
-                TypeExpr::Primitive(PrimitiveType::Bool)
-            }
-            Some(Token::Identifier) => {
-                // not turbo-fish style in decl context
-                let name = self.parse_identifier();
-                let generics = if self.check(Token::Lt) {
-                    self.parse_generic_argument_list()
-                } else {
-                    Vec::new()
-                };
-                TypeExpr::Named { name, generics }
-            }
-            _ => {
-                self.report_error("Expected type expression");
-                TypeExpr::Error {
-                    span: self.lexer.span(),
+                return TypeExpr::Primitive(prim_type);
+            } else {
+                match token {
+                    Token::Identifier => {
+                        // not turbo-fish style in decl context
+                        let name = self.parse_identifier();
+                        let generics = if self.check(Token::Lt) {
+                            self.parse_generic_argument_list()
+                        } else {
+                            Vec::new()
+                        };
+                        TypeExpr::Named { name, generics }
+                    }
+                    _ => {
+                        self.report_error("Expected type expression");
+                        TypeExpr::Error {
+                            span: self.lexer.span(),
+                        }
+                    }
                 }
             }
+        } else {
+            self.report_error("Expected type expression");
+            return TypeExpr::Error {
+                span: self.lexer.span(),
+            };
         };
+
+        // let mut ty = match self.current_token {
+        //     Some(Token::Identifier) => {
+        //         // not turbo-fish style in decl context
+        //         let name = self.parse_identifier();
+        //         let generics = if self.check(Token::Lt) {
+        //             self.parse_generic_argument_list()
+        //         } else {
+        //             Vec::new()
+        //         };
+        //         TypeExpr::Named { name, generics }
+        //     }
+        //     _ => {
+        //         self.report_error("Expected type expression");
+        //         TypeExpr::Error {
+        //             span: self.lexer.span(),
+        //         }
+        //     }
+        // };
 
         // parse shape if any like [f32, 128, 128]
         if self.check(Token::LBracket) {

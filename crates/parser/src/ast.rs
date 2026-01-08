@@ -86,11 +86,17 @@ pub enum Stmt {
     },
 }
 
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PrimitiveType {
-    F32,
-    I32,
     Bool,
+    Char,
+    I8,
+    I16,
+    I32,
+    I64,
+    F32,
+    F64,
 }
 
 #[derive(Debug, Clone, PartialEq)]

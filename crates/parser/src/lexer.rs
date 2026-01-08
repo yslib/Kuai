@@ -53,12 +53,22 @@ pub enum Token {
     KwContinue,
 
     // 基础类型关键字 (虽然是渐进类型，但基础类型通常作为关键字保留)
-    #[token("f32")]
-    TypeF32,
-    #[token("i32")]
-    TypeI32,
     #[token("bool")]
     TypeBool,
+    #[token("char")]
+    TypeChar,
+    #[token("i8")]
+    TypeI8,
+    #[token("i16")]
+    TypeI16,
+    #[token("i32")]
+    TypeI32,
+    #[token("i64")]
+    TypeI64,
+    #[token("f32")]
+    TypeF32,
+    #[token("f64")]
+    TypeF64,
 
     // ============================================
     // 2. 属性系统 (Attributes) - 核心扩展点
