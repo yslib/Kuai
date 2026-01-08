@@ -1,0 +1,11 @@
+(a + b) * (c - d);
+
+x = obj.field;
+
+y = 1.cos() + "abcd".len();
+
+a = t.nchw * b[i, j];  // swizzle and einsum
+
+result = arr[0, 1, 2]; // index access
+
+x = a.b.c[0].d; // chained field and index access

@@ -166,9 +166,16 @@ impl Pretty for Expr {
                 .group(),
             Expr::MemberAccess { target, member } => alloc
                 .text("(<dot> ")
-                .append(member.to_doc(alloc))
-                .append(alloc.text(", "))
                 .append(target.to_doc(alloc))
+                .append(alloc.text(", "))
+                .append(member.to_doc(alloc))
+                .append(alloc.text(")"))
+                .group(),
+            Expr::NamespaceAccess { namespace, member } => alloc
+                .text("(<colon:colon> ")
+                .append(namespace.to_doc(alloc))
+                .append(alloc.text(", "))
+                .append(member.to_doc(alloc))
                 .append(alloc.text(")"))
                 .group(),
             Expr::Index { target, indices } => target

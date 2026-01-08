@@ -1,0 +1,3 @@
+result = (a + b) * (c - d) / e + A.b  * [1 2 3 4] + (e[a,b,c,e,d]);
+
+result = (a + b) * (c - d) / e + A.b  * [1 2 3 4] + (e[a,b,c,e,d]) + foo(a)(b)(c);

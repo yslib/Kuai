@@ -1,0 +1,20 @@
+import std::math;
+
+@module_attribute(version="1.0")
+struct Config<T> {
+    value: T,
+    enabled: bool,
+}
+
+@inline
+func helper(x: f32) -> f32 {
+    return x * 2.0;
+}
+
+@kernel(threads=256)
+@optimize(level=3)
+func main_kernel<T: Numeric>(input: T[N, M], config: Config<T>) -> T[N, M] {
+    temp = helper(input[0, 0]);
+    result = input.xy * temp;
+    return result;
+}

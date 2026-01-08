@@ -16,6 +16,7 @@ impl PrimitiveType {
             Token::TypeI16 => Some(PrimitiveType::I16),
             Token::TypeI32 => Some(PrimitiveType::I32),
             Token::TypeI64 => Some(PrimitiveType::I64),
+            Token::TypeF32 => Some(PrimitiveType::F32),
             Token::TypeF64 => Some(PrimitiveType::F64),
             _ => None,
         }
@@ -543,12 +544,10 @@ impl<'source> Parser<'source> {
     // TypeExpr := (UserDefinedType [ GenericArgs] [ ShapeExpr ]) | PrimitiveType [ ShapeExpr ]
     fn parse_type_expr(&mut self) -> TypeExpr {
         // base type  Primitive | Ident [<GenericArgs>]
-
         let mut ty = if let Some(token) = self.current_token.as_ref() {
             if let Some(prim_type) = PrimitiveType::from_token(token) {
-                // fast path for primitive types
                 self.advance();
-                return TypeExpr::Primitive(prim_type);
+                TypeExpr::Primitive(prim_type)
             } else {
                 match token {
                     Token::Identifier => {
@@ -570,30 +569,11 @@ impl<'source> Parser<'source> {
                 }
             }
         } else {
-            self.report_error("Expected type expression");
-            return TypeExpr::Error {
+            self.report_error("Invalid token");
+            TypeExpr::Error {
                 span: self.lexer.span(),
-            };
+            }
         };
-
-        // let mut ty = match self.current_token {
-        //     Some(Token::Identifier) => {
-        //         // not turbo-fish style in decl context
-        //         let name = self.parse_identifier();
-        //         let generics = if self.check(Token::Lt) {
-        //             self.parse_generic_argument_list()
-        //         } else {
-        //             Vec::new()
-        //         };
-        //         TypeExpr::Named { name, generics }
-        //     }
-        //     _ => {
-        //         self.report_error("Expected type expression");
-        //         TypeExpr::Error {
-        //             span: self.lexer.span(),
-        //         }
-        //     }
-        // };
 
         // parse shape if any like [f32, 128, 128]
         if self.check(Token::LBracket) {
@@ -796,7 +776,7 @@ impl<'source> Parser<'source> {
     // binding_power: 当前操作符的紧密度
     fn parse_expr(&mut self, min_bp: u8) -> Expr {
         // 1. Prefix (前缀) 处理：字面量, 变量, (, [
-        let mut left = match self.current_token.clone() {
+        let mut left = match self.current_token {
             Some(Token::IntegerLiteral) => {
                 let val = self.current_slice.parse().unwrap();
                 self.advance();
@@ -848,6 +828,44 @@ impl<'source> Parser<'source> {
                         member,
                     };
                     continue;
+                }
+                Some(Token::DoubleColon) => {
+                    // turbo-fish style generic call: function::<T1, T2>(args...)
+                    let (l_bp, _) = (9, 10);
+                    if l_bp < min_bp {
+                        break;
+                    }
+                    self.advance(); // consume '::'
+
+                    // foo::
+                    if self.check(Token::Lt) {
+                        // '<' begin, turbo-fish generic
+                        // generic parm list
+                        let generics = self.parse_generic_argument_list();
+                        if self.check(Token::LParen) {
+                            let args = self.parse_argument_list();
+                            left = Expr::Call {
+                                func: Box::new(left),
+                                generics,
+                                args,
+                            };
+                        } else {
+                            // TODO:: maybe foo::<T1, T2> is also valid grammar?
+                            // for example, it refer to a function pointer or so.
+                            // But for simplicity, we don't support it now.
+                            self.report_error("Expected '(' after generic arguments");
+                            return Expr::Error(self.lexer.span());
+                        }
+                        continue;
+                    } else {
+                        // namespace access like foo::current
+                        let ident = self.parse_identifier();
+                        left = Expr::NamespaceAccess {
+                            namespace: Box::new(left),
+                            member: ident,
+                        };
+                        continue;
+                    }
                 }
                 Some(Token::LParen) => {
                     // func call: function(args...)

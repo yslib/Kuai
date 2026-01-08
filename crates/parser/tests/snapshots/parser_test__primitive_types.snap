@@ -1,5 +1,0 @@
----
-source: crates/parser/tests/parser_test.rs
-expression: pretty_output
----
-func types(a: f32, b: i32, c: bool) {}

@@ -1,0 +1,13 @@
+import std::util::math;
+
+@swizzle_set(chars="nchw", indices=[0, 1, 2, 3])
+struct Tensor {
+    data: f32,
+}
+
+@kernel(threads=256)
+func forward(input: f32[B, C, H, W]) -> f32[B, C, H, W] {
+    factor = [0.5, 0.5, 0.5];
+    result = input.nchw * factor;
+    return result;
+}

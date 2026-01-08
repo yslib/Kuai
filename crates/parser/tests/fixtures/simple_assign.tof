@@ -1,0 +1,7 @@
+x = 42;
+
+v = [1 2 3 4];    // julia-style array
+v = [1, 2, 3, 4];
+
+return x + y;
+

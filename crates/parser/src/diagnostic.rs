@@ -27,6 +27,16 @@ impl Diagnostic {
     }
 }
 
+impl std::fmt::Display for Diagnostic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{:?}] at {:?}: {}",
+            self.serverity, self.span, self.message
+        )
+    }
+}
+
 impl std::fmt::Debug for Diagnostic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(

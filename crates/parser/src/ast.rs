@@ -86,7 +86,6 @@ pub enum Stmt {
     },
 }
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum PrimitiveType {
     Bool,
@@ -191,6 +190,12 @@ pub enum Expr {
     // 成员访问: a.b (可能是字段，可能是 Swizzle)
     MemberAccess {
         target: Box<Expr>,
+        member: Ident,
+    },
+
+    // Namespace成员访问: a::b
+    NamespaceAccess {
+        namespace: Box<Expr>,
         member: Ident,
     },
 
