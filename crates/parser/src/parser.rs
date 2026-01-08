@@ -110,7 +110,7 @@ impl<'source> Parser<'source> {
     fn report_error(&mut self, msg: &str) {
         let span = self.lexer.span();
         self.diagnostics
-            .push(Diagnostic::error(Serverity::Error, span, msg.to_string()));
+            .push(Diagnostic::error(Severity::Error, span, msg.to_string()));
     }
 
     pub fn parse(&mut self) -> Result<Module, Vec<Diagnostic>> {
