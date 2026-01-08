@@ -2,4 +2,4 @@
 source: crates/parser/tests/parser_test.rs
 expression: pretty_output
 ---
-a = (* (<dot> nchw, t), b[i, j ]);
+y = (+ (), ());

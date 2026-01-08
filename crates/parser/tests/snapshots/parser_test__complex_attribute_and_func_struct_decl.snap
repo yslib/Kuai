@@ -11,6 +11,6 @@ struct Tensor {
 @kernel(threads: (i32 256))
 func forward(input: f32[B, C, H, W]) -> f32[B, C, H, W] {
   factor = [(f32 0.5), (f32 0.5), (f32 0.5) ];
-  result = (* .nchwinput, factor);
+  result = (* (<dot> nchw, input), factor);
   return result;
 }

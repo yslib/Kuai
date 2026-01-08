@@ -17,6 +17,6 @@ func helper(x: f32) -> f32 {
 @optimize(level: (i32 3))
 func main_kernel<T: Numeric>(input: T[N, M], config: Config<T>) -> T[N, M] {
   temp = (input[(i32 0), (i32 0) ] );
-  result = (* .xyinput, temp);
+  result = (* (<dot> xy, input), temp);
   return result;
 }

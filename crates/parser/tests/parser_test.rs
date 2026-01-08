@@ -197,6 +197,12 @@ fn test_member_access() {
 }
 
 #[test]
+fn test_literal_member_access() {
+    let code = r#"y = 1.cos() + "abcd".len();"#;
+    parse_and_snapshot(code, "literal_member_access");
+}
+
+#[test]
 fn test_swizzle_and_einsum() {
     let code = "a = t.nchw * b[i, j];";
     parse_and_snapshot(code, "swizzle_and_einsum");

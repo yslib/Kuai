@@ -160,9 +160,11 @@ impl Pretty for Expr {
                 .append(alloc.text(")"))
                 .group(),
             Expr::MemberAccess { target, member } => alloc
-                .text(".")
+                .text("(<dot> ")
                 .append(member.to_doc(alloc))
+                .append(alloc.text(", "))
                 .append(target.to_doc(alloc))
+                .append(alloc.text(")"))
                 .group(),
             Expr::Index { target, indices } => target
                 .to_doc(alloc)
