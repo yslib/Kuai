@@ -1,6 +1,7 @@
-pub mod context;
-pub mod lexer;
 pub mod ast;
-pub mod parser;
+pub mod context;
 pub mod diagnostic;
+pub mod lexer;
+pub mod parser;
 pub mod pretty;
+pub mod symbol;
