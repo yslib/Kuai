@@ -1,0 +1,17 @@
+---
+source: crates/parser/tests/parser_test.rs
+assertion_line: 13
+expression: pretty_output
+input_file: crates/parser/tests/fixtures/simple_func.tof
+---
+($func empty) {}
+($func add -> <i32> (<i32> a), (<i32> b)) {
+  return (<+> a, b);
+}
+($func generic_func<T> -> T (T input)) {
+  return input;
+}
+($func process<T: Numeric, U = <f32>> -> T (T x), (U y)) {
+  return x;
+}
+($func a) {}

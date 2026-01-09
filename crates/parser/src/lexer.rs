@@ -170,3 +170,21 @@ pub enum Token {
     #[regex(r"//", line_comment)]
     Comment,
 }
+
+pub fn check_balanced(source: &str) -> (bool, i32) {
+    let lexer = Token::lexer(source);
+    let mut depth = 0;
+    let mut has_token = false;
+
+    for token in lexer {
+        has_token = true;
+        match token {
+            Ok(Token::LBracket) | Ok(Token::LBrace) => depth += 1,
+            Ok(Token::RBracket) | Ok(Token::RBrace) => {
+                depth -= 1;
+            }
+            _ => {}
+        }
+    }
+    (has_token && depth <= 0, depth)
+}

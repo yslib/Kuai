@@ -13,3 +13,7 @@ func process<T: Numeric, U = f32>(x: T, y: U) -> T {
     return x;
 }
 
+
+func a(){
+
+}

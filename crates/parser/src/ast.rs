@@ -1,4 +1,6 @@
+use lasso::Spur;
 pub type Span = std::ops::Range<usize>;
+pub type Id = lasso::Spur;
 pub const ERROR_IDENT_NAME: &str = "<error_ident>";
 
 #[derive(Debug, Clone, PartialEq)]
@@ -8,10 +10,23 @@ pub struct Module {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Ident {
-    pub name: String,
+    pub id: Id,
     pub span: Span,
+}
+
+// temporary impls until we have a better way to display interned strings
+impl std::fmt::Debug for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.id)
+    }
+}
+
+impl std::fmt::Display for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.id)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

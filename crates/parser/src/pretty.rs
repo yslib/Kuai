@@ -73,7 +73,7 @@ impl Pretty for Ident {
         D: DocAllocator<'a>,
         D::Doc: Clone,
     {
-        alloc.text(self.name.clone())
+        alloc.text(format!("{:?}", self.id))
     }
 }
 

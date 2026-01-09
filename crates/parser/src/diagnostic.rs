@@ -1,37 +1,17 @@
 use miette::{LabeledSpan, SourceCode, SourceSpan};
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, miette::Diagnostic)]
 #[error("{message}")]
 pub struct MietteDiagnostic {
     // 错误消息
     pub message: String,
 
-    // 严重程度映射
-    pub severity: Severity,
-
-    // miette 使用 SourceSpan (start, length)
+    #[label("Here")]
     pub span: SourceSpan,
 
-    // 源代码 (miette 需要它来渲染代码框)
     #[source_code]
-    pub src: String,
-}
-
-impl miette::Diagnostic for MietteDiagnostic {
-    fn code(&self) -> Option<Box<dyn std::fmt::Display>> {
-        None
-    }
-
-    fn severity(&self) -> Option<miette::Severity> {
-        match self.severity {
-            Severity::Error => Some(miette::Severity::Error),
-            Severity::Warning => Some(miette::Severity::Warning),
-            Severity::Hint => Some(miette::Severity::Hint),
-        }
-    }
-
-    fn labels(&self) -> Option<Box<dyn Iterator<Item = LabeledSpan> + '_>> {}
+    pub src: miette::NamedSource<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,6 +29,14 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
+    pub fn render(self, filaname: String, src: String) -> MietteDiagnostic {
+        MietteDiagnostic {
+            message: self.message,
+            span: SourceSpan::new(self.span.start.into(), self.span.end - self.span.start),
+            src: miette::NamedSource::new(filaname, src),
+        }
+    }
+
     pub fn error(severity: Severity, span: std::ops::Range<usize>, message: String) -> Self {
         Self {
             severity,

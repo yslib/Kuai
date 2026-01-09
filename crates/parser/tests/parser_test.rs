@@ -5,7 +5,8 @@ use parser::pretty::print_ast;
 fn test_parser_fixture() {
     insta::glob!("fixtures/*.tof", |path| {
         let source_code = std::fs::read_to_string(path).unwrap();
-        let mut parser = Parser::new(&source_code);
+        let mut ctx = parser::context::Context::new();
+        let mut parser = Parser::new(&source_code, &mut ctx);
         let res = parser.parse();
         match res {
             Ok(ast) => {

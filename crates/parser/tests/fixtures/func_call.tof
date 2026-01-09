@@ -3,4 +3,3 @@ result = foo(a, b, c);
 result = cast::<f32>(value); // turbo-fish call
 
 result = create(width=100, height=200); // call with named arguments
-

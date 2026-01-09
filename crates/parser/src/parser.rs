@@ -1,4 +1,5 @@
 use crate::ast::*;
+use crate::context::*;
 use crate::diagnostic::*;
 use crate::lexer::Token;
 use logos::{Lexer, Logos};
@@ -23,21 +24,23 @@ impl PrimitiveType {
     }
 }
 
-pub struct Parser<'source> {
+pub struct Parser<'source, 'ctx> {
     lexer: Lexer<'source, Token>,
+    ctx: &'ctx mut Context,
     current_token: Option<Token>,
     current_slice: &'source str,
     diagnostics: Vec<Diagnostic>,
 }
 
-impl<'source> Parser<'source> {
-    pub fn new(source: &'source str) -> Self {
+impl<'source, 'ctx> Parser<'source, 'ctx> {
+    pub fn new(source: &'source str, ctx: &'ctx mut Context) -> Self {
         let mut lexer = Token::lexer(source);
         let current_token = lexer.next().and_then(|r| r.ok());
         let current_slice = lexer.slice();
 
         Self {
             lexer,
+            ctx,
             current_token,
             current_slice,
             diagnostics: Vec::new(),
@@ -111,6 +114,9 @@ impl<'source> Parser<'source> {
         let span = self.lexer.span();
         self.diagnostics
             .push(Diagnostic::error(Severity::Error, span, msg.to_string()));
+        if self.diagnostics.len() > 100 {
+            panic!("Too many errors, aborting parsing.");
+        }
     }
 
     pub fn parse(&mut self) -> Result<Module, Vec<Diagnostic>> {
@@ -430,14 +436,16 @@ impl<'source> Parser<'source> {
             let name = self.current_slice.to_string();
             let span = self.lexer.span();
             self.advance();
-            Ident { name, span }
+            let name = self.ctx.interner.get_or_intern(name);
+            Ident { id: name, span }
         } else {
             self.report_error(&format!(
                 "Expected identifier, got {:?}",
                 self.current_token
             ));
             Ident {
-                name: ERROR_IDENT_NAME.to_string(),
+                id: self.ctx.interner.get_or_intern(ERROR_IDENT_NAME), // TODO:: optimize this
+                // later
                 span: self.lexer.span(),
             }
         }
@@ -697,10 +705,14 @@ impl<'source> Parser<'source> {
 
     fn parse_block(&mut self) -> Block {
         let start = self.lexer.span().start;
+        let mut stmts = Vec::new();
         if !self.expect(Token::LBrace, "Expected '{' at beginning of block") {
             self.synchronize();
+            return Block {
+                stmts,
+                span: start..self.lexer.span().end,
+            };
         }
-        let mut stmts = Vec::new();
         while !self.check(Token::RBrace) {
             stmts.push(self.parse_stmt());
         }
