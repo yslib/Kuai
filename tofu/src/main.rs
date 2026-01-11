@@ -14,7 +14,7 @@ use std::path::PathBuf;
 /// Simple program to greet a person
 #[derive(ClapParser, Debug)]
 #[command(
-    name = "tofu",
+    name = "Tofu",
     version = "0.1.0",
     about = "Tofu Programming Language CLI"
 )]
@@ -102,11 +102,14 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
         println!("No previous history.");
     }
 
-    println!("🚀 Tofu Playground");
-    println!("Commands: .ast (toggle AST), .exit (quit), .help");
+    println!("**************************************************************************");
+    println!("*                                                                        *");
+    println!("*                           🚀 Tofu REPL                                 *");
+    println!("*                                                                        *");
+    println!("**************************************************************************");
 
+    let mut terminate = false;
     loop {
-        let mut terminate = false;
         let mut is_first_line = true;
         let mut buffer = String::new();
         loop {
@@ -137,14 +140,14 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
                 }
                 Err(ReadlineError::Interrupted) => {
                     println!("CTRL-C");
-                    buffer.clear();
                     terminate = buffer.is_empty();
+                    buffer.clear();
                     break;
                 }
                 Err(ReadlineError::Eof) => {
-                    buffer.clear();
                     println!("CTRL-D");
                     terminate = buffer.is_empty();
+                    buffer.clear();
                     break;
                 }
                 Err(err) => {
