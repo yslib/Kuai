@@ -1,3 +1,4 @@
+use crate::ast::Id;
 use lasso::Rodeo;
 
 pub struct Context {
@@ -11,7 +12,13 @@ impl Context {
         }
     }
 
-    pub fn lookup(&self, id: lasso::Spur) -> &str {
+    pub fn lookup(&self, id: Id) -> &str {
         self.interner.resolve(&id)
+    }
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
     }
 }

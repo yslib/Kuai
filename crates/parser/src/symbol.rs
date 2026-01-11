@@ -19,7 +19,7 @@ pub enum ScopeKind {
 
 #[derive(Debug, Clone)]
 pub struct Symbol {
-    pub name: String,
+    pub id: Id,
     pub kind: SymbolKind,
     pub ty: Option<TypeExpr>,
     pub span: Span,
@@ -40,20 +40,21 @@ impl Scope {
         }
     }
 
-    // 递归查找符号（向上查找）
-    pub fn resolve(&self, name: &str) -> Option<Symbol> {
-        if let Some(sym) = self.symbols.get(name) {
-            return Some(sym.clone());
+    pub fn resolve(&self, name: Id) -> Option<Symbol> {
+        if let Some(sym) = self.symbols.get(&name) {
+            Some(sym.clone())
+        } else {
+            self.parent.as_ref().and_then(|p| p.borrow().resolve(name))
         }
-        self.parent.as_ref().and_then(|p| p.borrow().resolve(name))
     }
 
     // 在当前作用域定义符号（检查冲突）
     pub fn define(&mut self, sym: Symbol) -> Result<(), Symbol> {
-        if self.symbols.contains_key(&sym.name) {
-            return Err(self.symbols.get(&sym.name).unwrap().clone());
+        if let Some(old) = self.symbols.get(&sym.id) {
+            Err(old.clone())
+        } else {
+            self.symbols.insert(sym.id, sym);
+            Ok(())
         }
-        self.symbols.insert(sym.name.clone(), sym);
-        Ok(())
     }
 }

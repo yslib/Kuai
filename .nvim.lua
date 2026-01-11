@@ -13,5 +13,5 @@ vim.notify("Welcome to Tofu Development!\nAdding tofu.nvim to runtime path: " ..
 vim.opt.rtp:prepend(plugin_path)
 
 require("tofu").setup({
-    repl_cmd = "cargo run --bin tofu --quiet",
+    repl_cmd = "cargo run --bin tofu -- -l",
 })

@@ -29,9 +29,9 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    pub fn render(self, filaname: String, src: String) -> MietteDiagnostic {
+    pub fn render(&self, filaname: String, src: String) -> MietteDiagnostic {
         MietteDiagnostic {
-            message: self.message,
+            message: self.message.clone(),
             span: SourceSpan::new(self.span.start.into(), self.span.end - self.span.start),
             src: miette::NamedSource::new(filaname, src),
         }
