@@ -188,13 +188,15 @@ fn main() -> miette::Result<()> {
         compile_and_run(&code, &mut ctx);
         return Ok(());
     }
-    if args.listen.is_some() {
+    if let Some(addr) = args.listen {
         let shared_ctx = Arc::clone(&ctx);
-        let h = thread::spawn(move || start_tcp_server(shared_ctx, args.listen.unwrap()));
-        run_repl(Arc::clone(&ctx))?;
-        h.join().unwrap()?;
-    } else {
-        run_repl(Arc::clone(&ctx))?;
-    };
+        thread::spawn(move || {
+            if let Err(e) = start_tcp_server(shared_ctx, addr) {
+                eprintln!("TCP server error: {:?}", e);
+            }
+        });
+    }
+
+    run_repl(Arc::clone(&ctx))?;
     Ok(())
 }
