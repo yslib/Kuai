@@ -88,6 +88,21 @@ fn start_tcp_server(shared_ctx: Arc<Mutex<Context>>, addr: SocketAddr) -> miette
     Ok(())
 }
 
+fn print_banner() {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("╔══════════════════════════════════════════════════════════════════════════╗");
+    println!("║                                                                          ║");
+    println!(
+        "║                         🚀 Tofu REPL v{:<7}                            ║",
+        version
+    );
+    println!("║                                                                          ║");
+    println!("║   • Type expressions to evaluate                                         ║");
+    println!("║   • Ctrl-D / Ctrl-C to exit                                              ║");
+    println!("║                                                                          ║");
+    println!("╚══════════════════════════════════════════════════════════════════════════╝");
+}
+
 fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
     let config = Config::builder()
         .history_ignore_space(true)
@@ -102,11 +117,7 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
         println!("No previous history.");
     }
 
-    println!("**************************************************************************");
-    println!("*                                                                        *");
-    println!("*                           🚀 Tofu REPL                                 *");
-    println!("*                                                                        *");
-    println!("**************************************************************************");
+    print_banner();
 
     let mut terminate = false;
     loop {
