@@ -1,13 +1,13 @@
 use crate::ast::*;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SymbolKind {
     Dimension,
     Variable,
     Function,
+    BuiltinFunction,
     Struct,
     Param,
 }
@@ -27,12 +27,12 @@ pub struct Symbol {
 
 pub struct Scope {
     pub symbols: HashMap<Id, Symbol>,
-    pub parent: Option<Rc<RefCell<Scope>>>,
+    pub parent: Option<Arc<RwLock<Scope>>>,
     // 记录这是什么类型的作用域：Global, Function, Block
     pub kind: ScopeKind,
 }
 impl Scope {
-    pub fn new(parent: Option<Rc<RefCell<Scope>>>, kind: ScopeKind) -> Self {
+    pub fn new(parent: Option<Arc<RwLock<Scope>>>, kind: ScopeKind) -> Self {
         Self {
             symbols: HashMap::new(),
             parent,
@@ -44,7 +44,9 @@ impl Scope {
         if let Some(sym) = self.symbols.get(&name) {
             Some(sym.clone())
         } else {
-            self.parent.as_ref().and_then(|p| p.borrow().resolve(name))
+            self.parent
+                .as_ref()
+                .and_then(|p| p.read().unwrap().resolve(name))
         }
     }
 

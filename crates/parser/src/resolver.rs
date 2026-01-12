@@ -6,20 +6,19 @@ use crate::{
     symbol::{Scope, Symbol, SymbolKind},
 };
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 pub struct Resolver<'ctx> {
     ctx: &'ctx Context,
-    scope_stack: Rc<RefCell<Scope>>,
+    scope_stack: Arc<RwLock<Scope>>,
     diagnostics: Vec<Diagnostic>,
 }
 
 impl<'ctx> Resolver<'ctx> {
     pub fn new(ctx: &'ctx Context) -> Self {
-        let global_scope = Scope::new(None, crate::symbol::ScopeKind::Global);
         Resolver {
             ctx,
-            scope_stack: Rc::new(RefCell::new(global_scope)),
+            scope_stack: Arc::clone(&ctx.global_scope),
             diagnostics: Vec::new(),
         }
     }
@@ -68,12 +67,19 @@ impl<'ctx> Resolver<'ctx> {
     }
 
     fn push_scope(&mut self) {
-        let parent = Rc::clone(&self.scope_stack);
-        self.scope_stack = Rc::new(RefCell::new(Scope::new(Some(parent), ScopeKind::Global)));
+        let parent = Arc::clone(&self.scope_stack);
+        self.scope_stack = Arc::new(RwLock::new(Scope::new(Some(parent), ScopeKind::Block)));
     }
 
     fn pop_scope(&mut self) {
-        let parent = self.scope_stack.borrow().parent.clone().unwrap();
+        let parent = self
+            .scope_stack
+            .read()
+            .unwrap()
+            .parent
+            .as_ref()
+            .unwrap()
+            .clone();
         self.scope_stack = parent;
     }
 
@@ -106,7 +112,7 @@ impl<'ctx> Resolver<'ctx> {
         match e {
             Expr::Literal(lit) => {}
             Expr::Variable(ident) => {
-                if let Some(sym) = self.scope_stack.borrow().resolve(ident.id) {
+                if let Some(sym) = self.scope_stack.read().unwrap().resolve(ident.id) {
                 } else {
                     let name = self.ctx.lookup(ident.id);
                     self.report_undefine(&format!("Variable '{}' is not defined", name));
@@ -127,7 +133,7 @@ impl<'ctx> Resolver<'ctx> {
             ty: None,
             span: decl.name.span.clone(),
         };
-        if let Err(old) = self.scope_stack.borrow_mut().define(symbol) {
+        if let Err(old) = self.scope_stack.write().unwrap().define(symbol) {
             Self::report_redefine(
                 self.ctx,
                 &mut self.diagnostics,
@@ -144,7 +150,7 @@ impl<'ctx> Resolver<'ctx> {
             ty: None,
             span: p.span.clone(),
         };
-        if let Err(old) = self.scope_stack.borrow_mut().define(sym) {
+        if let Err(old) = self.scope_stack.write().unwrap().define(sym) {
             Self::report_redefine(
                 self.ctx,
                 &mut self.diagnostics,
