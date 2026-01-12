@@ -1,24 +1,21 @@
-use crate::context::Context;
 use crate::symbol::ScopeKind;
-use crate::{
-    ast::*,
-    diagnostic::*,
-    symbol::{Scope, Symbol, SymbolKind},
-};
-use std::cell::RefCell;
+use crate::symbol::{Scope, Symbol, SymbolKind};
+use core::Interner;
+use core::diagnostic::*;
+use syntax::ast::*;
 use std::sync::{Arc, RwLock};
 
 pub struct Resolver<'ctx> {
-    ctx: &'ctx Context,
+    interner: &'ctx Interner,
     scope_stack: Arc<RwLock<Scope>>,
     diagnostics: Vec<Diagnostic>,
 }
 
 impl<'ctx> Resolver<'ctx> {
-    pub fn new(ctx: &'ctx Context) -> Self {
+    pub fn new(ctx: &'ctx Interner, parent_scope: Arc<RwLock<Scope>>) -> Self {
         Resolver {
-            ctx,
-            scope_stack: Arc::clone(&ctx.global_scope),
+            interner: ctx,
+            scope_stack: parent_scope,
             diagnostics: Vec::new(),
         }
     }
@@ -34,7 +31,7 @@ impl<'ctx> Resolver<'ctx> {
     }
 
     fn report_redefine(
-        ctx: &'ctx Context,
+        ctx: &'ctx Interner,
         diagnostic: &mut Vec<Diagnostic>,
         kind: &SymbolKind,
         old: &Symbol,
@@ -42,7 +39,7 @@ impl<'ctx> Resolver<'ctx> {
         let msg = format!(
             "{:?} symbol '{}' is already defined at {:?}",
             kind,
-            ctx.lookup(old.id),
+            ctx.resolve(&old.id),
             old.span
         );
         let diag = Diagnostic::error(Severity::Error, old.span.clone(), msg);
@@ -114,7 +111,7 @@ impl<'ctx> Resolver<'ctx> {
             Expr::Variable(ident) => {
                 if let Some(sym) = self.scope_stack.read().unwrap().resolve(ident.id) {
                 } else {
-                    let name = self.ctx.lookup(ident.id);
+                    let name = self.interner.resolve(&ident.id);
                     self.report_undefine(&format!("Variable '{}' is not defined", name));
                 }
             }
@@ -135,7 +132,7 @@ impl<'ctx> Resolver<'ctx> {
         };
         if let Err(old) = self.scope_stack.write().unwrap().define(symbol) {
             Self::report_redefine(
-                self.ctx,
+                self.interner,
                 &mut self.diagnostics,
                 &SymbolKind::Dimension,
                 &old,
@@ -152,7 +149,7 @@ impl<'ctx> Resolver<'ctx> {
         };
         if let Err(old) = self.scope_stack.write().unwrap().define(sym) {
             Self::report_redefine(
-                self.ctx,
+                self.interner,
                 &mut self.diagnostics,
                 &SymbolKind::Dimension,
                 &old,

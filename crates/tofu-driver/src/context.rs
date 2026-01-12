@@ -1,21 +1,19 @@
-use crate::symbol::{Scope, SymbolKind};
-use crate::{ast::Id, symbol::Symbol};
-use lasso::Rodeo;
+use core::Interner;
+use core::spur::Id;
+use sema::symbol::*;
+
 use std::sync::{Arc, RwLock};
 
 pub struct Context {
-    pub interner: Rodeo,
+    pub interner: core::Interner,
     pub global_scope: Arc<RwLock<Scope>>,
 }
 
 impl Context {
     pub fn new() -> Self {
         Context {
-            interner: Rodeo::new(),
-            global_scope: Arc::new(RwLock::new(Scope::new(
-                None,
-                crate::symbol::ScopeKind::Global,
-            ))),
+            interner: Interner::new(),
+            global_scope: Arc::new(RwLock::new(Scope::new(None, ScopeKind::Global))),
         }
     }
 

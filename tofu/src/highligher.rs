@@ -1,5 +1,5 @@
 use logos::Logos;
-use parser::lexer::Token;
+use syntax::lexer::Token;
 use rustyline::highlight::{CmdKind, Highlighter};
 use rustyline_derive::{Completer, Helper, Hinter, Validator};
 use std::borrow::Cow::{self, Owned};

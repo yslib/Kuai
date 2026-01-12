@@ -1,4 +1,5 @@
-use crate::ast::*;
+use core::spur::Id;
+use syntax::ast::*;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 

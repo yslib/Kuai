@@ -1,12 +1,14 @@
 mod highligher;
+use driver::context::*;
 use miette::Report;
-use parser::{context::*, parser::*, resolver::*};
 use rustyline::error::ReadlineError;
 use rustyline::{Config, DefaultEditor, EditMode};
+use sema::resolver::*;
 use std::io::Read;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use syntax::parser::*;
 
 use clap::Parser as ClapParser;
 use std::path::PathBuf;
@@ -33,11 +35,11 @@ struct Args {
 }
 
 fn compile_and_run(input: &str, ctx: &mut Context) {
-    let mut parser = Parser::new(input, ctx);
+    let mut parser = Parser::new(input, &mut ctx.interner);
 
     match parser.parse() {
         Ok(module) => {
-            let mut resolver = Resolver::new(ctx);
+            let mut resolver = Resolver::new(&ctx.interner, Arc::clone(&ctx.global_scope));
             resolver.resolve(&module);
             if resolver.diagnostics().is_empty() {
                 println!("✨ Parse successful.");
@@ -133,7 +135,7 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
                     }
                     buffer.push_str(&line);
                     buffer.push('\n');
-                    let (is_balanced, depth) = parser::lexer::check_balanced(&buffer);
+                    let (is_balanced, depth) = syntax::lexer::check_balanced(&buffer);
                     if is_balanced {
                         if is_first_line
                             || trimmed.is_empty()

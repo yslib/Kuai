@@ -1,6 +1,5 @@
-use lasso::Spur;
+use core::spur::Id;
 pub type Span = std::ops::Range<usize>;
-pub type Id = lasso::Spur;
 pub const ERROR_IDENT_NAME: &str = "<error_ident>";
 
 #[derive(Debug, Clone, PartialEq)]

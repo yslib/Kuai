@@ -1,7 +1,8 @@
 use crate::ast::*;
-use crate::context::*;
-use crate::diagnostic::*;
 use crate::lexer::Token;
+use core::Interner;
+use core::diagnostic::Diagnostic;
+use core::diagnostic::Severity;
 use logos::{Lexer, Logos};
 
 pub trait FromToken {
@@ -24,23 +25,23 @@ impl PrimitiveType {
     }
 }
 
-pub struct Parser<'source, 'ctx> {
+pub struct Parser<'source> {
     lexer: Lexer<'source, Token>,
-    ctx: &'ctx mut Context,
+    interner: &'source mut Interner,
     current_token: Option<Token>,
     current_slice: &'source str,
     diagnostics: Vec<Diagnostic>,
 }
 
-impl<'source, 'ctx> Parser<'source, 'ctx> {
-    pub fn new(source: &'source str, ctx: &'ctx mut Context) -> Self {
+impl<'source> Parser<'source> {
+    pub fn new(source: &'source str, interner: &'source mut Interner) -> Self {
         let mut lexer = Token::lexer(source);
         let current_token = lexer.next().and_then(|r| r.ok());
         let current_slice = lexer.slice();
 
         Self {
             lexer,
-            ctx,
+            interner,
             current_token,
             current_slice,
             diagnostics: Vec::new(),
@@ -455,7 +456,7 @@ impl<'source, 'ctx> Parser<'source, 'ctx> {
             let name = self.current_slice.to_string();
             let span = self.lexer.span();
             self.advance();
-            let name = self.ctx.interner.get_or_intern(name);
+            let name = self.interner.get_or_intern(name);
             Ident { id: name, span }
         } else {
             self.report_error(&format!(
@@ -463,7 +464,7 @@ impl<'source, 'ctx> Parser<'source, 'ctx> {
                 self.current_token
             ));
             Ident {
-                id: self.ctx.interner.get_or_intern(ERROR_IDENT_NAME), // TODO:: optimize this
+                id: self.interner.get_or_intern(ERROR_IDENT_NAME), // TODO:: optimize this
                 // later
                 span: self.lexer.span(),
             }

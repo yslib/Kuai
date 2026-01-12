@@ -1,5 +1,5 @@
-use parser::parser::Parser;
-use parser::pretty::print_ast;
+use syntax::parser::Parser;
+use syntax::pretty::print_ast;
 
 #[test]
 fn test_parser_fixture() {
