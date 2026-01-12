@@ -1,0 +1,186 @@
+(* Tofu Language Grammar in EBNF *)
+(* Based on lexer.rs, ast.rs, and parser.rs *)
+
+(* ========================================== *)
+(* 1. Lexical Structure (Tokens) *)
+(* ========================================== *)
+
+(* Keywords *)
+KW_FUNC       = "func" ;
+KW_STRUCT     = "struct" ;
+KW_IMPORT     = "import" ;
+KW_RETURN     = "return" ;
+KW_LET        = "let" ;
+KW_DIM        = "dim" ;
+KW_IF         = "if" ;
+KW_ELSE       = "else" ;
+KW_FOR        = "for" ;
+KW_IN         = "in" ;
+KW_STEP       = "step" ;
+KW_BREAK      = "break" ;
+KW_CONTINUE   = "continue" ;
+
+(* Primitive Types *)
+TYPE_BOOL     = "bool" ;
+TYPE_CHAR     = "char" ;
+TYPE_I8       = "i8" ;
+TYPE_I16      = "i16" ;
+TYPE_I32      = "i32" ;
+TYPE_I64      = "i64" ;
+TYPE_F32      = "f32" ;
+TYPE_F64      = "f64" ;
+
+(* Literals & Identifiers *)
+(* Regex patterns from lexer.rs *)
+(* FLOAT_LITERAL: -?(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)? | -?\.\d+(?:[eE][+-]?\d+)? *)
+(* INTEGER_LITERAL: -?(?:0|[1-9]\d*) *)
+(* STRING_LITERAL: "([^"\\]|\\[\s\S])*"" *)
+(* IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]* *)
+(* ATTRIBUTE_TAG: @[a-zA-Z_][a-zA-Z0-9_]* *)
+
+(* Symbols *)
+DOT           = "." ;
+DOUBLE_DOT    = ".." ;
+COMMA         = "," ;
+COLON         = ":" ;
+DOUBLE_COLON  = "::" ;
+SEMI_COLON    = ";" ;
+ASSIGN        = "=" ;
+ARROW         = "->" ;
+LPAREN        = "(" ;
+RPAREN        = ")" ;
+LBRACKET      = "[" ;
+RBRACKET      = "]" ;
+LBRACE        = "{" ;
+RBRACE        = "}" ;
+
+(* Operators *)
+PLUS          = "+" ;
+MINUS         = "-" ;
+STAR          = "*" ;
+SLASH         = "/" ;
+EQ            = "==" ;
+NE            = "!=" ;
+LT            = "<" ;
+GT            = ">" ;
+
+(* ========================================== *)
+(* 2. Syntax Structure (Grammar) *)
+(* ========================================== *)
+
+module          = { attribute }, { statement } ;
+
+(* Attributes *)
+(* Logic: parse_with_attributes & parse_top_level_attributes *)
+attribute_list  = { attribute } ;
+attribute       = ATTRIBUTE_TAG, [ LPAREN, argument_list, RPAREN ] ;
+
+(* Statements *)
+statement       = func_decl
+                | struct_decl
+                | import_stmt
+                | dim_decl_stmt
+                | var_decl_stmt
+                | for_stmt
+                | if_stmt
+                | break_stmt
+                | continue_stmt
+                | return_stmt
+                | assign_or_expr_stmt ;
+
+(* Function Declaration *)
+func_decl       = attribute_list, KW_FUNC, func_proto, block ;
+func_proto      = IDENTIFIER, [ generic_param_list ], param_list, [ ARROW, type_expr ] ;
+
+param_list      = LPAREN, [ param, { COMMA, param }, [ COMMA ] ], RPAREN ;
+param           = IDENTIFIER, COLON, type_expr ;
+
+(* Struct Declaration *)
+struct_decl     = attribute_list, KW_STRUCT, IDENTIFIER, [ generic_param_list ], LBRACE, { field_decl, [ COMMA ] }, RBRACE ;
+field_decl      = IDENTIFIER, COLON, type_expr ;
+
+(* Import Statement *)
+import_stmt     = KW_IMPORT, path, SEMI_COLON ;
+path            = IDENTIFIER, { DOUBLE_COLON, IDENTIFIER } ;
+
+(* Dimension Declaration *)
+dim_decl_stmt   = KW_DIM, dim_decl, { COMMA, dim_decl }, SEMI_COLON ;
+dim_decl        = IDENTIFIER, [ COLON, expr ], [ ASSIGN, expr ] ;
+
+(* Variable Declaration (Let) *)
+var_decl_stmt   = KW_LET, IDENTIFIER, [ COLON, type_expr ], [ ASSIGN, expr ], SEMI_COLON ;
+
+(* Control Flow *)
+for_stmt        = attribute_list, KW_FOR, IDENTIFIER, KW_IN, expr, DOUBLE_DOT, expr, [ KW_STEP, expr ], block ;
+
+if_stmt         = attribute_list, KW_IF, expr, block, [ KW_ELSE, ( if_stmt | block ) ] ;
+
+break_stmt      = KW_BREAK, SEMI_COLON ;
+continue_stmt   = KW_CONTINUE, SEMI_COLON ;
+
+return_stmt     = KW_RETURN, expr, SEMI_COLON ;
+
+block           = LBRACE, { statement }, RBRACE ;
+
+(* Assignment or Expression Statement *)
+assign_or_expr_stmt = expr, [ ASSIGN, expr ], SEMI_COLON ;
+
+(* Generics *)
+generic_param_list = LT, generic_param, { COMMA, generic_param }, GT ;
+generic_param      = IDENTIFIER, [ COLON, type_expr ], [ ASSIGN, type_expr ] ;
+
+generic_arg_list   = LT, type_expr, { COMMA, type_expr }, GT ;
+
+(* Types *)
+type_expr       = ( primitive_type | named_type ), [ tensor_shape ] ;
+
+primitive_type  = TYPE_BOOL | TYPE_CHAR | TYPE_I8 | TYPE_I16 | TYPE_I32 | TYPE_I64 | TYPE_F32 | TYPE_F64 ;
+
+named_type      = IDENTIFIER, [ generic_arg_list ] ;
+
+tensor_shape    = LBRACKET, expr, { COMMA, expr }, RBRACKET ;
+
+(* Expressions (Pratt Parser structure implied) *)
+(* Precedence (lowest to highest):
+   1. Assignment (=) - handled in statement grammar
+   2. Logical OR (||) - not implemented in parser.rs yet
+   3. Logical AND (&&) - not implemented in parser.rs yet
+   4. Equality (==, !=) - not implemented in infix_binding_power yet
+   5. Comparison (<, >, <=, >=) - not implemented in infix_binding_power yet
+   6. Term (+, -) -> (3, 4)
+   7. Factor (*, /) -> (5, 6)
+   8. Call (()), Index ([]), Member (.), Swizzle -> (7, 8) / (9, 10)
+   9. Prefix (-, !) -> not implemented in parse_expr prefix match yet
+*)
+
+expr            = binary_expr ;
+
+(* Simplified view of expression hierarchy for EBNF *)
+binary_expr     = term_expr ; (* Recursive structure hidden in Pratt implementation *)
+
+term_expr       = factor_expr, { ( PLUS | MINUS ), factor_expr } ;
+factor_expr     = postfix_expr, { ( STAR | SLASH ), postfix_expr } ;
+
+postfix_expr    = primary_expr, { postfix_op } ;
+postfix_op      = member_access
+                | call_op
+                | index_op
+                | namespace_access ;
+
+member_access   = DOT, IDENTIFIER ;
+call_op         = [ DOUBLE_COLON, generic_arg_list ], LPAREN, argument_list, RPAREN ;
+index_op        = LBRACKET, expr, { COMMA, expr }, RBRACKET ; (* Access/Einsum *)
+namespace_access = DOUBLE_COLON, IDENTIFIER ; (* Only after identifier *)
+
+primary_expr    = INTEGER_LITERAL
+                | FLOAT_LITERAL
+                | STRING_LITERAL
+                | IDENTIFIER
+                | array_literal
+                | LPAREN, expr, RPAREN ;
+
+array_literal   = LBRACKET, expr, { ( COMMA | " " ), expr }, RBRACKET ;
+
+argument_list   = [ argument, { COMMA, argument } ] ;
+argument        = [ IDENTIFIER, ASSIGN ], expr ; (* Named or Positional *)
+
