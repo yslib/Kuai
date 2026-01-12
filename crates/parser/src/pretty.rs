@@ -90,6 +90,7 @@ impl Pretty for Argument {
                 .to_doc(alloc)
                 .append(alloc.text(": "))
                 .append(value.to_doc(alloc)),
+            Argument::Attribute(attr) => attr.to_doc(alloc),
         }
     }
 }

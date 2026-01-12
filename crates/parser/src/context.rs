@@ -1,5 +1,5 @@
-use crate::ast::Id;
-use crate::symbol::Scope;
+use crate::symbol::{Scope, SymbolKind};
+use crate::{ast::Id, symbol::Symbol};
 use lasso::Rodeo;
 use std::sync::{Arc, RwLock};
 
@@ -21,6 +21,20 @@ impl Context {
 
     pub fn lookup(&self, id: Id) -> &str {
         self.interner.resolve(&id)
+    }
+
+    pub fn inject_builtins(&mut self) {
+        let builtins = vec!["print", "exit", "help"];
+        for name in builtins {
+            let id = self.interner.get_or_intern(name);
+            let mut scope = self.global_scope.write().unwrap();
+            let _ = scope.define(Symbol {
+                id,
+                kind: SymbolKind::BuiltinFunction,
+                ty: None,
+                span: 0..0,
+            });
+        }
     }
 }
 

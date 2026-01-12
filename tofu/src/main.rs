@@ -185,7 +185,9 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
 
 fn main() -> miette::Result<()> {
     let args = Args::parse();
-    let ctx = Arc::new(Mutex::new(Context::new()));
+    let mut c = Context::new();
+    c.inject_builtins();
+    let ctx = Arc::new(Mutex::new(c));
     if let Some(code) = args.execute {
         let shared_ctx = Arc::clone(&ctx);
         let mut a = shared_ctx.lock().unwrap();

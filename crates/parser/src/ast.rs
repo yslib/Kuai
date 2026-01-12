@@ -33,6 +33,7 @@ impl std::fmt::Display for Ident {
 pub enum Argument {
     Positional(Expr),
     Named { name: Ident, value: Expr },
+    Attribute(Attribute),
 }
 
 #[derive(Debug, Clone, PartialEq)]

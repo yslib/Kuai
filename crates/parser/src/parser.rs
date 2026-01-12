@@ -205,11 +205,19 @@ impl<'source, 'ctx> Parser<'source, 'ctx> {
                 if !self.expect(Token::Assign, "Expected '=' in named argument") {
                     return Err(());
                 }
+                if self.check(Token::Attribute) {
+                    let attr = self.parse_attribute();
+                    return Ok(Argument::Attribute(attr));
+                }
                 let value = self.parse_expr(0);
                 return Ok(Argument::Named { name, value });
             }
         }
 
+        if self.check(Token::Attribute) {
+            let attr = self.parse_attribute();
+            return Ok(Argument::Attribute(attr));
+        }
         let expr = self.parse_expr(0);
         if let Expr::Error { .. } = expr {
             return Err(());
@@ -240,6 +248,30 @@ impl<'source, 'ctx> Parser<'source, 'ctx> {
         args
     }
 
+    fn parse_attribute(&mut self) -> Attribute {
+        if !self.check(Token::Attribute) {
+            self.report_error("Expected attribute");
+            return Attribute {
+                name: ERROR_IDENT_NAME.to_string(),
+                args: Vec::new(),
+            };
+        }
+        // "@attr" or "@attr(args...)"
+        // consume '@'
+        let name = self.current_slice[1..].to_string();
+        self.advance();
+        // 解析参数 (args...)
+        if self.check(Token::LParen) {
+            let args = self.parse_argument_list();
+            Attribute { name, args }
+        } else {
+            Attribute {
+                name,
+                args: Vec::new(),
+            }
+        }
+    }
+
     // --- 核心：属性解析器 (扩展性的基石) ---
     //
     //Attribute = AttrTag, [ "(", ArgList, ")" ] ;
@@ -257,20 +289,7 @@ impl<'source, 'ctx> Parser<'source, 'ctx> {
 
         // 只要看到 @，就一直解析属性
         while self.check(Token::Attribute) {
-            // "@attr" or "@attr(args...)"
-            // consume '@'
-            let name = self.current_slice[1..].to_string();
-            self.advance();
-            // 解析参数 @attr(args...)
-            let attr = if self.check(Token::LParen) {
-                let args = self.parse_argument_list();
-                Attribute { name, args }
-            } else {
-                Attribute {
-                    name,
-                    args: Vec::new(),
-                }
-            };
+            let attr = self.parse_attribute();
             attributes.push(attr);
         }
         parse_fn(self, attributes)
