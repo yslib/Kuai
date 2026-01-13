@@ -107,9 +107,9 @@ impl<'ctx> Resolver<'ctx> {
 
     fn resolve_expr(&mut self, e: &Expr) {
         match e {
-            Expr::Literal(lit) => {}
+            Expr::Literal(_lit) => {}
             Expr::Variable(ident) => {
-                if let Some(sym) = self.scope_stack.read().unwrap().resolve(ident.id) {
+                if let Some(_sym) = self.scope_stack.read().unwrap().resolve(ident.id) {
                 } else {
                     let name = self.interner.resolve(&ident.id);
                     self.report_undefine(&format!("Variable '{}' is not defined", name));

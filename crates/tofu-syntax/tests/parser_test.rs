@@ -1,7 +1,7 @@
+use core::Interner;
+use syntax::ast::Module;
 use syntax::parser::Parser;
 use syntax::pretty::print_ast;
-use syntax::ast::Module;
-use core::Interner;
 
 #[test]
 fn test_parser() {

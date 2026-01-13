@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod highligher;
 use driver::context::*;
 use miette::Report;
@@ -45,14 +46,14 @@ fn compile_and_run(input: &str, ctx: &mut Context) {
                 println!("✨ Parse successful.");
             } else {
                 for diag in resolver.diagnostics() {
-                    let adapter = diag.render("stdin".to_string(), input.to_string());
+                    let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
                     println!("{:?}", Report::new(adapter));
                 }
             }
         }
         Err(diagnostics) => {
             for diag in diagnostics {
-                let adapter = diag.render("stdin".to_string(), input.to_string());
+                let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
                 println!("{:?}", Report::new(adapter));
             }
         }

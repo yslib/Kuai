@@ -298,8 +298,11 @@ impl<'source> Parser<'source> {
 
     fn parse_dim(&mut self) -> Vec<DimDecl> {
         // 'dim' DimName [':' TypeExpr ] [ '=' Expr ] ;
-        let start_span = self.lexer.span().start;
-        self.expect(Token::KwDim, "Expected 'dim'");
+        if !self.expect(Token::KwDim, "Expected 'dim'") {
+            self.report_error("Expected 'dim' keyword");
+            self.synchronize();
+            return Vec::new();
+        }
 
         let mut decls = Vec::new();
 

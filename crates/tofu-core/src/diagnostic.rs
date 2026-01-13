@@ -1,4 +1,5 @@
-use miette::{LabeledSpan, SourceCode, SourceSpan};
+#![allow(unused)]
+use miette::SourceSpan;
 use thiserror::Error;
 
 #[derive(Error, Debug, miette::Diagnostic)]
@@ -21,7 +22,7 @@ pub enum Severity {
     Hint,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Diagnostic {
     pub severity: Severity,
     pub span: std::ops::Range<usize>,
@@ -29,7 +30,7 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    pub fn render(&self, filaname: String, src: String) -> MietteDiagnostic {
+    pub fn render_as_miette(&self, filaname: String, src: String) -> MietteDiagnostic {
         MietteDiagnostic {
             message: self.message.clone(),
             span: SourceSpan::new(self.span.start.into(), self.span.end - self.span.start),
@@ -43,15 +44,5 @@ impl Diagnostic {
             span,
             message,
         }
-    }
-}
-
-impl std::fmt::Display for Diagnostic {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{:?}] at {:?}: {}",
-            self.severity, self.span, self.message
-        )
     }
 }
