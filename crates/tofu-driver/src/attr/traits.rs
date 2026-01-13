@@ -9,7 +9,18 @@ pub enum CompileStage {
     Raw,
     Resolved,
     Analyzed,
-    Lowered,
+}
+
+pub enum HanlderType {
+    Observer,
+    Transformer,
+    Finalizer,
+}
+
+pub enum Artifact {
+    Source(String),
+    Binary(Vec<u8>),
+    Object(Box<dyn Any + Send + Sync>),
 }
 
 pub struct AttrMetadata {
@@ -32,14 +43,96 @@ impl AttrMetadata {
     }
 }
 
-pub trait AttrHandler: Send + Sync {
+impl Default for AttrMetadata {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct AttrEnvironment<'a> {
+    pub parent: Option<&'a AttrEnvironment<'a>>,
+    pub local_attrs: &'a [Attribute],
+    pub recursive_attrs: Vec<&'a Attribute>,
+    pub delta_meta: AttrMetadata,
+}
+
+impl<'a> AttrEnvironment<'a> {
+    pub fn new(
+        parent: Option<&'a AttrEnvironment<'a>>,
+        local_attrs: &'a [Attribute],
+        recursive_attrs: Vec<&'a Attribute>,
+        delta_meta: AttrMetadata,
+    ) -> Self {
+        AttrEnvironment {
+            parent,
+            local_attrs,
+            recursive_attrs,
+            delta_meta,
+        }
+    }
+
+    pub fn get_metadata<T>(&self, key: &str) -> Option<&T>
+    where
+        T: Send + Sync + 'static,
+    {
+        if let Some(value) = self.delta_meta.get::<T>(key) {
+            Some(value)
+        } else if let Some(parent) = self.parent {
+            parent.get_metadata::<T>(key)
+        } else {
+            None
+        }
+    }
+
+    pub fn for_each_attr<F>(&self, mut f: F)
+    where
+        F: FnMut(&Attribute),
+    {
+        // for attr in self.local_attrs {
+        //     f(attr);
+        // }
+        if let Some(parent) = self.parent {
+            parent.for_each_attr(&mut f);
+        }
+        for attr in &self.recursive_attrs {
+            f(attr);
+        }
+    }
+}
+
+pub enum AttrAction {
+    Continue(Stmt),
+    SkipChildren(Stmt),
+    Terminal(Stmt),
+    Lowered(Artifact),
+}
+
+pub trait AttrEngine {
+    fn apply<'a>(
+        &self,
+        ctx: &Context,
+        node: Stmt,
+        stage: CompileStage,
+        env: &'a AttrEnvironment<'a>,
+    ) -> Result<AttrAction, Vec<Diagnostic>>;
+}
+
+pub trait AttrBase: Send + Sync {
     fn name(&self) -> &str;
+    fn handler_type(&self) -> HanlderType;
+
     fn stage(&self) -> CompileStage;
+    fn is_recursive(&self) -> bool {
+        false
+    }
+    fn evaluate(&self, ctx: &Context, attr: &Attribute, meta: &mut AttrMetadata);
 
     fn transform(
         &self,
         ctx: &Context,
+        engine: &dyn AttrEngine,
         attr: &Attribute,
-        node: &Stmt,
-    ) -> Result<Stmt, Vec<Diagnostic>>;
+        node: Stmt,
+        meta: &AttrMetadata,
+    ) -> Result<AttrAction, Vec<Diagnostic>>;
 }
