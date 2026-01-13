@@ -1,7 +1,11 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/generic_type.tof
+input_file: crates/tofu-syntax/tests/fixtures/generic_type.tof
 ---
-($func use_generic(Vec<<f32>> v), (Map<String, <i32>> m)) {}
-($func nested(Map<String, Vec<Option<<f32>>>> data)) {}
+(<func> (<proto> Spur(1) ((<param> Spur(2): (<type> Spur(3) <<f32>>)), (<param> Spur(4): (<type> Spur(5) <(<type> Spur(6)), <i32>>)))) (<block>
+  
+))
+(<func> (<proto> Spur(7) ((<param> Spur(8): (<type> Spur(5) <(<type> Spur(6)), (<type> Spur(3) <(<type> Spur(9) <<f32>>)>)>)))) (<block>
+  
+))

@@ -1,0 +1,21 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/complex_2.tof
+---
+(<import> std::math)
+(<struct> [@module_attribute(version = (<str> "\"1.0\""))] Config <(<generic> T)>
+  (<field> value: (<type> T))
+  (<field> enabled: <bool>)
+)
+(<func> [@inline] (<proto> helper ((<param> x: <f32>)) -> <f32>) (<block>
+  (<return> (<*> x, (<f64> 2)))
+))
+(<func> [@kernel(threads = (<i64> 256)), @optimize(level = (<i64> 3))] (<proto> main_kernel <(<generic> T: (<type> Numeric))> ((<param> input: (<tensor> (<type> T) [N, M])), (<param> config: (<type> Config <(<type> T)>))) -> (<tensor> (<type> T) [N, M])) (<block>
+  (<set> temp = (<call> helper ((<index> input [(<i64> 0), (<i64> 0)]))))
+  (<set> result = (<*> (<dot> input, xy), temp))
+  (<for> a (<range> (<i64> 0)..(<i64> 1) step (<i64> 5)) (<block>
+    
+  ))
+  (<return> result)
+))

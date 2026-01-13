@@ -1,6 +1,8 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/primitve_type.tof
+input_file: crates/tofu-syntax/tests/fixtures/primitve_type.tof
 ---
-($func types(<f32> a), (<i32> b), (<bool> c)) {}
+(<func> (<proto> Spur(1) ((<param> Spur(2): <f32>), (<param> Spur(3): <i32>), (<param> Spur(4): <bool>))) (<block>
+  
+))

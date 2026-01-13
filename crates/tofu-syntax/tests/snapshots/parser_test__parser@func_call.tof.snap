@@ -1,0 +1,8 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/func_call.tof
+---
+(<set> result = (<call> foo (a, b, c)))
+(<set> result = (<call> cast <<f32>> (value)))
+(<set> result = (<call> create (width = (<i64> 100), height = (<i64> 200))))

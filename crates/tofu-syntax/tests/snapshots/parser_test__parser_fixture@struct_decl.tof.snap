@@ -1,13 +1,13 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/struct_decl.tof
+input_file: crates/tofu-syntax/tests/fixtures/struct_decl.tof
 ---
-struct Point {
-  x: <f32>,
-  y: <f32>,
-}
-struct Container<T> {
-  value: T,
-  count: <i32>,
-}
+(<struct> Spur(1)
+  (<field> Spur(2): <f32>)
+  (<field> Spur(3): <f32>)
+)
+(<struct> Spur(4) <(<generic> Spur(5))>
+  (<field> Spur(6): (<type> Spur(5)))
+  (<field> Spur(7): <i32>)
+)

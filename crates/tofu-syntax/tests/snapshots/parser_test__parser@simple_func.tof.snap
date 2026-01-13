@@ -1,0 +1,20 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/simple_func.tof
+---
+(<func> (<proto> empty ()) (<block>
+  
+))
+(<func> (<proto> add ((<param> a: <i32>), (<param> b: <i32>)) -> <i32>) (<block>
+  (<return> (<+> a, b))
+))
+(<func> (<proto> generic_func <(<generic> T)> ((<param> input: (<type> T))) -> (<type> T)) (<block>
+  (<return> input)
+))
+(<func> (<proto> process <(<generic> T: (<type> Numeric)), (<generic> U = <f32>)> ((<param> x: (<type> T)), (<param> y: (<type> U))) -> (<type> T)) (<block>
+  (<return> x)
+))
+(<func> (<proto> a ()) (<block>
+  
+))

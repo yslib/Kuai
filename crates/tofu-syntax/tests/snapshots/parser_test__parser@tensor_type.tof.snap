@@ -1,0 +1,8 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/tensor_type.tof
+---
+(<func> (<proto> tensor_func ((<param> input: (<tensor> <f32> [B, C, H, W]))) -> (<tensor> <f32> [B, C, H, W])) (<block>
+  (<return> input)
+))

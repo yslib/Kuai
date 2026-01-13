@@ -1,9 +1,9 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/simple_assign.tof
+input_file: crates/tofu-syntax/tests/fixtures/simple_assign.tof
 ---
-x = (<i32> 42);
-v = [(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)];
-v = [(<i32> 1), (<i32> 2), (<i32> 3), (<i32> 4)];
-return (<+> x, y);
+(<set> Spur(1) = (<i64> 42))
+(<set> Spur(2) = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
+(<set> Spur(2) = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
+(<return> (<+> Spur(1), Spur(3)))

@@ -1,22 +1,21 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/complex_2.tof
+input_file: crates/tofu-syntax/tests/fixtures/complex_2.tof
 ---
-import std::math;
-@module_attribute(version: (<str> "\"1.0\""))
-struct Config<T> {
-  value: T,
-  enabled: <bool>,
-}
-@inline
-($func helper -> <f32> (<f32> x)) {
-  return (<*> x, (<f32> 2));
-}
-@kernel(threads: (<i32> 256))
-@optimize(level: (<i32> 3))
-($func main_kernel<T: Numeric> -> T[N, M] (T[N, M] input), (Config<T> config)) {
-  temp = (<helper> (input[(<i32> 0), (<i32> 0)]));
-  result = (<*> (<dot> input, xy), temp);
-  return result;
-}
+(<import> Spur(1)::Spur(2))
+(<struct> [@module_attribute(Spur(3) = (<str> "\"1.0\""))] Spur(4) <(<generic> Spur(5))>
+  (<field> Spur(6): (<type> Spur(5)))
+  (<field> Spur(7): <bool>)
+)
+(<func> [@inline] (<proto> Spur(8) ((<param> Spur(9): <f32>)) -> <f32>) (<block>
+  (<return> (<*> Spur(9), (<f64> 2)))
+))
+(<func> [@kernel(Spur(10) = (<i64> 256)), @optimize(Spur(11) = (<i64> 3))] (<proto> Spur(12) <(<generic> Spur(5): (<type> Spur(13)))> ((<param> Spur(14): (<tensor> (<type> Spur(5)) [Spur(15), Spur(16)])), (<param> Spur(17): (<type> Spur(4) <(<type> Spur(5))>))) -> (<tensor> (<type> Spur(5)) [Spur(15), Spur(16)])) (<block>
+  (<set> Spur(18) = (<call> Spur(8) ((<index> Spur(14) [(<i64> 0), (<i64> 0)]))))
+  (<set> Spur(19) = (<*> (<dot> Spur(14), Spur(20)), Spur(18)))
+  (<for> Spur(21) (<range> (<i64> 0)..(<i64> 1) step (<i64> 5)) (<block>
+    
+  ))
+  (<return> Spur(19))
+))

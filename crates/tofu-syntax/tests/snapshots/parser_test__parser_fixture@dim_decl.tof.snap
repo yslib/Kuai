@@ -1,6 +1,5 @@
 ---
 source: crates/tofu-syntax/tests/parser_test.rs
-assertion_line: 14
 expression: pretty_output
 input_file: crates/tofu-syntax/tests/fixtures/dim_decl.tof
 ---

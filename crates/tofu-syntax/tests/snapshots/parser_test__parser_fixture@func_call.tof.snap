@@ -1,8 +1,8 @@
 ---
-source: crates/parser/tests/parser_test.rs
+source: crates/tofu-syntax/tests/parser_test.rs
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/func_call.tof
+input_file: crates/tofu-syntax/tests/fixtures/func_call.tof
 ---
-result = (<foo> (a, b, c));
-result = (<cast><<f32>> (value));
-result = (<create> (width: (<i32> 100), height: (<i32> 200)));
+(<set> Spur(1) = (<call> Spur(2) (Spur(3), Spur(4), Spur(5))))
+(<set> Spur(1) = (<call> Spur(6) <<f32>> (Spur(7))))
+(<set> Spur(1) = (<call> Spur(8) (Spur(9) = (<i64> 100), Spur(10) = (<i64> 200))))
