@@ -17,3 +17,7 @@ func process<T: Numeric, U = f32>(x: T, y: U) -> T {
 func a(){
 
 }
+
+func b(){;}
+
+func b(){;;;;};

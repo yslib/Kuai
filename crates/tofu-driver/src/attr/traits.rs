@@ -51,22 +51,19 @@ impl Default for AttrMetadata {
 
 pub struct AttrEnvironment<'a> {
     pub parent: Option<&'a AttrEnvironment<'a>>,
-    pub local_attrs: &'a [Attribute],
-    pub recursive_attrs: Vec<&'a Attribute>,
+    pub local_attrs: &'a [(&'a Attribute, bool)],
     pub delta_meta: AttrMetadata,
 }
 
 impl<'a> AttrEnvironment<'a> {
     pub fn new(
         parent: Option<&'a AttrEnvironment<'a>>,
-        local_attrs: &'a [Attribute],
-        recursive_attrs: Vec<&'a Attribute>,
+        local_attrs: &'a [(&'a Attribute, bool)],
         delta_meta: AttrMetadata,
     ) -> Self {
         AttrEnvironment {
             parent,
             local_attrs,
-            recursive_attrs,
             delta_meta,
         }
     }
@@ -84,19 +81,29 @@ impl<'a> AttrEnvironment<'a> {
         }
     }
 
-    pub fn for_each_attr<F>(&self, mut f: F)
+    pub fn for_active_attrs<F>(
+        &self,
+        mut node: Stmt,
+        mut f: F,
+    ) -> Result<AttrAction, Vec<Diagnostic>>
     where
-        F: FnMut(&Attribute),
+        F: FnMut(&Self, &Attribute, Stmt) -> Result<AttrAction, Vec<Diagnostic>>,
     {
-        // for attr in self.local_attrs {
-        //     f(attr);
-        // }
+        for (attr, visible) in self.local_attrs {
+            if *visible {
+                node = match f(self, attr, node)? {
+                    AttrAction::Continue(n) => n,
+                    AttrAction::SkipChildren(n) => return Ok(AttrAction::Continue(n)),
+                    AttrAction::Terminal(n) => return Ok(AttrAction::Terminal(n)),
+                    AttrAction::Lowered(a) => return Ok(AttrAction::Lowered(a)),
+                }
+            }
+        }
+
         if let Some(parent) = self.parent {
-            parent.for_each_attr(&mut f);
+            return parent.for_active_attrs(node, f);
         }
-        for attr in &self.recursive_attrs {
-            f(attr);
-        }
+        Ok(AttrAction::Continue(node))
     }
 }
 

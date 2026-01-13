@@ -113,6 +113,63 @@ pub enum Stmt {
     },
 }
 
+impl Stmt {
+    pub fn get_attributes(&self) -> Option<&Vec<Attribute>> {
+        match self {
+            Stmt::For { attributes, .. } => Some(attributes),
+            Stmt::If { attributes, .. } => Some(attributes),
+            Stmt::Function(func_decl) => Some(&func_decl.attributes),
+            Stmt::Struct(struct_decl) => Some(&struct_decl.attributes),
+            _ => None,
+        }
+    }
+
+    pub fn for_each_child<F>(&self, mut f: F)
+    where
+        F: FnMut(&Stmt),
+    {
+        match self {
+            Stmt::Function(func_decl) => {
+                if let Some(body) = &func_decl.body {
+                    for stmt in &body.stmts {
+                        f(stmt);
+                    }
+                }
+            }
+            Stmt::Struct(_) => {
+                // do nothing for now
+            }
+            Stmt::For { body, .. } => {
+                for stmt in &body.stmts {
+                    f(stmt);
+                }
+            }
+            Stmt::If {
+                then_branch,
+                else_branch,
+                ..
+            } => {
+                for stmt in &then_branch.stmts {
+                    f(stmt);
+                }
+                if let Some(else_branch) = else_branch {
+                    match else_branch {
+                        ElseBranch::Block(block) => {
+                            for stmt in &block.stmts {
+                                f(stmt);
+                            }
+                        }
+                        ElseBranch::If(stmt) => {
+                            f(stmt);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PrimitiveType {
     Bool,

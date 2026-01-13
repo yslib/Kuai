@@ -18,3 +18,5 @@ func heavy_compute(data: f32[N]) {}
 @optimize(level=2)
 @kernel(a=@inline, b=@unroll(factor=2))
 func foo() {}
+
+@kernel(a=@optimize(level=3))a;
