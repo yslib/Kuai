@@ -1,0 +1,14 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+assertion_line: 14
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/simple_expr.tof
+---
+(<*> (<+> Spur(1), Spur(2)), (<-> Spur(3), Spur(4)))
+(<set> Spur(5) = (<dot> Spur(6), Spur(7)))
+(<set> Spur(8) = (<+> (<call> (<dot> (<i64> 1), Spur(9)) ()),
+(<call> (<dot> (<str> "\"abcd\""), Spur(10)) ())))
+(<set> Spur(1) = (<*> (<dot> Spur(11), Spur(12)),
+(<index> Spur(2) [Spur(13), Spur(14)])))
+(<set> Spur(15) = (<index> Spur(16) [(<i64> 0), (<i64> 1), (<i64> 2)]))
+(<set> Spur(5) = (<dot> (<index> (<dot> (<dot> Spur(1), Spur(2)), Spur(3)) [(<i64> 0)]), Spur(4)))

@@ -1,7 +1,7 @@
 use core::spur::Id;
-use syntax::ast::*;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use syntax::ast::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SymbolKind {

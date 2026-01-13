@@ -13,3 +13,8 @@ func compute() {}
 @kernel(threads=128)
 @unroll(factor=4)
 func heavy_compute(data: f32[N]) {}
+
+// nested attributes
+@optimize(level=2)
+@kernel(a=@inline, b=@unroll(factor=2))
+func foo() {}

@@ -1,0 +1,12 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+assertion_line: 14
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/generic_type.tof
+---
+(<func> (<proto> Spur(1) ((<param> Spur(2): (<type> Spur(3) <<f32>>)), (<param> Spur(4): (<type> Spur(5) <(<type> Spur(6)), <i32>>)))) (<block>
+  
+))
+(<func> (<proto> Spur(7) ((<param> Spur(8): (<type> Spur(5) <(<type> Spur(6)), (<type> Spur(3) <(<type> Spur(9) <<f32>>)>)>)))) (<block>
+  
+))

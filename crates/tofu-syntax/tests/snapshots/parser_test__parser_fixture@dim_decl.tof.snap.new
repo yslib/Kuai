@@ -1,9 +1,9 @@
 ---
-source: crates/parser/tests/parser_test.rs
-assertion_line: 13
+source: crates/tofu-syntax/tests/parser_test.rs
+assertion_line: 14
 expression: pretty_output
-input_file: crates/parser/tests/fixtures/dim_decl.tof
+input_file: crates/tofu-syntax/tests/fixtures/dim_decl.tof
 ---
-<dim to do>
-<dim to do>
-<dim to do>
+(<dim_group> (<dim> Spur(1)), (<dim> Spur(2)))
+(<dim_group> (<dim> Spur(3) = (<i64> 32)))
+(<dim_group> (<dim> Spur(4): (<i64> 8) = (<i64> 64)))

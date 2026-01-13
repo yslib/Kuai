@@ -1,0 +1,7 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+assertion_line: 14
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/fixtures/simple_stmt.tof
+---
+(<import> Spur(1)::Spur(2))

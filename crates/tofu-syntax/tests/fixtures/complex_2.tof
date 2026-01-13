@@ -16,5 +16,7 @@ func helper(x: f32) -> f32 {
 func main_kernel<T: Numeric>(input: T[N, M], config: Config<T>) -> T[N, M] {
     temp = helper(input[0, 0]);
     result = input.xy * temp;
+    for a in 0..1 step 5 {
+    }
     return result;
 }

@@ -1,8 +1,8 @@
 use logos::Logos;
-use syntax::lexer::Token;
 use rustyline::highlight::{CmdKind, Highlighter};
 use rustyline_derive::{Completer, Helper, Hinter, Validator};
 use std::borrow::Cow::{self, Owned};
+use syntax::lexer::Token;
 
 #[derive(Helper, Completer, Hinter, Validator)]
 pub struct TofuHelper;

@@ -2,8 +2,8 @@ use crate::symbol::ScopeKind;
 use crate::symbol::{Scope, Symbol, SymbolKind};
 use core::Interner;
 use core::diagnostic::*;
-use syntax::ast::*;
 use std::sync::{Arc, RwLock};
+use syntax::ast::*;
 
 pub struct Resolver<'ctx> {
     interner: &'ctx Interner,
