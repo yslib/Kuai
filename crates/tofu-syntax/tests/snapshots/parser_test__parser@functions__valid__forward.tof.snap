@@ -1,0 +1,10 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/cases/functions/valid/forward.tof
+---
+(<func> [@kernel(threads = (<i64> 256))] (<proto> forward ((<param> input: (<tensor> <f32> [B, C, H, W]))) -> (<tensor> <f32> [B, C, H, W])) (<block>
+  (<set> factor = [(<f64> 0.5), (<f64> 0.5), (<f64> 0.5)])
+  (<set> result = (<*> (<dot> input, nchw), factor))
+  (<return> result)
+))

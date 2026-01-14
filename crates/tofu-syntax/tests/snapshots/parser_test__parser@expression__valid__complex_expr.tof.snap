@@ -1,0 +1,11 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/cases/expression/valid/complex_expr.tof
+---
+(<set> result = (<+> (<+> (</> (<*> (<+> a, b), (<-> c, d)), e),
+(<*> (<dot> A, b), [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])),
+(<index> e [a, b, c, e, d])))
+(<set> result = (<+> (<+> (<+> (</> (<*> (<+> a, b), (<-> c, d)), e),
+(<*> (<dot> A, b), [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])),
+(<index> e [a, b, c, e, d])), (<call> (<call> (<call> foo (a)) (b)) (c))))

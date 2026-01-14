@@ -1,0 +1,6 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/cases/expression/valid/single_assign.tof
+---
+(<set> x = (<i64> 42))

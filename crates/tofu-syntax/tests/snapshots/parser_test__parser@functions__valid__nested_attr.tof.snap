@@ -1,0 +1,8 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/cases/functions/valid/nested_attr.tof
+---
+(<func> [@optimize(level = (<i64> 2)), @kernel(@inline, @unroll(factor = (<i64> 2)))] (<proto> foo ()) (<block>
+  
+))

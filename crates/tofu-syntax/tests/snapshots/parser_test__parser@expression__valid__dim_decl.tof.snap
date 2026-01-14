@@ -1,0 +1,8 @@
+---
+source: crates/tofu-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/tofu-syntax/tests/cases/expression/valid/dim_decl.tof
+---
+(<dim_group> (<dim> M), (<dim> N))
+(<dim_group> (<dim> BLOCK_SIZE = (<i64> 32)))
+(<dim_group> (<dim> TILE_M: (<i64> 8) = (<i64> 64)))
