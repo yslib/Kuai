@@ -1,6 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/fixtures/access.tof
----
-(<set> Spur(1) = (<call> Spur(2) <(<type> Spur(3))> (Spur(4), Spur(5))))

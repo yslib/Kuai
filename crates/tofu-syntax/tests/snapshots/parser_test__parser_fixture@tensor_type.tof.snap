@@ -1,8 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/fixtures/tensor_type.tof
----
-(<func> (<proto> Spur(1) ((<param> Spur(2): (<tensor> <f32> [Spur(3), Spur(4), Spur(5), Spur(6)]))) -> (<tensor> <f32> [Spur(3), Spur(4), Spur(5), Spur(6)])) (<block>
-  (<return> Spur(2))
-))

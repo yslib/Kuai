@@ -1,0 +1,5 @@
+@module_attribute(version="1.0")
+struct Config<T> {
+    value: T,
+    enabled: bool,
+}

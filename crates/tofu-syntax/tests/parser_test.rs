@@ -5,7 +5,7 @@ use syntax::pretty::print_ast;
 
 #[test]
 fn test_parser() {
-    insta::glob!("fixtures/*.tof", |path| {
+    insta::glob!("**/*.tof", |path| {
         let input = std::fs::read_to_string(path).unwrap();
         let mut interner = Interner::new();
         let mut parser = Parser::new(&input, &mut interner);

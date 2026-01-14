@@ -1,1 +1,0 @@
-func types(a: f32, b: i32, c: bool) {}

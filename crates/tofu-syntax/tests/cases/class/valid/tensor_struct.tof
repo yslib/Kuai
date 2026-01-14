@@ -1,0 +1,4 @@
+@swizzle_set(chars="nchw", indices=[0, 1, 2, 3])
+struct Tensor {
+    data: f32,
+}

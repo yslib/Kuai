@@ -1,6 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/fixtures/simple_stmt.tof
----
-(<import> std::math)

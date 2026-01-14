@@ -1,0 +1,1 @@
+@kernel(a=@optimize(level=3))a;

@@ -1,6 +1,0 @@
----
-source: crates/parser/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/parser/tests/fixtures/empty_module.tof
----
-

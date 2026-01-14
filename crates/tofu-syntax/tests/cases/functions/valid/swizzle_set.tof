@@ -1,0 +1,5 @@
+@swizzle_set(chars="xyzw", indices=[0, 1, 2, 3])
+struct Point<M, N, K> {
+    position: f32[4],
+    color: f32[4],
+}

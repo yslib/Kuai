@@ -1,0 +1,2 @@
+@kernel(threads=256)
+func compute() {}

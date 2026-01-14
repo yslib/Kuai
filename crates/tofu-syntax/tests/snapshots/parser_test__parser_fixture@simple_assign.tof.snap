@@ -1,9 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/fixtures/simple_assign.tof
----
-(<set> Spur(1) = (<i64> 42))
-(<set> Spur(2) = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
-(<set> Spur(2) = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
-(<return> (<+> Spur(1), Spur(3)))

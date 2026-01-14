@@ -1,0 +1,4 @@
+@gpu
+@kernel(threads=128)
+@unroll(factor=4)
+func heavy_compute(data: f32[N]) {}
