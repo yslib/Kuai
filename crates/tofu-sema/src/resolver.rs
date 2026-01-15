@@ -81,14 +81,14 @@ impl<'ctx> Resolver<'ctx> {
     }
 
     fn resolve_stmt(&mut self, stmt: &Stmt) {
-        match stmt {
-            Stmt::DimDecl(dim_decls) => {
+        match &stmt.stmt {
+            StmtImpl::DimDecl(dim_decls) => {
                 for dim_decl in dim_decls {
                     self.define_dim(dim_decl);
                 }
             }
-            Stmt::Function(func_decl) => self.resolve_func(func_decl),
-            Stmt::Expr(_expr) => {}
+            StmtImpl::Function(func_decl) => self.resolve_func(func_decl),
+            StmtImpl::Expr(_expr) => {}
             _ => {}
         }
     }

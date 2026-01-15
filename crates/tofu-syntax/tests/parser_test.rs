@@ -11,7 +11,7 @@ fn test_parser() {
         let mut parser = Parser::new(&input, &mut interner);
         if let Ok(stmts) = parser.parse_impl() {
             let ast = Module {
-                attributes: vec![],
+                top_level_attributes: vec![],
                 stmts,
                 span: 0..input.len(),
             };

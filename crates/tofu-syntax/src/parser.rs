@@ -126,7 +126,7 @@ impl<'source> Parser<'source> {
         let stmts = self.parse_impl()?;
         let end = self.lexer.span().end;
         Ok(Module {
-            attributes,
+            top_level_attributes: attributes,
             stmts,
             span: start..end,
         })
@@ -349,7 +349,10 @@ impl<'source> Parser<'source> {
                 Some(Token::KwFunc) => p.parse_func(attrs),
                 Some(Token::KwStruct) => p.parse_struct(attrs),
                 Some(Token::KwImport) => p.parse_import(),
-                Some(Token::KwDim) => Stmt::DimDecl(p.parse_dim()),
+                Some(Token::KwDim) => Stmt {
+                    attributes: attrs,
+                    stmt: StmtImpl::DimDecl(p.parse_dim()),
+                },
                 Some(Token::KwLet) => {
                     // 'let' var_name [: TypeExpr ] [= Expr ];
                     p.advance();
@@ -366,48 +369,65 @@ impl<'source> Parser<'source> {
                     } else {
                         None
                     };
-                    let var = Stmt::VarDecl(VarDecl {
-                        name,
-                        ty,
-                        init,
-                        span: p.lexer.span(),
-                    });
                     if !p.expect(Token::SemiColon, "Expected ';' at end of let statement") {
                         p.synchronize();
-                        Stmt::Error {
-                            span: p.lexer.span(),
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Error {
+                                span: p.lexer.span(),
+                            },
                         }
                     } else {
-                        var
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::VarDecl(VarDecl {
+                                name,
+                                ty,
+                                init,
+                                span: p.lexer.span(),
+                            }),
+                        }
                     }
                 }
                 Some(Token::KwBreak) => {
                     let span = p.lexer.span();
                     p.advance();
-                    let stmt = Stmt::Break(span);
+                    let stmt = StmtImpl::Break(span);
                     if !p.expect(Token::SemiColon, "Expected ';' at end of break statement") {
                         p.synchronize();
-                        Stmt::Error {
-                            span: p.lexer.span(),
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Error {
+                                span: p.lexer.span(),
+                            },
                         }
                     } else {
-                        stmt
+                        Stmt {
+                            attributes: attrs,
+                            stmt,
+                        }
                     }
                 }
                 Some(Token::KwContinue) => {
                     let span = p.lexer.span();
                     p.advance();
-                    let stmt = Stmt::Continue(span);
+                    let stmt = StmtImpl::Continue(span);
                     if !p.expect(
                         Token::SemiColon,
                         "Expected ';' at end of continue statement",
                     ) {
                         p.synchronize();
-                        Stmt::Error {
-                            span: p.lexer.span(),
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Error {
+                                span: p.lexer.span(),
+                            },
                         }
                     } else {
-                        stmt
+                        Stmt {
+                            attributes: attrs,
+                            stmt,
+                        }
                     }
                 }
                 Some(Token::KwFor) => p.parse_for(attrs),
@@ -415,39 +435,50 @@ impl<'source> Parser<'source> {
                 Some(Token::KwReturn) => {
                     p.advance();
                     let expr = p.parse_expr(0); // 0 是最低优先级
-                    let stmt = Stmt::Return(expr);
                     if !p.expect(Token::SemiColon, "Expected ';' at end of return statement") {
                         p.synchronize();
-                        Stmt::Error {
-                            span: p.lexer.span(),
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Error {
+                                span: p.lexer.span(),
+                            },
                         }
                     } else {
-                        stmt
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Return(expr),
+                        }
                     }
                 }
                 _ => {
                     let expr = p.parse_expr(0);
-                    let stmt = if p.check(Token::Assign) {
+                    let stmt_impl = if p.check(Token::Assign) {
                         p.advance();
                         let value = p.parse_expr(0);
-                        Stmt::Assignment {
+                        StmtImpl::Assignment {
                             target: expr,
                             value,
                             span: p.lexer.span(),
                         }
                     } else {
-                        Stmt::Expr(expr)
+                        StmtImpl::Expr(expr)
                     };
                     if !p.expect(
                         Token::SemiColon,
                         "Expected ';' at end of expression statement",
                     ) {
                         p.synchronize();
-                        Stmt::Error {
-                            span: p.lexer.span(),
+                        Stmt {
+                            attributes: attrs,
+                            stmt: StmtImpl::Error {
+                                span: p.lexer.span(),
+                            },
                         }
                     } else {
-                        stmt
+                        Stmt {
+                            attributes: attrs,
+                            stmt: stmt_impl,
+                        }
                     }
                 }
             }
@@ -494,19 +525,28 @@ impl<'source> Parser<'source> {
 
     fn parse_import(&mut self) -> Stmt {
         if !self.expect(Token::KwImport, "Expected import") {
-            return Stmt::Error {
-                span: self.lexer.span(),
+            return Stmt {
+                attributes: vec![],
+                stmt: StmtImpl::Error {
+                    span: self.lexer.span(),
+                },
             };
         }
         let path = self.parse_path();
-        let stmt = Stmt::Import(path);
+        let stmt = StmtImpl::Import(path);
         if !self.expect(Token::SemiColon, "Expected ';' at end of import statement") {
             self.synchronize();
-            Stmt::Error {
-                span: self.lexer.span(),
+            Stmt {
+                attributes: vec![],
+                stmt: StmtImpl::Error {
+                    span: self.lexer.span(),
+                },
             }
         } else {
-            stmt
+            Stmt {
+                attributes: vec![],
+                stmt,
+            }
         }
     }
 
@@ -685,17 +725,19 @@ impl<'source> Parser<'source> {
             None
         };
         let body = self.parse_block();
-        Stmt::For {
+        Stmt {
             attributes,
-            var,
-            range: Range {
-                start: start_expr,
-                end: end_expr,
-                step: step_expr,
-                span: range_start_span..range_end_span,
+            stmt: StmtImpl::For {
+                var,
+                range: Range {
+                    start: start_expr,
+                    end: end_expr,
+                    step: step_expr,
+                    span: range_start_span..range_end_span,
+                },
+                body,
+                span: self.lexer.span(),
             },
-            body,
-            span: self.lexer.span(),
         }
     }
 
@@ -718,11 +760,13 @@ impl<'source> Parser<'source> {
         } else {
             None
         };
-        Stmt::If {
+        Stmt {
             attributes,
-            condtion: condition,
-            then_branch,
-            else_branch,
+            stmt: StmtImpl::If {
+                condtion: condition,
+                then_branch,
+                else_branch,
+            },
         }
     }
 
@@ -787,11 +831,13 @@ impl<'source> Parser<'source> {
         }
         let proto = self.parse_func_proto();
         let body = self.parse_block();
-        Stmt::Function(FuncDecl {
+        Stmt {
             attributes,
-            proto,
-            body: Some(body),
-        })
+            stmt: StmtImpl::Function(FuncDecl {
+                proto,
+                body: Some(body),
+            }),
+        }
     }
 
     // FieldDecl = Identifier, ":", TypeExpr ;
@@ -837,12 +883,14 @@ impl<'source> Parser<'source> {
             Vec::new()
         };
         let fields = self.parse_field_list();
-        Stmt::Struct(StructDecl {
+        Stmt {
             attributes,
-            name,
-            generics,
-            fields,
-        })
+            stmt: StmtImpl::Struct(StructDecl {
+                name,
+                generics,
+                fields,
+            }),
+        }
     }
 
     // --- 表达式解析 (Pratt Parser 核心) ---

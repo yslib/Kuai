@@ -57,48 +57,27 @@ impl AttrEngine for Pipeline {
             delta_meta,
         };
         //let mut current_node = node;
-        let mut should_recurse = true;
 
-        let action = current_env.for_active_attrs(node, |env, attr, mut input| {
+        current_env.for_active_attrs(node, |env, attr, mut input| {
             let handlers = self.registry.get_handlers(&attr.name, stage);
+            let mut skip_child = false;
             for handler in handlers {
                 input = match handler.transform(ctx, self, attr, input, &env.delta_meta)? {
                     AttrAction::Continue(n) => n,
-                    AttrAction::SkipChildren(n) => return Ok(AttrAction::SkipChildren(n)),
+                    AttrAction::SkipChildren(n) => {
+                        skip_child = true;
+                        n
+                    }
                     AttrAction::Terminal(n) => return Ok(AttrAction::Terminal(n)),
                     AttrAction::Lowered(n) => return Ok(AttrAction::Lowered(n)),
                 };
             }
-            Ok(AttrAction::Continue(input))
-        });
-
-        // for attr in current_env.local_attrs {
-        //     let handlers = self.registry.get_handlers(&attr.name, stage);
-        //     for handler in handlers {
-        //         let action =
-        //             handler.transform(ctx, self, attr, current_node, &current_env.delta_meta)?;
-        //
-        //         match action {
-        //             AttrAction::Continue(new_node) => {
-        //                 current_node = new_node;
-        //             }
-        //             AttrAction::SkipChildren(new_node) => {
-        //                 current_node = new_node;
-        //                 should_recurse = false;
-        //             }
-        //             _ => {
-        //                 return Ok(action);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // if should_recurse {
-        //     current_node.for_each_child(|child| {
-        //         let _ = self.apply(ctx, child.clone(), stage, &current_env);
-        //     });
-        // }
-
-        todo!()
+            if skip_child {
+                Ok(AttrAction::SkipChildren(input))
+            } else {
+                Ok(AttrAction::Continue(input))
+            }
+        })
+        // action
     }
 }

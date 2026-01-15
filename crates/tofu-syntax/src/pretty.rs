@@ -327,11 +327,6 @@ impl Pretty for FuncDecl {
         D::Doc: Clone,
     {
         let mut doc = alloc.text("(<func> ");
-        if !self.attributes.is_empty() {
-            doc = doc
-                .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
-                .append(alloc.space());
-        }
         doc = doc.append(self.proto.to_doc(alloc, ctx));
 
         if let Some(ref body) = self.body {
@@ -363,25 +358,17 @@ impl Pretty for StructDecl {
         D: DocAllocator<'a>,
         D::Doc: Clone,
     {
-        let mut doc = alloc.text("(<struct> ");
-        if !self.attributes.is_empty() {
-            doc = doc
-                .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
-                .append(alloc.space());
-        }
-        doc = doc.append(self.name.to_doc(alloc, ctx));
-
-        if !self.generics.is_empty() {
-            doc = doc
-                .append(alloc.space())
-                .append(wrap_list(alloc, ctx, "<", &self.generics, ">"));
-        }
-
         let fields_doc = alloc.intersperse(
             self.fields.iter().map(|f| f.to_doc(alloc, ctx)),
             alloc.hardline(),
         );
 
+        let mut doc = alloc.text("").append(self.name.to_doc(alloc, ctx));
+        if !self.generics.is_empty() {
+            doc = doc
+                .append(alloc.space())
+                .append(wrap_list(alloc, ctx, "<", &self.generics, ">"));
+        }
         doc.append(alloc.hardline().append(fields_doc).nest(2))
             .append(alloc.hardline())
             .append(alloc.text(")"))
@@ -448,21 +435,41 @@ impl Pretty for Stmt {
         D: DocAllocator<'a>,
         D::Doc: Clone,
     {
-        match self {
-            Stmt::Import(path) => alloc
+        match &self.stmt {
+            StmtImpl::Import(path) => alloc
                 .text("(<import> ")
                 .append(path.to_doc(alloc, ctx))
                 .append(alloc.text(")")),
-            Stmt::Function(f) => f.to_doc(alloc, ctx),
-            Stmt::Struct(s) => s.to_doc(alloc, ctx),
-            Stmt::Expr(expr) => expr.to_doc(alloc, ctx),
-            Stmt::Return(expr) => alloc
+            StmtImpl::Function(f) => {
+                let mut doc = alloc.text("(<func> ");
+                if !self.attributes.is_empty() {
+                    doc = doc
+                        .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
+                        .append(alloc.space());
+                }
+                doc = doc.append(f.proto.to_doc(alloc, ctx)).append(alloc.space());
+                if let Some(ref body) = f.body {
+                    doc = doc.append(body.to_doc(alloc, ctx));
+                }
+                doc.append(alloc.text(")")).group()
+            }
+            StmtImpl::Struct(s) => {
+                let mut doc = alloc.text("(<struct> ");
+                if !self.attributes.is_empty() {
+                    doc = doc
+                        .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
+                        .append(alloc.space());
+                }
+                doc.append(s.to_doc(alloc, ctx))
+            }
+            StmtImpl::Expr(expr) => expr.to_doc(alloc, ctx),
+            StmtImpl::Return(expr) => alloc
                 .text("(<return> ")
                 .append(expr.to_doc(alloc, ctx))
                 .append(alloc.text(")"))
                 .group(),
-            Stmt::DimDecl(decls) => wrap_list(alloc, ctx, "(<dim_group> ", decls, ")"),
-            Stmt::VarDecl(VarDecl { name, ty, init, .. }) => {
+            StmtImpl::DimDecl(decls) => wrap_list(alloc, ctx, "(<dim_group> ", decls, ")"),
+            StmtImpl::VarDecl(VarDecl { name, ty, init, .. }) => {
                 let mut doc = alloc.text("(<let> ").append(name.to_doc(alloc, ctx));
                 if let Some(ty) = ty {
                     doc = doc.append(alloc.text(": ")).append(ty.to_doc(alloc, ctx));
@@ -474,23 +481,23 @@ impl Pretty for Stmt {
                 }
                 doc.append(alloc.text(")")).group()
             }
-            Stmt::Assignment { target, value, .. } => alloc
+            StmtImpl::Assignment { target, value, .. } => alloc
                 .text("(<set> ")
                 .append(target.to_doc(alloc, ctx))
                 .append(alloc.text(" = "))
                 .append(value.to_doc(alloc, ctx))
                 .append(alloc.text(")"))
                 .group(),
-            Stmt::If {
-                attributes,
+            StmtImpl::If {
                 condtion,
                 then_branch,
                 else_branch,
+                ..
             } => {
                 let mut doc = alloc.text("(<if> ");
-                if !attributes.is_empty() {
+                if !self.attributes.is_empty() {
                     doc = doc
-                        .append(wrap_list(alloc, ctx, "[", attributes, "]"))
+                        .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
                         .append(alloc.space());
                 }
                 doc = doc
@@ -502,17 +509,13 @@ impl Pretty for Stmt {
                 }
                 doc.append(alloc.text(")")).group()
             }
-            Stmt::For {
-                attributes,
-                var,
-                range,
-                body,
-                ..
+            StmtImpl::For {
+                var, range, body, ..
             } => {
                 let mut doc = alloc.text("(<for> ");
-                if !attributes.is_empty() {
+                if !self.attributes.is_empty() {
                     doc = doc
-                        .append(wrap_list(alloc, ctx, "[", attributes, "]"))
+                        .append(wrap_list(alloc, ctx, "[", &self.attributes, "]"))
                         .append(alloc.space());
                 }
                 doc.append(var.to_doc(alloc, ctx))
@@ -523,9 +526,9 @@ impl Pretty for Stmt {
                     .append(alloc.text(")"))
                     .group()
             }
-            Stmt::Break(_) => alloc.text("<break>"),
-            Stmt::Continue(_) => alloc.text("<continue>"),
-            Stmt::Error { .. } => alloc.text("<stmt_error>"),
+            StmtImpl::Break(_) => alloc.text("<break>"),
+            StmtImpl::Continue(_) => alloc.text("<continue>"),
+            StmtImpl::Error { .. } => alloc.text("<stmt_error>"),
         }
     }
 }
@@ -536,11 +539,17 @@ impl Pretty for Module {
         D: DocAllocator<'a>,
         D::Doc: Clone,
     {
-        let mut doc = if self.attributes.is_empty() {
+        let mut doc = if self.top_level_attributes.is_empty() {
             alloc.nil()
         } else {
-            wrap_list(alloc, ctx, "(<module_attrs> ", &self.attributes, ")")
-                .append(alloc.hardline())
+            wrap_list(
+                alloc,
+                ctx,
+                "(<module_attrs> ",
+                &self.top_level_attributes,
+                ")",
+            )
+            .append(alloc.hardline())
         };
 
         doc = doc.append(alloc.intersperse(

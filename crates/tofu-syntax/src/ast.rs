@@ -4,7 +4,7 @@ pub const ERROR_IDENT_NAME: &str = "<error_ident>";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
-    pub attributes: Vec<Attribute>,
+    pub top_level_attributes: Vec<Attribute>,
     pub stmts: Vec<Stmt>,
     pub span: Span,
 }
@@ -77,7 +77,13 @@ pub struct VarDecl {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Stmt {
+pub struct Stmt {
+    pub attributes: Vec<Attribute>,
+    pub stmt: StmtImpl,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum StmtImpl {
     Import(Path),
     Function(FuncDecl),
     Struct(StructDecl),
@@ -90,7 +96,6 @@ pub enum Stmt {
     },
 
     For {
-        attributes: Vec<Attribute>,
         var: Ident,
         range: Range,
         body: Block,
@@ -98,7 +103,6 @@ pub enum Stmt {
     },
 
     If {
-        attributes: Vec<Attribute>,
         condtion: Expr,
         then_branch: Block,
         else_branch: Option<ElseBranch>,
@@ -115,58 +119,7 @@ pub enum Stmt {
 
 impl Stmt {
     pub fn get_attributes(&self) -> Option<&Vec<Attribute>> {
-        match self {
-            Stmt::For { attributes, .. } => Some(attributes),
-            Stmt::If { attributes, .. } => Some(attributes),
-            Stmt::Function(func_decl) => Some(&func_decl.attributes),
-            Stmt::Struct(struct_decl) => Some(&struct_decl.attributes),
-            _ => None,
-        }
-    }
-
-    pub fn for_each_child<F>(&self, mut f: F)
-    where
-        F: FnMut(&Stmt),
-    {
-        match self {
-            Stmt::Function(func_decl) => {
-                if let Some(body) = &func_decl.body {
-                    for stmt in &body.stmts {
-                        f(stmt);
-                    }
-                }
-            }
-            Stmt::Struct(_) => {
-                // do nothing for now
-            }
-            Stmt::For { body, .. } => {
-                for stmt in &body.stmts {
-                    f(stmt);
-                }
-            }
-            Stmt::If {
-                then_branch,
-                else_branch,
-                ..
-            } => {
-                for stmt in &then_branch.stmts {
-                    f(stmt);
-                }
-                if let Some(else_branch) = else_branch {
-                    match else_branch {
-                        ElseBranch::Block(block) => {
-                            for stmt in &block.stmts {
-                                f(stmt);
-                            }
-                        }
-                        ElseBranch::If(stmt) => {
-                            f(stmt);
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
+        Some(&self.attributes)
     }
 }
 
@@ -223,7 +176,6 @@ pub struct Block {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuncDecl {
-    pub attributes: Vec<Attribute>,
     pub proto: FuncProto,
     pub body: Option<Block>,
 }
@@ -237,7 +189,6 @@ pub struct FieldDecl {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructDecl {
-    pub attributes: Vec<Attribute>,
     pub name: Ident,
     pub generics: Vec<GenericParam>,
     pub fields: Vec<FieldDecl>,

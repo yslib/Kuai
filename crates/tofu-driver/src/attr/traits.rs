@@ -93,7 +93,7 @@ impl<'a> AttrEnvironment<'a> {
             if *visible {
                 node = match f(self, attr, node)? {
                     AttrAction::Continue(n) => n,
-                    AttrAction::SkipChildren(n) => return Ok(AttrAction::Continue(n)),
+                    AttrAction::SkipChildren(n) => return Ok(AttrAction::SkipChildren(n)),
                     AttrAction::Terminal(n) => return Ok(AttrAction::Terminal(n)),
                     AttrAction::Lowered(a) => return Ok(AttrAction::Lowered(a)),
                 }
@@ -101,9 +101,10 @@ impl<'a> AttrEnvironment<'a> {
         }
 
         if let Some(parent) = self.parent {
-            return parent.for_active_attrs(node, f);
+            parent.for_active_attrs(node, f)
+        } else {
+            Ok(AttrAction::Continue(node))
         }
-        Ok(AttrAction::Continue(node))
     }
 }
 
