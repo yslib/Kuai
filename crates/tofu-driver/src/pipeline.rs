@@ -79,5 +79,8 @@ impl AttrEngine for Pipeline {
             }
         })
         // action
+        // TODO::
+        // only apply attributes for top level nodes now
+        // such as functions, structs, enums, etc.
     }
 }
