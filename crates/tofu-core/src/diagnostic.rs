@@ -2,6 +2,8 @@
 use miette::SourceSpan;
 use thiserror::Error;
 
+pub use miette::Report;
+
 #[derive(Error, Debug, miette::Diagnostic)]
 #[error("{message}")]
 pub struct MietteDiagnostic {

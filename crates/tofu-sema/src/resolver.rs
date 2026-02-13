@@ -1,7 +1,7 @@
 use crate::symbol::ScopeKind;
 use crate::symbol::{Scope, Symbol, SymbolKind};
-use core::Interner;
-use core::diagnostic::*;
+use tofu_core::Interner;
+use tofu_core::diagnostic::*;
 use std::sync::{Arc, RwLock};
 use syntax::ast::*;
 

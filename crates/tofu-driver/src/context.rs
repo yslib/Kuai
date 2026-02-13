@@ -1,11 +1,11 @@
-use core::Interner;
-use core::spur::Id;
 use sema::symbol::*;
+use tofu_core::Interner;
+use tofu_core::spur::Id;
 
 use std::sync::{Arc, RwLock};
 
 pub struct Context {
-    pub interner: core::Interner,
+    pub interner: tofu_core::Interner,
     pub global_scope: Arc<RwLock<Scope>>,
 }
 

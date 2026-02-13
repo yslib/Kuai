@@ -1,9 +1,9 @@
 use crate::attr::registry::AttributeRegistry;
 use crate::context::Context;
-use core::diagnostic::Report;
 use sema::resolver::Resolver;
 use std::sync::{Arc, Mutex};
 use syntax::parser::Parser;
+use tofu_core::diagnostic::Report;
 pub struct Compiler {
     pub ctx: Arc<Mutex<Context>>,
     pub registry: Arc<AttributeRegistry>,
@@ -18,7 +18,9 @@ impl Compiler {
     }
 
     fn compile_and_run(&self, source: &str) {
-        let mut parser = Parser::new(source, &self.ctx.interner);
+        let mut ctx = self.ctx.lock().unwrap();
+        let ctx = &mut *ctx; // reborrow ctx to mutable reference
+        let mut parser = Parser::new(source, &mut ctx.interner);
 
         match parser.parse() {
             Ok(module) => {
@@ -28,7 +30,8 @@ impl Compiler {
                     println!("✨ Parse successful.");
                 } else {
                     for diag in resolver.diagnostics() {
-                        let adapter = diag.render_as_miette("stdin".to_string(), source.to_string());
+                        let adapter =
+                            diag.render_as_miette("stdin".to_string(), source.to_string());
                         println!("{:?}", Report::new(adapter));
                     }
                 }

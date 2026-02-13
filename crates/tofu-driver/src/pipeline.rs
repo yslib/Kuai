@@ -1,6 +1,6 @@
 use crate::attr::{registry::*, traits::*};
 use crate::context::Context;
-use core::diagnostic::*;
+use tofu_core::diagnostic::*;
 use syntax::ast::*;
 pub struct Pipeline {
     pub registry: AttributeRegistry,

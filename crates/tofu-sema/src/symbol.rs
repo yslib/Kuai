@@ -1,4 +1,4 @@
-use core::spur::Id;
+use tofu_core::spur::Id;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use syntax::ast::*;

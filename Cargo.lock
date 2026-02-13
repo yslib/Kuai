@@ -232,22 +232,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "core"
-version = "0.1.0"
-dependencies = [
- "bumpalo",
- "lasso",
- "miette",
- "thiserror",
-]
-
-[[package]]
 name = "driver"
 version = "0.1.0"
 dependencies = [
- "core",
  "sema",
  "syntax",
+ "tofu_core",
 ]
 
 [[package]]
@@ -403,8 +393,8 @@ checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
 name = "linter"
 version = "0.1.0"
 dependencies = [
- "core",
  "syntax",
+ "tofu_core",
 ]
 
 [[package]]
@@ -681,8 +671,8 @@ dependencies = [
 name = "sema"
 version = "0.1.0"
 dependencies = [
- "core",
  "syntax",
+ "tofu_core",
 ]
 
 [[package]]
@@ -774,10 +764,10 @@ dependencies = [
 name = "syntax"
 version = "0.1.0"
 dependencies = [
- "core",
  "insta",
  "logos",
  "pretty",
+ "tofu_core",
 ]
 
 [[package]]
@@ -838,7 +828,6 @@ name = "tofu"
 version = "0.1.0"
 dependencies = [
  "clap",
- "core",
  "driver",
  "logos",
  "miette",
@@ -846,6 +835,17 @@ dependencies = [
  "rustyline-derive",
  "sema",
  "syntax",
+ "tofu_core",
+]
+
+[[package]]
+name = "tofu_core"
+version = "0.1.0"
+dependencies = [
+ "bumpalo",
+ "lasso",
+ "miette",
+ "thiserror",
 ]
 
 [[package]]

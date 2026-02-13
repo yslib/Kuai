@@ -1,4 +1,4 @@
-use core::spur::Id;
+use tofu_core::spur::Id;
 pub type Span = std::ops::Range<usize>;
 pub const ERROR_IDENT_NAME: &str = "<error_ident>";
 

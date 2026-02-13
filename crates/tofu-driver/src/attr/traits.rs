@@ -1,5 +1,5 @@
 use crate::context::Context;
-use core::diagnostic::Diagnostic;
+use tofu_core::diagnostic::Diagnostic;
 use std::any::Any;
 use std::collections::HashMap;
 use syntax::ast::*;

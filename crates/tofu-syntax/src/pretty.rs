@@ -1,5 +1,5 @@
 use crate::ast::*;
-use core::Interner;
+use tofu_core::Interner;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 pub struct PrintContext<'a> {

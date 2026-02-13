@@ -1,4 +1,4 @@
-use core::Interner;
+use tofu_core::Interner;
 use syntax::ast::Module;
 use syntax::parser::Parser;
 use syntax::pretty::print_ast;

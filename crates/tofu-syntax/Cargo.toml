@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-core = { path = "../tofu-core" }
+tofu_core = { path = "../tofu-core" }
 logos = "0.16.0"
 pretty = "0.10.0"
 
