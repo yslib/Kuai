@@ -1,9 +1,9 @@
 use crate::ast::*;
 use crate::lexer::Token;
+use logos::{Lexer, Logos};
 use tofu_core::Interner;
 use tofu_core::diagnostic::Diagnostic;
 use tofu_core::diagnostic::Severity;
-use logos::{Lexer, Logos};
 
 pub trait FromToken {
     fn from_token(token: Token) -> Self;

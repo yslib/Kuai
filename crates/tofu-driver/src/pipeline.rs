@@ -1,18 +1,18 @@
 use crate::attr::{registry::*, traits::*};
 use crate::context::Context;
-use tofu_core::diagnostic::*;
 use syntax::ast::*;
-pub struct Pipeline {
-    pub registry: AttributeRegistry,
+use tofu_core::diagnostic::*;
+pub struct Pipeline<'a> {
+    pub registry: &'a AttributeRegistry,
 }
 
-impl Pipeline {
-    pub fn new(registry: AttributeRegistry) -> Self {
+impl<'a> Pipeline<'a> {
+    pub fn new(registry: &'a AttributeRegistry) -> Self {
         Pipeline { registry }
     }
 }
 
-impl AttrEngine for Pipeline {
+impl<'b> AttrEngine for Pipeline<'b> {
     fn apply<'a>(
         &self,
         ctx: &Context,

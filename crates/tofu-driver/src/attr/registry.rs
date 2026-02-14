@@ -1,6 +1,5 @@
 use crate::attr::traits::*;
 use std::collections::HashMap;
-use syntax::ast::*;
 pub struct AttributeRegistry {
     handlers: HashMap<String, Vec<Box<dyn AttrBase>>>,
 }

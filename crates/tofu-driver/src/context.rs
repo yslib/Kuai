@@ -1,3 +1,4 @@
+use crate::attr::traits::Artifact;
 use sema::symbol::*;
 use tofu_core::Interner;
 use tofu_core::spur::Id;
@@ -7,6 +8,7 @@ use std::sync::{Arc, RwLock};
 pub struct Context {
     pub interner: tofu_core::Interner,
     pub global_scope: Arc<RwLock<Scope>>,
+    pub artifacts: Vec<Artifact>,
 }
 
 impl Context {
@@ -14,6 +16,7 @@ impl Context {
         Context {
             interner: Interner::new(),
             global_scope: Arc::new(RwLock::new(Scope::new(None, ScopeKind::Global))),
+            artifacts: Vec::new(),
         }
     }
 
