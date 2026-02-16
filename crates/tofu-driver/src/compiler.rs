@@ -27,13 +27,17 @@ impl Compiler {
 
         // Stage 1: Parse
         let mut parser = Parser::new(source, &mut ctx.interner);
-        let module = match parser.parse() {
-            Ok(m) => m,
-            Err(parse_errors) => {
-                // Parser failed, return partial result with errors
-                return CompileResult::err(parse_errors);
-            }
+        let parse_result = parser.parse();
+
+        // Collect parse diagnostics
+        diagnostics.extend(parse_result.diagnostics.clone());
+
+        // If parsing failed completely (no output), return early
+        let module = match parse_result.output {
+            Some(m) => m,
+            None => return CompileResult::err(diagnostics),
         };
+
         let mut stmts = module.stmts;
 
         // Stage 2: Raw Stage (Attribute Transform)

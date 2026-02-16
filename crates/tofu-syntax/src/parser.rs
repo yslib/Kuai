@@ -2,7 +2,7 @@ use crate::ast::*;
 use crate::lexer::Token;
 use logos::{Lexer, Logos};
 use tofu_core::Interner;
-use tofu_core::diagnostic::Diagnostic;
+use tofu_core::diagnostic::{CompileResult, Diagnostic};
 use tofu_core::diagnostic::Severity;
 
 pub trait FromToken {
@@ -115,21 +115,22 @@ impl<'source> Parser<'source> {
         let span = self.lexer.span();
         self.diagnostics
             .push(Diagnostic::error(Severity::Error, span, msg.to_string()));
-        if self.diagnostics.len() > 100 {
-            panic!("Too many errors, aborting parsing.");
-        }
+        // Remove panic - let parser continue collecting errors
     }
 
-    pub fn parse(&mut self) -> Result<Module, Vec<Diagnostic>> {
+    pub fn parse(&mut self) -> CompileResult<Module> {
         let start = self.lexer.span().start;
         let attributes = self.parse_top_level_attributes();
-        let stmts = self.parse_impl()?;
+        let stmts = self.parse_impl();
         let end = self.lexer.span().end;
-        Ok(Module {
+
+        let module = Module {
             top_level_attributes: attributes,
             stmts,
             span: start..end,
-        })
+        };
+
+        CompileResult::with_diagnostics(module, self.diagnostics.clone())
     }
 
     fn parse_top_level_attributes(&mut self) -> Vec<Attribute> {
@@ -142,16 +143,12 @@ impl<'source> Parser<'source> {
         Vec::new()
     }
 
-    pub fn parse_impl(&mut self) -> Result<Vec<Stmt>, Vec<Diagnostic>> {
+    pub fn parse_impl(&mut self) -> Vec<Stmt> {
         let mut stmts = Vec::new();
         while self.current_token.is_some() {
             stmts.push(self.parse_stmt());
         }
-        if self.diagnostics.is_empty() {
-            Ok(stmts)
-        } else {
-            Err(self.diagnostics.clone())
-        }
+        stmts
     }
 
     // ident: TypeExpr
