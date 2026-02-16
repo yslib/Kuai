@@ -1,0 +1,1 @@
+let x: Tensor[M, N = zeros();
