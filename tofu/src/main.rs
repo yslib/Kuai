@@ -37,16 +37,25 @@ struct Args {
 }
 
 fn compile_and_run(input: &str, ctx: &mut Context, compiler: &Compiler, session: &Session) {
-    match compiler.compile(session, ctx, input) {
-        Ok(_module) => {
+    let result = compiler.compile(session, ctx, input);
+
+    // Print diagnostics
+    for diag in &result.diagnostics {
+        let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
+        println!("{:?}", Report::new(adapter));
+    }
+
+    // Print summary
+    if result.is_ok() {
+        if result.diagnostics.is_empty() {
             println!("✨ Compilation successful.");
+        } else {
+            println!("✨ Compilation successful with {} warning(s).", result.warnings().len());
         }
-        Err(diagnostics) => {
-            for diag in diagnostics {
-                let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
-                println!("{:?}", Report::new(adapter));
-            }
-        }
+    } else if result.output.is_some() {
+        println!("⚠️  Compilation completed with {} error(s).", result.errors().len());
+    } else {
+        println!("❌ Compilation failed with {} error(s).", result.errors().len());
     }
 }
 

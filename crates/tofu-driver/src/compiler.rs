@@ -6,7 +6,7 @@ use sema::resolver::Resolver;
 use std::sync::Arc;
 use syntax::ast::*;
 use syntax::parser::Parser;
-use tofu_core::diagnostic::Diagnostic;
+use tofu_core::diagnostic::{CompileResult, Diagnostic};
 
 #[derive(Clone, Copy)]
 pub struct Compiler;
@@ -21,39 +21,89 @@ impl Compiler {
         sess: &Session,
         ctx: &mut Context,
         source: &str,
-    ) -> Result<Module, Vec<Diagnostic>> {
+    ) -> CompileResult<Module> {
         let pipeline = Pipeline::new(&sess.attr_registry);
+        let mut diagnostics = Vec::new();
 
         // Stage 1: Parse
         let mut parser = Parser::new(source, &mut ctx.interner);
-        let module = parser.parse()?;
+        let module = match parser.parse() {
+            Ok(m) => m,
+            Err(parse_errors) => {
+                // Parser failed, return partial result with errors
+                return CompileResult::err(parse_errors);
+            }
+        };
         let mut stmts = module.stmts;
 
         // Stage 2: Raw Stage (Attribute Transform)
-        stmts = self.apply_stage(ctx, stmts, CompileStage::Raw, &pipeline)?;
+        stmts = match self.apply_stage(ctx, stmts, CompileStage::Raw, &pipeline) {
+            Ok(s) => s,
+            Err(errs) => {
+                diagnostics.extend(errs);
+                // Return early with what we have
+                return CompileResult::with_diagnostics(
+                    Module {
+                        stmts: Vec::new(),
+                        top_level_attributes: module.top_level_attributes,
+                        span: module.span,
+                    },
+                    diagnostics,
+                );
+            }
+        };
 
         // Stage 3: Semantic Analysis (Resolving Symbols)
         let mut resolver = Resolver::new(&ctx.interner, Arc::clone(&ctx.global_scope));
-        let module = Module {
+        let temp_module = Module {
             stmts: stmts.clone(),
-            ..module
+            top_level_attributes: module.top_level_attributes.clone(),
+            span: module.span.clone(),
         };
-        resolver.resolve(&module);
-        if !resolver.diagnostics().is_empty() {
-            return Err(resolver.diagnostics().clone());
-        }
+        resolver.resolve(&temp_module);
+        diagnostics.extend(resolver.diagnostics().clone());
 
         // Stage 4: Resolved Stage
-        stmts = self.apply_stage(ctx, stmts, CompileStage::Resolved, &pipeline)?;
+        stmts = match self.apply_stage(ctx, stmts, CompileStage::Resolved, &pipeline) {
+            Ok(s) => s,
+            Err(errs) => {
+                diagnostics.extend(errs);
+                // Return early with partial result
+                return CompileResult::with_diagnostics(
+                    Module {
+                        stmts: Vec::new(),
+                        top_level_attributes: module.top_level_attributes,
+                        span: module.span,
+                    },
+                    diagnostics,
+                );
+            }
+        };
 
         // Stage 5: Analyzed Stage (Code Generation / Lowering to IR)
-        stmts = self.apply_stage(ctx, stmts, CompileStage::Analyzed, &pipeline)?;
+        stmts = match self.apply_stage(ctx, stmts, CompileStage::Analyzed, &pipeline) {
+            Ok(s) => s,
+            Err(errs) => {
+                diagnostics.extend(errs);
+                // Return early with partial result
+                return CompileResult::with_diagnostics(
+                    Module {
+                        stmts: Vec::new(),
+                        top_level_attributes: module.top_level_attributes,
+                        span: module.span,
+                    },
+                    diagnostics,
+                );
+            }
+        };
 
-        Ok(Module {
+        let final_module = Module {
             stmts,
             top_level_attributes: module.top_level_attributes,
             span: module.span,
-        })
+        };
+
+        CompileResult::with_diagnostics(final_module, diagnostics)
     }
 
     fn apply_stage(
@@ -92,6 +142,7 @@ impl Compiler {
                 }
                 Err(diags) => {
                     diagnostics.extend(diags);
+                    // Continue processing other statements
                 }
             }
         }
