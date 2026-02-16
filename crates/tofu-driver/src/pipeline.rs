@@ -2,6 +2,7 @@ use crate::attr::{registry::*, traits::*};
 use crate::context::Context;
 use syntax::ast::*;
 use tofu_core::diagnostic::*;
+
 pub struct Pipeline<'a> {
     pub registry: &'a AttributeRegistry,
 }
@@ -12,13 +13,13 @@ impl<'a> Pipeline<'a> {
     }
 }
 
-impl<'b> AttrEngine for Pipeline<'b> {
-    fn apply<'a>(
+impl<'a> AttrEngine for Pipeline<'a> {
+    fn apply<'b>(
         &self,
         ctx: &Context,
         node: Stmt,
         stage: CompileStage,
-        env: &'a AttrEnvironment<'a>,
+        env: &'b AttrEnvironment<'b>,
     ) -> Result<AttrAction, Vec<Diagnostic>> {
         // apply attributes in reverse order
 

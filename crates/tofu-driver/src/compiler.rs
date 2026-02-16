@@ -1,26 +1,28 @@
-use crate::attr::registry::AttributeRegistry;
 use crate::attr::traits::*;
 use crate::context::Context;
 use crate::pipeline::Pipeline;
 use crate::session::Session;
 use sema::resolver::Resolver;
-use std::{io::pipe, sync::Arc};
+use std::sync::Arc;
 use syntax::ast::*;
 use syntax::parser::Parser;
-use tofu_core::diagnostic::{Diagnostic, Report};
+use tofu_core::diagnostic::Diagnostic;
+
+#[derive(Clone, Copy)]
 pub struct Compiler;
 
 impl Compiler {
+    pub fn new() -> Self {
+        Compiler
+    }
+
     pub fn compile(
         &self,
         sess: &Session,
         ctx: &mut Context,
         source: &str,
-    ) -> Result<(), Vec<Diagnostic>> {
-        let pipeline = Pipeline::new(sess.attr_registry);
-        let ctx = &mut *ctx; // reborrow ctx to mutable reference
-        //
-        //
+    ) -> Result<Module, Vec<Diagnostic>> {
+        let pipeline = Pipeline::new(&sess.attr_registry);
 
         // Stage 1: Parse
         let mut parser = Parser::new(source, &mut ctx.interner);
@@ -28,38 +30,43 @@ impl Compiler {
         let mut stmts = module.stmts;
 
         // Stage 2: Raw Stage (Attribute Transform)
-
         stmts = self.apply_stage(ctx, stmts, CompileStage::Raw, &pipeline)?;
 
-        // Stage 3. Semantic Analysis(Resovling Symbols)
-
+        // Stage 3: Semantic Analysis (Resolving Symbols)
         let mut resolver = Resolver::new(&ctx.interner, Arc::clone(&ctx.global_scope));
-        let module = Module { stmts, ..module };
+        let module = Module {
+            stmts: stmts.clone(),
+            ..module
+        };
         resolver.resolve(&module);
         if !resolver.diagnostics().is_empty() {
             return Err(resolver.diagnostics().clone());
         }
 
-        // Stage 4. Resovled Stage
-
-        let mut stmts = module.stmts;
+        // Stage 4: Resolved Stage
         stmts = self.apply_stage(ctx, stmts, CompileStage::Resolved, &pipeline)?;
 
-        // Stage 5. Code Generation (Lowering to IR or directly to executable code)
+        // Stage 5: Analyzed Stage (Code Generation / Lowering to IR)
+        stmts = self.apply_stage(ctx, stmts, CompileStage::Analyzed, &pipeline)?;
 
-        let mut _res = self.apply_stage(ctx, stmts, CompileStage::Analyzed, &pipeline)?;
-        return Ok(());
+        Ok(Module {
+            stmts,
+            top_level_attributes: module.top_level_attributes,
+            span: module.span,
+        })
     }
 
-    pub fn apply_stage(
+    fn apply_stage(
         &self,
         ctx: &Context,
-        stmt: Vec<Stmt>,
+        stmts: Vec<Stmt>,
         stage: CompileStage,
         pipeline: &Pipeline,
     ) -> Result<Vec<Stmt>, Vec<Diagnostic>> {
         let mut result = Vec::new();
-        for stmt in stmt {
+        let mut diagnostics = Vec::new();
+
+        for stmt in stmts {
             let action = pipeline.apply(
                 ctx,
                 stmt.clone(),
@@ -69,16 +76,36 @@ impl Compiler {
                     local_attrs: &[],
                     delta_meta: AttrMetadata::new(),
                 },
-            )?;
+            );
+
             match action {
-                AttrAction::Continue(s) => result.push(s),
-                _ => {
-                    // For simplicity, we only handle Continue action in this example
-                    // In a real implementation, you would need to handle other actions as well
-                    return Ok(result);
+                Ok(AttrAction::Continue(s)) => result.push(s),
+                Ok(AttrAction::SkipChildren(s)) => result.push(s),
+                Ok(AttrAction::Terminal(s)) => {
+                    result.push(s);
+                    break;
+                }
+                Ok(AttrAction::Lowered(_artifact)) => {
+                    // Store artifact for later use
+                    // For now, we just skip it
+                    continue;
+                }
+                Err(diags) => {
+                    diagnostics.extend(diags);
                 }
             }
         }
+
+        if !diagnostics.is_empty() {
+            return Err(diagnostics);
+        }
+
         Ok(result)
+    }
+}
+
+impl Default for Compiler {
+    fn default() -> Self {
+        Self::new()
     }
 }

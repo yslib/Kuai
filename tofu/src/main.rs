@@ -1,15 +1,16 @@
 #![allow(dead_code)]
 mod highligher;
+use driver::attr::registry::AttributeRegistry;
+use driver::compiler::Compiler;
 use driver::context::*;
+use driver::session::{Session, TargetArch};
 use miette::Report;
 use rustyline::error::ReadlineError;
 use rustyline::{Config, DefaultEditor, EditMode};
-use sema::resolver::*;
 use std::io::Read;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use syntax::parser::*;
 
 use clap::Parser as ClapParser;
 use std::path::PathBuf;
@@ -35,21 +36,10 @@ struct Args {
     listen: Option<SocketAddr>,
 }
 
-fn compile_and_run(input: &str, ctx: &mut Context) {
-    let mut parser = Parser::new(input, &mut ctx.interner);
-
-    match parser.parse() {
-        Ok(module) => {
-            let mut resolver = Resolver::new(&ctx.interner, Arc::clone(&ctx.global_scope));
-            resolver.resolve(&module);
-            if resolver.diagnostics().is_empty() {
-                println!("✨ Parse successful.");
-            } else {
-                for diag in resolver.diagnostics() {
-                    let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
-                    println!("{:?}", Report::new(adapter));
-                }
-            }
+fn compile_and_run(input: &str, ctx: &mut Context, compiler: &Compiler, session: &Session) {
+    match compiler.compile(session, ctx, input) {
+        Ok(_module) => {
+            println!("✨ Compilation successful.");
         }
         Err(diagnostics) => {
             for diag in diagnostics {
@@ -60,7 +50,12 @@ fn compile_and_run(input: &str, ctx: &mut Context) {
     }
 }
 
-fn start_tcp_server(shared_ctx: Arc<Mutex<Context>>, addr: SocketAddr) -> miette::Result<()> {
+fn start_tcp_server(
+    shared_ctx: Arc<Mutex<Context>>,
+    compiler: Compiler,
+    session: Session,
+    addr: SocketAddr,
+) -> miette::Result<()> {
     let listener =
         TcpListener::bind(addr).map_err(|e| miette::miette!("Failed to bind TCP port {}", e))?;
 
@@ -75,7 +70,7 @@ fn start_tcp_server(shared_ctx: Arc<Mutex<Context>>, addr: SocketAddr) -> miette
                     Ok(_) => {
                         let mut ctx = shared_ctx.lock().unwrap();
                         println!(">> {}", buffer);
-                        compile_and_run(&buffer, &mut ctx);
+                        compile_and_run(&buffer, &mut ctx, &compiler, &session);
                     }
                     Err(e) => {
                         println!("Failed to read from connection: {}", e);
@@ -106,7 +101,11 @@ fn print_banner() {
     println!("╚══════════════════════════════════════════════════════════════════════════╝");
 }
 
-fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
+fn run_repl(
+    shared_ctx: Arc<Mutex<Context>>,
+    compiler: Compiler,
+    session: &Session,
+) -> miette::Result<()> {
     let config = Config::builder()
         .history_ignore_space(true)
         .edit_mode(EditMode::Vi)
@@ -179,7 +178,7 @@ fn run_repl(shared_ctx: Arc<Mutex<Context>>) -> miette::Result<()> {
         }
         rl.add_history_entry(final_input).ok();
         let mut ctx = shared_ctx.lock().unwrap();
-        compile_and_run(final_input, &mut ctx);
+        compile_and_run(final_input, &mut ctx, &compiler, &session);
     }
 
     rl.save_history("history.txt").ok();
@@ -191,28 +190,38 @@ fn main() -> miette::Result<()> {
     let mut c = Context::new();
     c.inject_builtins();
     let ctx = Arc::new(Mutex::new(c));
+
+    // Initialize compiler and session
+    let compiler = Compiler::new();
+    let registry = Arc::new(AttributeRegistry::new());
+    let session = Session {
+        target_arch: TargetArch::X86_64,
+        attr_registry: registry,
+    };
+
     if let Some(code) = args.execute {
         let shared_ctx = Arc::clone(&ctx);
         let mut a = shared_ctx.lock().unwrap();
-        compile_and_run(&code, &mut a);
+        compile_and_run(&code, &mut a, &compiler, &session);
         return Ok(());
     } else if let Some(file_path) = args.file {
         let code = std::fs::read_to_string(&file_path)
             .map_err(|e| miette::miette!("Failed to read file {}: {}", file_path.display(), e))?;
         let shared_ctx = Arc::clone(&ctx);
         let mut ctx = shared_ctx.lock().unwrap();
-        compile_and_run(&code, &mut ctx);
+        compile_and_run(&code, &mut ctx, &compiler, &session);
         return Ok(());
     }
     if let Some(addr) = args.listen {
         let shared_ctx = Arc::clone(&ctx);
+        let session_clone = session.clone();
         thread::spawn(move || {
-            if let Err(e) = start_tcp_server(shared_ctx, addr) {
+            if let Err(e) = start_tcp_server(shared_ctx, compiler, session_clone, addr) {
                 eprintln!("TCP server error: {:?}", e);
             }
         });
     }
 
-    run_repl(Arc::clone(&ctx))?;
+    run_repl(Arc::clone(&ctx), compiler, &session)?;
     Ok(())
 }
