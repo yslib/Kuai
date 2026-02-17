@@ -17,19 +17,14 @@ fn test_parser() {
         if is_invalid {
             // Invalid test case - snapshot the errors
             let mut output = String::new();
-            if result.has_errors() {
-                output.push_str("PARSE_ERRORS:\n");
-                for diag in &result.diagnostics {
-                    output.push_str(&format!(
-                        "  [{:?}] {}:{} - {}\n",
-                        diag.severity,
-                        diag.span.start,
-                        diag.span.end,
-                        diag.message
-                    ));
-                }
-            } else {
-                output.push_str("UNEXPECTED_SUCCESS\n");
+            for diag in &result.diagnostics {
+                output.push_str(&format!(
+                    "[{:?}] {}:{} - {}\n",
+                    diag.severity,
+                    diag.span.start,
+                    diag.span.end,
+                    diag.message
+                ));
             }
             insta::assert_snapshot!(output);
         } else {
@@ -38,12 +33,11 @@ fn test_parser() {
                 let pretty_output = print_ast(&module, &interner);
                 insta::assert_snapshot!(pretty_output);
             } else {
-                // Valid test failed
+                // Valid test failed - output errors
                 let mut output = String::new();
-                output.push_str("UNEXPECTED_FAILURE:\n");
                 for diag in &result.diagnostics {
                     output.push_str(&format!(
-                        "  [{:?}] {}:{} - {}\n",
+                        "[{:?}] {}:{} - {}\n",
                         diag.severity,
                         diag.span.start,
                         diag.span.end,

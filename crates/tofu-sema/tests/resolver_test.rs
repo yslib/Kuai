@@ -30,37 +30,28 @@ fn test_resolver() {
             if is_invalid {
                 // Invalid test case - should have errors
                 let mut output = String::new();
-                if !diagnostics.is_empty() {
-                    output.push_str("RESOLVER_ERRORS:\n");
-                    for diag in diagnostics {
-                        let msg = &diag.message;
-                        output.push_str(&format!("  [{:?}] {}\n", diag.severity, msg));
-                    }
-                } else {
-                    output.push_str("UNEXPECTED_SUCCESS: Expected errors but got none\n");
+                for diag in diagnostics {
+                    output.push_str(&format!("[{:?}] {}\n", diag.severity, diag.message));
                 }
                 insta::assert_snapshot!(output);
             } else {
                 // Valid test case - should have no errors
                 if !diagnostics.is_empty() {
                     let mut output = String::new();
-                    output.push_str("UNEXPECTED_ERRORS:\n");
                     for diag in diagnostics {
-                        let msg = &diag.message;
-                        output.push_str(&format!("  [{:?}] {}\n", diag.severity, msg));
+                        output.push_str(&format!("[{:?}] {}\n", diag.severity, diag.message));
                     }
                     insta::assert_snapshot!(output);
                 } else {
-                    insta::assert_snapshot!("SUCCESS: No resolver errors");
+                    insta::assert_snapshot!("No errors");
                 }
             }
         } else {
             // Parse failed
             let mut output = String::new();
-            output.push_str("PARSE_FAILED:\n");
             for diag in &parse_result.diagnostics {
                 output.push_str(&format!(
-                    "  [{:?}] {}:{} - {}\n",
+                    "[{:?}] {}:{} - {}\n",
                     diag.severity, diag.span.start, diag.span.end, diag.message
                 ));
             }
