@@ -1,0 +1,6 @@
+let global_x = 10;
+
+func add(a: i32, b: i32) {
+    let result = a + b;
+    let x = global_x;
+}

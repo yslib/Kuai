@@ -1,0 +1,3 @@
+dim M = 128;
+dim N = 256;
+dim K = M + N;

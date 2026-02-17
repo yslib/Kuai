@@ -1,0 +1,2 @@
+func add(a: i32, b: i32) {}
+func add(x: i32, y: i32) {}

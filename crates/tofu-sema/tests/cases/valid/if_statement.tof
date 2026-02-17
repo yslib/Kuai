@@ -1,0 +1,4 @@
+let x = 10;
+if x {
+    let y = x + 1;
+}

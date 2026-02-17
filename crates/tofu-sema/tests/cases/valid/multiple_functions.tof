@@ -1,0 +1,9 @@
+func add(a: i32, b: i32) {
+    let result = a + b;
+}
+
+func multiply(x: i32, y: i32) {
+    let result = x + y;
+}
+
+let z = add;
