@@ -175,7 +175,7 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::LParen, "Expected '(' at start of parameter list") {
             return params;
         }
-        while !self.check(Token::RParen) {
+        while !self.check(Token::RParen) && self.current_token.is_some() {
             match self.parse_param() {
                 Ok(p) => {
                     params.push(p);
@@ -229,7 +229,7 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::LParen, "Expected '(' at begin of argument list") {
             return args;
         }
-        while !self.check(Token::RParen) {
+        while !self.check(Token::RParen) && self.current_token.is_some() {
             match self.parse_argument() {
                 Ok(a) => args.push(a),
                 Err(_) => {
@@ -494,10 +494,13 @@ impl<'source> Parser<'source> {
                 "Expected identifier, got {:?}",
                 self.current_token
             ));
+            let span = self.lexer.span();
+            // Consume the unexpected token to avoid infinite loop
+            self.advance();
             Ident {
                 id: self.interner.get_or_intern(ERROR_IDENT_NAME), // TODO:: optimize this
                 // later
-                span: self.lexer.span(),
+                span,
             }
         }
     }
@@ -615,7 +618,7 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::Lt, "Expected '<' at start of generic arguments") {
             return args;
         }
-        while !self.check(Token::Gt) {
+        while !self.check(Token::Gt) && self.current_token.is_some() {
             match self.parse_type_expr() {
                 TypeExpr::Error { .. } => {
                     self.synchronize_until(&[Token::Comma, Token::Gt]); // ,|>
@@ -624,6 +627,9 @@ impl<'source> Parser<'source> {
             }
             if self.check(Token::Comma) {
                 self.advance(); // consume ','
+            } else if !self.check(Token::Gt) {
+                // Expected comma or closing >, break to avoid infinite loop
+                break;
             }
         }
         self.expect(Token::Gt, "Expected '>' after generic arguments");
@@ -636,7 +642,7 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::LBracket, "Expected '[' at start of shape expression") {
             return shape;
         }
-        while !self.check(Token::RBracket) {
+        while !self.check(Token::RBracket) && self.current_token.is_some() {
             match self.parse_expr(0) {
                 Expr::Error { .. } => {
                     self.synchronize_until(&[Token::Comma, Token::RBracket]);
@@ -645,6 +651,9 @@ impl<'source> Parser<'source> {
             }
             if self.check(Token::Comma) {
                 self.advance(); // consume ','
+            } else if !self.check(Token::RBracket) {
+                // Expected comma or closing ], break to avoid infinite loop
+                break;
             }
         }
         self.expect(Token::RBracket, "Expected ']' at end of shape expression");
@@ -675,9 +684,10 @@ impl<'source> Parser<'source> {
                     }
                     _ => {
                         self.report_error("Expected type expression");
-                        TypeExpr::Error {
-                            span: self.lexer.span(),
-                        }
+                        let span = self.lexer.span();
+                        // Consume the unexpected token to avoid infinite loop
+                        self.advance();
+                        TypeExpr::Error { span }
                     }
                 }
             }
@@ -857,11 +867,17 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::LBrace, "Expected '{' at start of struct body") {
             self.synchronize();
         }
-        while !self.check(Token::RBrace) {
+        while !self.check(Token::RBrace) && self.current_token.is_some() {
             let field = self.parse_field_decl();
             fields.push(field);
             if self.check(Token::Comma) {
                 self.advance();
+            } else if !self.check(Token::RBrace) {
+                // Expected comma or closing brace, synchronize to avoid infinite loop
+                self.synchronize_until(&[Token::Comma, Token::RBrace]);
+                if self.check(Token::Comma) {
+                    self.advance();
+                }
             }
         }
         self.expect(Token::RBrace, "Expected '}' at end of struct body");
@@ -933,7 +949,10 @@ impl<'source> Parser<'source> {
                     "Unexpected token in expression: {:?}",
                     self.current_token
                 ));
-                return Expr::Error(self.lexer.span());
+                let span = self.lexer.span();
+                // Consume the unexpected token to avoid infinite loop
+                self.advance();
+                return Expr::Error(span);
             }
         };
 
@@ -979,7 +998,12 @@ impl<'source> Parser<'source> {
                             // for example, it refer to a function pointer or so.
                             // But for simplicity, we don't support it now.
                             self.report_error("Expected '(' after generic arguments");
-                            return Expr::Error(self.lexer.span());
+                            let span = self.lexer.span();
+                            // Consume the unexpected token to avoid infinite loop
+                            if self.current_token.is_some() {
+                                self.advance();
+                            }
+                            return Expr::Error(span);
                         }
                         continue;
                     } else {
@@ -1048,10 +1072,18 @@ impl<'source> Parser<'source> {
     fn parse_array_literal(&mut self) -> Expr {
         self.expect(Token::LBracket, "Expected '[' at start of array literal");
         let mut elements = Vec::new();
-        while !self.check(Token::RBracket) {
-            elements.push(self.parse_expr(0));
+        while !self.check(Token::RBracket) && self.current_token.is_some() {
+            let expr = self.parse_expr(0);
+            elements.push(expr);
             if self.check(Token::Comma) {
                 self.advance();
+            } else if !self.check(Token::RBracket) {
+                // Expected comma or closing bracket, but got something else
+                // Synchronize to avoid infinite loop
+                self.synchronize_until(&[Token::Comma, Token::RBracket]);
+                if self.check(Token::Comma) {
+                    self.advance();
+                }
             }
         }
         self.expect(Token::RBracket, "Expected ']' at end of array literal");
@@ -1061,10 +1093,18 @@ impl<'source> Parser<'source> {
     fn parse_index_access(&mut self, target: Expr) -> Expr {
         self.expect(Token::LBracket, "Expected '[' for index access");
         let mut indices = Vec::new();
-        while !self.check(Token::RBracket) {
-            indices.push(self.parse_expr(0));
+        while !self.check(Token::RBracket) && self.current_token.is_some() {
+            let expr = self.parse_expr(0);
+            indices.push(expr);
             if self.check(Token::Comma) {
                 self.advance();
+            } else if !self.check(Token::RBracket) {
+                // Expected comma or closing bracket, but got something else
+                // Synchronize to avoid infinite loop
+                self.synchronize_until(&[Token::Comma, Token::RBracket]);
+                if self.check(Token::Comma) {
+                    self.advance();
+                }
             }
         }
         self.consume(Token::RBracket, "Expected ']' at end of index access");
