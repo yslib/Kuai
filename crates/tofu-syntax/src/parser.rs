@@ -146,6 +146,11 @@ impl<'source> Parser<'source> {
     pub fn parse_impl(&mut self) -> Vec<Stmt> {
         let mut stmts = Vec::new();
         while self.current_token.is_some() {
+            // Skip empty statements (bare semicolons)
+            if self.check(Token::SemiColon) {
+                self.advance();
+                continue;
+            }
             stmts.push(self.parse_stmt());
         }
         stmts
@@ -599,7 +604,7 @@ impl<'source> Parser<'source> {
         if !self.expect(Token::Lt, "Expected '<' at start of generic parameters") {
             return generics;
         }
-        while !self.check(Token::Gt) {
+        while !self.check(Token::Gt) && self.current_token.is_some() {
             let generic = self.parse_generic_param();
             generics.push(generic);
             if self.check(Token::Comma) {
@@ -787,7 +792,12 @@ impl<'source> Parser<'source> {
                 span: start..self.lexer.span().end,
             };
         }
-        while !self.check(Token::RBrace) {
+    while !self.check(Token::RBrace) && self.current_token.is_some() {
+            // Skip empty statements (bare semicolons)
+            if self.check(Token::SemiColon) {
+                self.advance();
+                continue;
+            }
             stmts.push(self.parse_stmt());
         }
         self.expect(Token::RBrace, "Expected '}' at end of block");
@@ -1072,19 +1082,14 @@ impl<'source> Parser<'source> {
     fn parse_array_literal(&mut self) -> Expr {
         self.expect(Token::LBracket, "Expected '[' at start of array literal");
         let mut elements = Vec::new();
-        while !self.check(Token::RBracket) && self.current_token.is_some() {
+    while !self.check(Token::RBracket) && self.current_token.is_some() {
             let expr = self.parse_expr(0);
             elements.push(expr);
             if self.check(Token::Comma) {
                 self.advance();
-            } else if !self.check(Token::RBracket) {
-                // Expected comma or closing bracket, but got something else
-                // Synchronize to avoid infinite loop
-                self.synchronize_until(&[Token::Comma, Token::RBracket]);
-                if self.check(Token::Comma) {
-                    self.advance();
-                }
             }
+            // For Julia-style arrays, whitespace-separated elements are allowed,
+            // so just continue parsing without requiring comma.
         }
         self.expect(Token::RBracket, "Expected ']' at end of array literal");
         Expr::VectorLiteral(elements)
