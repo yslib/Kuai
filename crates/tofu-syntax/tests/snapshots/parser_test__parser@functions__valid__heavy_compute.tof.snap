@@ -1,8 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/cases/functions/valid/heavy_compute.tof
----
-(<func> [@gpu, @kernel(threads = (<i64> 128)), @unroll(factor = (<i64> 4))] (<proto> heavy_compute ((<param> data: (<tensor> <f32> [N])))) (<block>
-  
-))

@@ -1,0 +1,11 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/functions/valid/generic_type.ku
+---
+(<func> (<proto> use_generic ((<param> v: (<type> Vec <<f32>>)), (<param> m: (<type> Map <(<type> String), <i32>>)))) (<block>
+  
+))
+(<func> (<proto> nested ((<param> data: (<type> Map <(<type> String), (<type> Vec <(<type> Option <<f32>>)>)>)))) (<block>
+  
+))

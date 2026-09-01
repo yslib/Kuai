@@ -1,9 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/cases/functions/valid/swizzle_set.tof
----
-(<struct> [@swizzle_set(chars = (<str> "\"xyzw\""), indices = [(<i64> 0), (<i64> 1), (<i64> 2), (<i64> 3)])] Point <(<generic> M), (<generic> N), (<generic> K)>
-  (<field> position: (<tensor> <f32> [(<i64> 4)]))
-  (<field> color: (<tensor> <f32> [(<i64> 4)]))
-)

@@ -1,6 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/cases/expression/valid/comma_array.tof
----
-(<set> v = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])

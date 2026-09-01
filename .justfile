@@ -4,4 +4,4 @@
 
 run-repl:
     #!/bin/bash
-    cargo run --bin tofu
+    cargo run --bin kuai

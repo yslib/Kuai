@@ -1,8 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/cases/functions/valid/generic_func.tof
----
-(<func> (<proto> generic_func <(<generic> T)> ((<param> input: (<type> T))) -> (<type> T)) (<block>
-  (<return> input)
-))

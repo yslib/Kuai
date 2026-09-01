@@ -1,0 +1,11 @@
+[package]
+name = "sema"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+kuai_core = { path = "../kuai-core" }
+syntax = { path = "../kuai-syntax" }
+
+[dev-dependencies]
+insta = { version = "1.45.0", features = ["glob"] }

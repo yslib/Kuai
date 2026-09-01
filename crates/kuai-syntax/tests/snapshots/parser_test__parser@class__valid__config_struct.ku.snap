@@ -1,0 +1,9 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/class/valid/config_struct.ku
+---
+(<struct> [@module_attribute(version = (<str> "\"1.0\""))] Config <(<generic> T)>
+  (<field> value: (<type> T))
+  (<field> enabled: <bool>)
+)

@@ -6,12 +6,12 @@
 -- end
 
 local project_root = vim.fn.getcwd()
-local plugin_path = project_root .. "/dev_tools/tofu.nvim"
+local plugin_path = project_root .. "/dev_tools/kuai.nvim"
 
-vim.notify("Welcome to Tofu Development!\nAdding tofu.nvim to runtime path: " .. plugin_path, vim.log.levels.INFO,
-    { title = "Tofu Dev" })
+vim.notify("Welcome to Kuai Development!\nAdding kuai.nvim to runtime path: " .. plugin_path, vim.log.levels.INFO,
+    { title = "Kuai Dev" })
 vim.opt.rtp:prepend(plugin_path)
 
-require("tofu").setup({
-    repl_cmd = "cargo run --bin tofu -- -l",
+require("kuai").setup({
+    repl_cmd = "cargo run --bin kuai -- -l",
 })

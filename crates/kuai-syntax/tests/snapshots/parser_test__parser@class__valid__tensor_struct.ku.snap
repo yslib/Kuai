@@ -1,0 +1,8 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/class/valid/tensor_struct.ku
+---
+(<struct> [@swizzle_set(chars = (<str> "\"nchw\""), indices = [(<i64> 0), (<i64> 1), (<i64> 2), (<i64> 3)])] Tensor
+  (<field> data: <f32>)
+)

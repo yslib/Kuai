@@ -1,27 +1,27 @@
 ---
 ### **1. 项目定位与核心哲学**
-*   **项目名称**：Tofu (后缀 `.tof`)。
+*   **项目名称**：Kuai (后缀 `.ku`)。
 *   **定位**：微架构编译器，专注于 AI 张量计算与 Shader 生成。初期作为 Python 的高性能插件（类似 Triton/Taichi），通过 FFI 和零拷贝（DLPack/Array Interface）与外部生态（NumPy/PyTorch）交互。
 *   **设计哲学 (微内核架构)**：编译器内核保持极薄，仅负责基础语法解析和属性分发。所有核心语义（如 `Einsum`、并行化、代码生成、FFI 绑定）均通过插件化的**属性（Attribute）系统**实现。
 
 ### **2. 编译器架构 (Industrial-Grade Pipeline)**
 项目采用分层的 Workspace 结构，解决了循环依赖并实现了关注点分离：
-*   **`tofu-core`**：底层基石，定义 `Span`、`Id` (Spur) 和 `Diagnostic`。
-*   **`tofu-syntax`**：基于 **Logos** 的词法分析和 **Pratt Parser** 的语法分析。支持：
+*   **`kuai-core`**：底层基石，定义 `Span`、`Id` (Spur) 和 `Diagnostic`。
+*   **`kuai-syntax`**：基于 **Logos** 的词法分析和 **Pratt Parser** 的语法分析。支持：
     *   `dim` 关键字声明符号维度；
     *   Julia 风格向量字面量（空格/逗号分隔）；
     *   嵌套属性语法：`@parent(arg=@child)`。
-*   **`tofu-sema`**：语义分析。实现基于 `Arc<RwLock<Scope>>` 的分层作用域符号表，支持符号持久化记忆。
-*   **`tofu-driver`**：核心驱动。
-    *   **`TofuContext`**：持久化状态，持有 `ThreadedRodeo` (String Interning) 和全局作用域。
+*   **`kuai-sema`**：语义分析。实现基于 `Arc<RwLock<Scope>>` 的分层作用域符号表，支持符号持久化记忆。
+*   **`kuai-driver`**：核心驱动。
+    *   **`KuaiContext`**：持久化状态，持有 `ThreadedRodeo` (String Interning) 和全局作用域。
     *   **`AttrPipeline`**：分阶段（Raw, Resolved, Analyzed, Backend）驱动 AST 流转。
-*   **`tofu-cli`**：应用入口。包含：
+*   **`kuai-cli`**：应用入口。包含：
     *   **智能 REPL**：基于括号平衡算法处理多行输入；
     *   **TCP/Socket Server**：监听 `ip:port`，允许 Neovim 等编辑器以原子块形式发送代码并获取实时反馈。
 
 
 ### **3. 核心机制：递归属性系统**
-这是 Tofu 最具特色的设计，旨在通过属性接管编译器流程：
+这是 Kuai 最具特色的设计，旨在通过属性接管编译器流程：
 *   **接口拆分**：
     *   `AttrBase`：提供 `evaluate` 接口往“黑板”（Metadata）写数据。
     *   **多态 Trait**：`SyntaxTransformer` (AST 变换), `SemanticChecker` (语义验证), `BackendEmitter` (代码生成)。
@@ -36,7 +36,7 @@
 
 ### **4. 当前完成状态 (Milestones)**
 *   [x] **前端解析**：完成基础语法、嵌套属性、函数/结构体定义、`dim` 声明的解析。
-*   [x] **基础架构**：实现 `TofuContext` 及其跨线程所有权管理（`Arc<Mutex<Context>>`）。
+*   [x] **基础架构**：实现 `KuaiContext` 及其跨线程所有权管理（`Arc<Mutex<Context>>`）。
 *   [x] **字符串池化**：全面集成 `lasso` 进行标识符池化。
 *   [x] **符号表**：完成基于 `Arc<RwLock>` 的全局和局部作用域管理。
 *   [x] **交互环境**：
@@ -46,7 +46,7 @@
     *   支持多模式（REPL, `-e` 字符串执行, 文件执行, Daemon 模式）。
 
 ### **5. 待开发与下一步计划**
-1.  **实装 `TofuCompiler` 驱动**：正式整合 `Pipeline` 到 `main.rs` 流程中。
+1.  **实装 `KuaiCompiler` 驱动**：正式整合 `Pipeline` 到 `main.rs` 流程中。
 2.  **完善 `Resolver` Pass**：
     *   实现符号重定义检查和未定义引用检查；
     *   实现初步的维度检查（Dimension 符号 vs 普通 Variable 的区分使用）。
@@ -57,7 +57,7 @@
 
 ---
 **新会话启动建议：**
-“我已经搭建好了 Tofu 编译器的微内核架构，包括基于 `Arc<Mutex<TofuContext>>` 的线程安全上下文、支持嵌套属性的 `Parser`、以及分阶段的属性管道。现在请帮我从 `tofu-driver` 的 `TofuCompiler` 流水线实现开始，并着手编写第一个能够处理 `dim` 声明和验证 Tensor 形状的语义 Pass。”
+“我已经搭建好了 Kuai 编译器的微内核架构，包括基于 `Arc<Mutex<KuaiContext>>` 的线程安全上下文、支持嵌套属性的 `Parser`、以及分阶段的属性管道。现在请帮我从 `kuai-driver` 的 `KuaiCompiler` 流水线实现开始，并着手编写第一个能够处理 `dim` 声明和验证 Tensor 形状的语义 Pass。”
 
 
 

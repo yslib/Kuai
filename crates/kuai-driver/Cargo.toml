@@ -1,0 +1,8 @@
+[package]
+name = "driver"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+kuai_core = { path = "../kuai-core" }
+syntax = { path = "../kuai-syntax" }
+sema = { path = "../kuai-sema" }

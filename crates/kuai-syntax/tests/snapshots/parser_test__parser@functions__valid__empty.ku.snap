@@ -1,0 +1,8 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/functions/valid/empty.ku
+---
+(<func> (<proto> empty ()) (<block>
+  
+))

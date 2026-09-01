@@ -1,0 +1,8 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/functions/valid/add.ku
+---
+(<func> (<proto> add ((<param> a: <i32>), (<param> b: <i32>)) -> <i32>) (<block>
+  (<return> (<+> a, b))
+))

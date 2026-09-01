@@ -1,0 +1,9 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/expression/valid/simple_assign.ku
+---
+(<set> x = (<i64> 42))
+(<set> v = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
+(<set> v = [(<i64> 1), (<i64> 2), (<i64> 3), (<i64> 4)])
+(<return> (<+> x, y))

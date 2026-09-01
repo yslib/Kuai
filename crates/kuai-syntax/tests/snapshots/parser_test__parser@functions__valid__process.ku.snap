@@ -1,0 +1,8 @@
+---
+source: crates/kuai-syntax/tests/parser_test.rs
+expression: pretty_output
+input_file: crates/kuai-syntax/tests/cases/functions/valid/process.ku
+---
+(<func> (<proto> process <(<generic> T: (<type> Numeric)), (<generic> U = <f32>)> ((<param> x: (<type> T)), (<param> y: (<type> U))) -> (<type> T)) (<block>
+  (<return> x)
+))

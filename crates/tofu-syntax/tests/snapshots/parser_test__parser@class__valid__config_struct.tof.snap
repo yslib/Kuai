@@ -1,9 +1,0 @@
----
-source: crates/tofu-syntax/tests/parser_test.rs
-expression: pretty_output
-input_file: crates/tofu-syntax/tests/cases/class/valid/config_struct.tof
----
-(<struct> [@module_attribute(version = (<str> "\"1.0\""))] Config <(<generic> T)>
-  (<field> value: (<type> T))
-  (<field> enabled: <bool>)
-)
