@@ -3,6 +3,5 @@ resolver = "3"
 name = "kuai"
 members = [
 "crates/*",
-"tools/*",
 "kuai",
 ]

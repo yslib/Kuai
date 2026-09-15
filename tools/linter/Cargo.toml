@@ -1,7 +1,0 @@
-[package]
-name="linter"
-version="0.1.0"
-edition="2024"
-[dependencies]
-kuai_core = { path = "../../crates/kuai-core" }
-syntax={ path = "../../crates/kuai-syntax" }
