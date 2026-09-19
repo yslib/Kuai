@@ -22,7 +22,7 @@ extern const ku_vendor_builtin_record_t
     KU_VENDOR_BUILTINS_RECORD_STOP[] __asm("section$end$__DATA$ku_builtins");
 }
 #else
-#define KU_VENDOR_BUILTINS_RECORD_NAME  "ku_vendor_builtins_record"
+#define KU_VENDOR_BUILTINS_RECORD_NAME "ku_vendor_builtins_record"
 
 extern "C" {
 extern const ku_vendor_builtin_record_t KU_VENDOR_BUILTINS_RECORD_START[];

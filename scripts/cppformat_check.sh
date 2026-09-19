@@ -2,15 +2,15 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
-formatter="${CLANG_FORMAT:-$script_dir/clang_format.sh}"
+repo_root="$(realpath "$script_dir/..")"
+formatter="$script_dir/clang_format.sh"
 
 usage() {
     cat <<'USAGE'
-Usage: scripts/cppformat_check.sh [--exclude PATH] PATH [PATH ...]
+Usage: scripts/cppformat_check.sh [--fix] [--exclude PATH] PATH [PATH ...]
 
-Checks C/C++ source formatting. Set KUAI_FORMAT_MODE=local to use a local
-clang-format, or set KUAI_FORMAT_DOCKER_IMAGE for the default Docker mode.
+Checks C/C++ source formatting, or formats files in place with --fix.
+Uses uvx with the native clang-format version pinned by kuai-runtime/.clang-format-version.
 USAGE
 }
 
@@ -36,7 +36,8 @@ resolve_path() {
 is_excluded_path() {
     local path="$1"
     local exclude
-    for exclude in "${exclude_paths[@]}"; do
+    # Bash 3.2 treats an empty array as unset under nounset.
+    for exclude in ${exclude_paths[@]+"${exclude_paths[@]}"}; do
         if [[ "$path" == "$exclude" || "$path" == "$exclude/"* ]]; then
             return 0
         fi
@@ -71,11 +72,16 @@ collect_files() {
 
 targets=()
 excludes=()
+fix=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             usage
             exit 0
+            ;;
+        --fix)
+            fix=true
+            shift
             ;;
         --exclude)
             if [[ $# -lt 2 ]]; then
@@ -117,24 +123,32 @@ if [[ ${#targets[@]} -eq 0 ]]; then
 fi
 
 exclude_paths=()
-for exclude in "${excludes[@]}"; do
+for exclude in ${excludes[@]+"${excludes[@]}"}; do
     exclude_paths+=("$(resolve_path "$exclude")")
 done
 
-mapfile -d '' files < <(collect_files "${targets[@]}")
-if [[ ${#files[@]} -eq 0 ]]; then
-    echo "cppformat_check: no C/C++ files to check"
-    exit 0
-fi
-
 file_list="$(mktemp "$repo_root/.cppformat-files.XXXXXX")"
 trap 'rm -f "$file_list"' EXIT
-printf '%s\n' "${files[@]}" >"$file_list"
+# clang-format --files expects one path per line. A pipeline preserves collection
+# errors through pipefail and avoids mapfile, which macOS Bash 3.2 does not provide.
+collect_files "${targets[@]}" | tr '\000' '\n' >"$file_list"
+if [[ ! -s "$file_list" ]]; then
+    echo "cppformat_check: no C/C++ files to process"
+    exit 0
+fi
+file_count="$(wc -l <"$file_list")"
 
-if ! formatter_output="$("$formatter" --dry-run --Werror --files="$file_list" 2>&1)"; then
+formatter_args=(--dry-run --Werror)
+action=checked
+if [[ "$fix" == true ]]; then
+    formatter_args=(-i)
+    action=formatted
+fi
+
+if ! formatter_output="$("$formatter" "${formatter_args[@]}" --files="$file_list" 2>&1)"; then
     printf '%s\n' "$formatter_output" >&2
-    echo "cppformat_check: C/C++ formatting check failed" >&2
+    echo "cppformat_check: C/C++ formatting failed" >&2
     exit 1
 fi
 
-printf 'cppformat_check: checked %d file(s).\n' "${#files[@]}"
+printf 'cppformat_check: %s %d file(s).\n' "$action" "$file_count"
