@@ -88,8 +88,8 @@ KuLibrary::KuLibrary(const std::string &path) : d_ptr(new Impl(this)) {
     }
 
 #elif defined(__MACOSX__) || defined(__APPLE__)
-    m_lib = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (!m_lib)
+    d_ptr->m_lib = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (!d_ptr->m_lib)
         errorMsg = dlerror();
 #elif defined(__linux__)
     d_ptr->m_lib = dlopen(path.c_str(), RTLD_LAZY | RTLD_GLOBAL);

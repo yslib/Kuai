@@ -9,12 +9,26 @@
 
 #define KU_VENDOR_BUILTINS_RECORD_START __start_ku_vendor_builtins_record
 #define KU_VENDOR_BUILTINS_RECORD_STOP  __stop_ku_vendor_builtins_record
+
+#if defined(__APPLE__)
+// Mach-O section names are limited to 16 characters. The linker supplies the
+// section boundary symbols within each backend dylib.
+#define KU_VENDOR_BUILTINS_RECORD_NAME "__DATA,ku_builtins"
+
+extern "C" {
+extern const ku_vendor_builtin_record_t
+    KU_VENDOR_BUILTINS_RECORD_START[] __asm("section$start$__DATA$ku_builtins");
+extern const ku_vendor_builtin_record_t
+    KU_VENDOR_BUILTINS_RECORD_STOP[] __asm("section$end$__DATA$ku_builtins");
+}
+#else
 #define KU_VENDOR_BUILTINS_RECORD_NAME  "ku_vendor_builtins_record"
 
 extern "C" {
 extern const ku_vendor_builtin_record_t KU_VENDOR_BUILTINS_RECORD_START[];
 extern const ku_vendor_builtin_record_t KU_VENDOR_BUILTINS_RECORD_STOP[];
 }
+#endif
 
 namespace kuai::vendor {
 

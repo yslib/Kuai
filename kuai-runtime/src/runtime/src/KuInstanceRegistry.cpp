@@ -1,6 +1,7 @@
 #include "runtime/KuInstanceRegistry.h"
 
 #include <climits>
+#include <cstdint>
 #include <cstdlib>
 #include <dlfcn.h>
 #include <filesystem>
@@ -12,6 +13,10 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 
 #include <kuai/kuai_c/ku_runtime.h>
 #include <kuai/runtime/KuInstance.h>
@@ -36,6 +41,14 @@ ku_host_t hostHandle() noexcept {
 std::filesystem::path getMainExecutablePath() {
 #if defined(_WIN32)
     return {};
+#elif defined(__APPLE__)
+    std::uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    std::string path(size, '\0');
+    if (_NSGetExecutablePath(path.data(), &size) != 0) {
+        return {};
+    }
+    return std::filesystem::canonical(path.c_str());
 #else
     return std::filesystem::read_symlink("/proc/self/exe");
 #endif
@@ -77,7 +90,11 @@ const ku_vendor_module_t *loadVendorModule(std::string_view vendor) {
     try {
         const auto hostModulePath =
             getModulePathFromAddress(reinterpret_cast<void *>(&ku_instance_init));
+#if defined(__APPLE__)
+        const auto libraryName = "libkurt_" + std::string(vendor) + ".dylib";
+#else
         const auto libraryName = "libkurt_" + std::string(vendor) + ".so";
+#endif
         const auto libraryPath = hostModulePath.parent_path() / libraryName;
         auto      &manager = KuModuleManager::getKuModuleManager();
         const auto library = manager.loadLibrary(libraryPath.string());

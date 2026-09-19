@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <endian.h>
 #include <limits>
 #include <memory>
 #include <tuple>
