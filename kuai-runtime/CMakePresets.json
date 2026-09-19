@@ -1,0 +1,212 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_LIBDIR": "lib",
+        "CMAKE_CXX_FLAGS": "-w"
+      }
+    },
+    {
+      "name": "dev-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "rel-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "-s"
+      }
+    },
+    {
+      "name": "feature-cpu",
+      "hidden": true,
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cpu"
+      }
+    },
+    {
+      "name": "feature-cuda",
+      "hidden": true,
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cuda"
+      }
+    },
+    {
+      "name": "cuda-arch-native",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CUDA_ARCHITECTURES": "native"
+      }
+    },
+    {
+      "name": "cuda-arch-ci",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CUDA_ARCHITECTURES": "80"
+      }
+    },
+    {
+      "name": "feature-all",
+      "hidden": true,
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cpu;cuda"
+      }
+    },
+    {
+      "name": "toolchain-cuda-clang",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/opt/llvm/bin/clang++",
+        "CMAKE_CUDA_COMPILER": "/opt/llvm/bin/clang++",
+        "CUDAToolkit_ROOT": "/usr/local/cuda"
+      }
+    },
+    {
+      "name": "toolchain-cuda-nvcc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/opt/rh/gcc-toolset-14/root/usr/bin/g++",
+        "CMAKE_CUDA_COMPILER": "/usr/local/cuda/bin/nvcc",
+        "CMAKE_CUDA_HOST_COMPILER": "/opt/rh/gcc-toolset-14/root/usr/bin/g++",
+        "CUDAToolkit_ROOT": "/usr/local/cuda"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": ["feature-cuda", "cuda-arch-native", "rel-base"]
+    },
+    {
+      "name": "debug",
+      "inherits": ["feature-cuda", "cuda-arch-native", "dev-base"]
+    },
+    {
+      "name": "release-cpu",
+      "inherits": ["feature-cpu", "rel-base"]
+    },
+    {
+      "name": "debug-cpu",
+      "inherits": ["feature-cpu", "dev-base"]
+    },
+    {
+      "name": "release-cuda",
+      "inherits": ["feature-cuda", "cuda-arch-ci", "toolchain-cuda-clang", "rel-base"]
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "inherits": ["feature-cuda", "cuda-arch-ci", "toolchain-cuda-nvcc", "rel-base"]
+    },
+    {
+      "name": "release-all",
+      "inherits": ["feature-all", "cuda-arch-ci", "rel-base"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "jobs": 64
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "jobs": 64
+    },
+    {
+      "name": "release-cpu",
+      "configurePreset": "release-cpu",
+      "targets": ["kurt", "kurt_cpu"],
+      "jobs": 64
+    },
+    {
+      "name": "debug-cpu",
+      "configurePreset": "debug-cpu",
+      "targets": ["kurt", "kurt_cpu"],
+      "jobs": 64
+    },
+    {
+      "name": "release-cuda",
+      "configurePreset": "release-cuda",
+      "targets": ["kurt", "kurt_cuda"],
+      "jobs": 64
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "configurePreset": "release-cuda-nvcc",
+      "targets": ["kurt", "kurt_cuda"],
+      "jobs": 64
+    },
+    {
+      "name": "release-all",
+      "configurePreset": "release-all",
+      "jobs": 64
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "release",
+      "steps": [
+        {"type": "configure", "name": "release"},
+        {"type": "build", "name": "release"}
+      ]
+    },
+    {
+      "name": "debug",
+      "steps": [
+        {"type": "configure", "name": "debug"},
+        {"type": "build", "name": "debug"}
+      ]
+    },
+    {
+      "name": "release-cpu",
+      "steps": [
+        {"type": "configure", "name": "release-cpu"},
+        {"type": "build", "name": "release-cpu"}
+      ]
+    },
+    {
+      "name": "debug-cpu",
+      "steps": [
+        {"type": "configure", "name": "debug-cpu"},
+        {"type": "build", "name": "debug-cpu"}
+      ]
+    },
+    {
+      "name": "release-cuda",
+      "steps": [
+        {"type": "configure", "name": "release-cuda"},
+        {"type": "build", "name": "release-cuda"}
+      ]
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "steps": [
+        {"type": "configure", "name": "release-cuda-nvcc"},
+        {"type": "build", "name": "release-cuda-nvcc"}
+      ]
+    },
+    {
+      "name": "release-all",
+      "steps": [
+        {"type": "configure", "name": "release-all"},
+        {"type": "build", "name": "release-all"}
+      ]
+    }
+  ]
+}

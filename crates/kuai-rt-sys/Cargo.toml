@@ -2,6 +2,4 @@
 name = "kuai-sys"
 version = "0.1.0"
 edition = "2024"
-
-[build-dependencies]
-cmake = "0.1"
+links = "kurt"

@@ -1,0 +1,79 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# Modified from the Apache Arrow project for the Terrier project.
+
+---
+BasedOnStyle: LLVM
+TabWidth: 4
+IndentWidth: 4
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: false
+---
+AlignAfterOpenBracket: Align
+UseTab: Never
+DerivePointerAlignment: false
+PointerAlignment: Right
+AlignConsecutiveMacros: true
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+ConstructorInitializerIndentWidth: 4
+AllowAllParametersOfDeclarationOnNextLine: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: Yes
+SortIncludes: true
+AlignEscapedNewlines: Left
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^<[^/]+>$'
+    Priority:        1
+    SortPriority:    1
+  - Regex:           '^<kuai/.*>'
+    Priority:        2
+    SortPriority:    2
+  - Regex:           '^".*"'
+    Priority:        3
+    SortPriority:    3
+SpaceBeforeCpp11BracedList: false
+
+IndentCaseLabels: true
+
+Language: Cpp
+AccessModifierOffset: -4
+AllowShortEnumsOnASingleLine: false
+InsertNewlineAtEOF: true
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Never
+NamespaceIndentation: None
+BreakBeforeBinaryOperators: NonAssignment
+SpaceAfterTemplateKeyword: true
+SpaceBeforeParens: ControlStatements
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AlignFunctionDeclarations: true
+
+ColumnLimit: 100
+BinPackParameters: false
+---

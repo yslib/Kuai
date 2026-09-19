@@ -1,2 +1,4 @@
 /target
 history.txt
+**/__pycache__/
+*.py[cod]

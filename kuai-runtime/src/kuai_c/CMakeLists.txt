@@ -1,0 +1,31 @@
+include(KurtUtils)
+
+kurt_add_module(kuai_c
+    TARGET_NAME kurt
+    SHARED
+    PRIVATE_INCLUDE_DIRS
+        ${PROJECT_SOURCE_DIR}/src/core/private
+        ${PROJECT_SOURCE_DIR}/src/runtime/private
+    COMPILE_OPTIONS
+        ${KURT_WERROR_FLAG}
+    PRIVATE_LINK_LIBRARIES
+        kuai::core
+        kuai::runtime
+        kuai::profiler
+        Threads::Threads
+        ${CMAKE_DL_LIBS}
+    CXX_STANDARD 26
+    CXX_STANDARD_REQUIRED ON
+    POSITION_INDEPENDENT_CODE ON)
+
+# The aggregate target exposes every installed C++ module from the build tree.
+# The install tree already has the same unified include prefix.
+target_include_directories(kurt PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/core/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/runtime/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/profiler/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_compile_features(kurt INTERFACE $<INSTALL_INTERFACE:cxx_std_26>)
+
+set_target_properties(kurt PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

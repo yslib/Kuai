@@ -1,0 +1,18 @@
+#include "kuai/builtins/KuUnaryBuiltin.h"
+
+namespace kuai {
+
+KU_GENERATE_BUILTIN_cos;
+KU_GENERATE_BUILTIN_cosh;
+KU_GENERATE_BUILTIN_acos;
+KU_GENERATE_BUILTIN_acosh;
+KU_GENERATE_BUILTIN_sin;
+KU_GENERATE_BUILTIN_sinh;
+KU_GENERATE_BUILTIN_asin;
+KU_GENERATE_BUILTIN_asinh;
+KU_GENERATE_BUILTIN_tan;
+KU_GENERATE_BUILTIN_atan;
+KU_GENERATE_BUILTIN_tanh;
+KU_GENERATE_BUILTIN_atanh;
+
+} // namespace kuai
