@@ -154,6 +154,28 @@ fn explicit_streams_are_owned_and_distinct_from_the_per_thread_stream() {
 }
 
 #[test]
+fn device_instance_query_preserves_native_identity() {
+    let cpu = Cpu::new(default_scheduler());
+    // SAFETY: all handles borrow the live Cpu guard and output slots are writable.
+    // Only Cpu destroys the instance; queried owners do not acquire ownership.
+    unsafe {
+        let mut owner = ptr::null_mut();
+        success(ku_device_get_instance(cpu.device, &mut owner));
+        assert_eq!(owner, cpu.instance);
+
+        let mut selected = ptr::null_mut();
+        success(ku_instance_get_device(cpu.instance, 0, &mut selected));
+        let mut selected_owner = ptr::null_mut();
+        success(ku_device_get_instance(selected, &mut selected_owner));
+        assert_eq!(selected_owner, owner);
+
+        let mut default_device = ptr::null_mut();
+        success(ku_instance_get_default_device(owner, &mut default_device));
+        assert_eq!(default_device, cpu.device);
+    }
+}
+
+#[test]
 fn instance_device_capabilities_and_lifecycle() {
     let cpu = Cpu::new(default_scheduler());
     // SAFETY: handles remain live under the Cpu guard; outputs are writable.

@@ -201,6 +201,14 @@ unsafe extern "C" {
         out: *mut ku_instance_capabilities_t,
     ) -> ku_status_t;
     pub fn ku_device_get_info(device: ku_device_t, out: *mut ku_device_info_t) -> ku_status_t;
+    /// Returns the device's exact owning instance as a borrowed, stable handle.
+    /// The query does not retain, allocate, or synchronize.
+    ///
+    /// # Safety
+    /// `device` must be valid and non-null; `out` must be valid, writable, and
+    /// non-null. The returned handle remains valid until its instance is destroyed.
+    /// Do not destroy the borrowed handle or use it after instance destruction.
+    pub fn ku_device_get_instance(device: ku_device_t, out: *mut ku_instance_t) -> ku_status_t;
     pub fn ku_device_get_capabilities(
         device: ku_device_t,
         out: *mut ku_device_capabilities_t,

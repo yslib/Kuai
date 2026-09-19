@@ -55,11 +55,11 @@ jobs:
           KUAI_RUNTIME_BUILD_MODE: docker
           KUAI_RUNTIME_PRESET: release-cpu
         run: cargo build --workspace --locked
-      - name: Test kuai-sys C ABI
+      - name: Test runtime bindings and safe Rust interface
         env:
           KUAI_RUNTIME_BUILD_MODE: docker
           KUAI_RUNTIME_PRESET: release-cpu
-        run: cargo test -p kuai-sys --locked
+        run: cargo test -p kuai-sys -p kuai-rt --locked
 
   cargo-cuda:
     runs-on: ubuntu-24.04
@@ -75,8 +75,8 @@ jobs:
           image="$(<kuai-runtime/docker/Docker_cuda.ci.lock)"
           [[ "$image" =~ ^ghcr\.io/yslib/kuai-runtime-cuda:[0-9a-f]{40}$ ]]
           echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
-      - name: Test kuai-sys with CUDA runtime
+      - name: Test Rust runtime interfaces with CUDA runtime
         env:
           KUAI_RUNTIME_BUILD_MODE: docker
           KUAI_RUNTIME_PRESET: release-cuda
-        run: cargo test -p kuai-sys --locked
+        run: cargo test -p kuai-sys -p kuai-rt --locked

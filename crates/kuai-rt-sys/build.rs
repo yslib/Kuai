@@ -210,10 +210,12 @@ fn main() {
     let config = BuildConfig::from_env();
     // CPU integration tests require an installed CPU vendor module.
     println!("cargo:rustc-check-cfg=cfg(kuai_runtime_cpu)");
-    if matches!(
+    let cpu_enabled = matches!(
         config.preset.as_str(),
         "debug-cpu" | "release-cpu" | "release-all"
-    ) {
+    );
+    println!("cargo:cpu_enabled={cpu_enabled}");
+    if cpu_enabled {
         println!("cargo:rustc-cfg=kuai_runtime_cpu");
     }
     println!(

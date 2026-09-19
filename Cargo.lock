@@ -390,6 +390,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kuai-rt"
+version = "0.1.0"
+dependencies = [
+ "kuai-sys",
+]
+
+[[package]]
 name = "kuai-sys"
 version = "0.1.0"
 
