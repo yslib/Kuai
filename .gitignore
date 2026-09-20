@@ -1,4 +1,5 @@
 /target
+/.worktrees/
 history.txt
 **/__pycache__/
 *.py[cod]
