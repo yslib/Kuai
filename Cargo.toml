@@ -4,4 +4,6 @@ name = "kuai"
 members = [
 "crates/*",
 "kuai",
+"xtask",
 ]
+default-members = ["crates/*", "kuai"]

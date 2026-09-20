@@ -30,9 +30,11 @@ jobs:
         with:
           components: rustfmt
       - name: Check C++ formatting
-        run: ./scripts/cppformat_check.sh kuai-runtime/src kuai-runtime/vendor kuai-runtime/python/bindings
+        run: cargo xtask cpp fmt --check
       - name: Check Rust formatting
         run: cargo fmt --all --check
+      - name: Test formatting tasks
+        run: cargo test -p xtask --locked
 
   runtime-syntax:
     runs-on: ubuntu-24.04
