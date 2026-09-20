@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <new>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -203,12 +204,7 @@ ku_builtin_builder_t KuBuiltinRegistry::builder() noexcept {
 }
 
 std::vector<std::string_view> KuBuiltinRegistry::functionNames() const {
-    std::vector<std::string_view> names;
-    names.reserve(d_ptr->m_groups.size());
-    for (const auto &entry : d_ptr->m_groups) {
-        names.emplace_back(entry.first);
-    }
-    return names;
+    return d_ptr->m_groups | std::views::keys | std::ranges::to<std::vector<std::string_view>>();
 }
 
 std::optional<ku_call_target_t>

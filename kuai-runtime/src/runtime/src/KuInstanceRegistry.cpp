@@ -1,5 +1,6 @@
 #include "runtime/KuInstanceRegistry.h"
 
+#include <algorithm>
 #include <climits>
 #include <cstdint>
 #include <cstdlib>
@@ -8,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <new>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -149,14 +151,8 @@ ku_status_t KuInstanceRegistry::init(const ku_instance_init_info_t &info, KuInst
     if (status != KU_STATUS_SUCCESS) {
         return status;
     }
-    bool hasDefaultDevice = false;
-    for (std::size_t index = 0; index < info.capabilities.device_count; ++index) {
-        if (info.capabilities.devices[index].device_id == info.default_device_id) {
-            hasDefaultDevice = true;
-            break;
-        }
-    }
-    if (!hasDefaultDevice) {
+    if (!std::ranges::contains(std::span(info.capabilities.devices, info.capabilities.device_count),
+                               info.default_device_id, &ku_device_capabilities_t::device_id)) {
         return KU_STATUS_OUT_OF_RANGE;
     }
 

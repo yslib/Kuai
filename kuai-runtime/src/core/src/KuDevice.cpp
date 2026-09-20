@@ -33,7 +33,12 @@ public:
         if (m_defaultStream == nullptr) {
             return KU_STATUS_INVALID_STATE;
         }
-        return KuNativeMemoryResource::create(*q_ptr, m_resource);
+        auto resource = KuNativeMemoryResource::create(*q_ptr);
+        if (!resource) {
+            return resource.error();
+        }
+        m_resource = std::move(*resource);
+        return KU_STATUS_SUCCESS;
     }
 
     ku_status_t shutdown() noexcept {
@@ -55,19 +60,18 @@ public:
 
 namespace detail {
 
-ku_status_t KuDeviceAccess::create(const ku_vendor_api_t          &vendorApi,
-                                   ku_device_id_t                  deviceId,
-                                   ku_device_type_t                deviceType,
-                                   const ku_device_capabilities_t &capabilities,
-                                   std::unique_ptr<KuDevice>      &out) noexcept {
-    out.reset();
+std::expected<std::unique_ptr<KuDevice>, ku_status_t>
+KuDeviceAccess::create(const ku_vendor_api_t          &vendorApi,
+                       ku_device_id_t                  deviceId,
+                       ku_device_type_t                deviceType,
+                       const ku_device_capabilities_t &capabilities) noexcept {
     int  deviceCount = 0;
     auto status = vendorApi.get_device_count(vendorApi.ctx, &deviceCount);
     if (status != KU_STATUS_SUCCESS) {
-        return status;
+        return std::unexpected(status);
     }
     if (deviceId < 0 || deviceId >= deviceCount) {
-        return KU_STATUS_OUT_OF_RANGE;
+        return std::unexpected(KU_STATUS_OUT_OF_RANGE);
     }
 
     try {
@@ -75,14 +79,13 @@ ku_status_t KuDeviceAccess::create(const ku_vendor_api_t          &vendorApi,
             new KuDevice(vendorApi, {deviceType, deviceId}, capabilities));
         const auto initializeStatus = device->initialize();
         if (initializeStatus != KU_STATUS_SUCCESS) {
-            return initializeStatus;
+            return std::unexpected(initializeStatus);
         }
-        out = std::move(device);
-        return KU_STATUS_SUCCESS;
+        return device;
     } catch (const std::bad_alloc &) {
-        return KU_STATUS_OUT_OF_HOST_MEMORY;
+        return std::unexpected(KU_STATUS_OUT_OF_HOST_MEMORY);
     } catch (...) {
-        return KU_STATUS_INTERNAL_ERROR;
+        return std::unexpected(KU_STATUS_INTERNAL_ERROR);
     }
 }
 

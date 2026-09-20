@@ -1,5 +1,6 @@
 #pragma once
 
+#include <expected>
 #include <memory>
 #include <new>
 
@@ -11,31 +12,31 @@ namespace kuai {
 // Stream-ordered host adapter over one non-null backend-native pool.
 class KuNativeMemoryResource final : public KuMemoryResource {
 public:
-    static ku_status_t create(KuDevice &device, std::unique_ptr<KuMemoryResource> &out) noexcept {
+    // Host-private factory; device initialization converts errors back to ku_status_t.
+    static std::expected<std::unique_ptr<KuMemoryResource>, ku_status_t>
+    create(KuDevice &device) noexcept {
         const auto &api = device.getVendorApi();
         KU_ASSERT(api.memory_pool_create != nullptr);
         KU_ASSERT(api.memory_pool_destroy != nullptr);
         KU_ASSERT(api.malloc_from_pool_async != nullptr);
         KU_ASSERT(api.free_async != nullptr);
-        out.reset();
 
         ku_memory_pool_t pool = nullptr;
         const auto       status =
             api.memory_pool_create(api.ctx, device.getDeviceInfo().device_id, &pool);
         if (status != KU_STATUS_SUCCESS) {
-            return status;
+            return std::unexpected(status);
         }
         KU_ASSERT(pool != nullptr, "successful pool creation must publish a pool handle");
 
         try {
-            out.reset(new KuNativeMemoryResource(device, pool));
-            return KU_STATUS_SUCCESS;
+            return std::unique_ptr<KuMemoryResource>(new KuNativeMemoryResource(device, pool));
         } catch (const std::bad_alloc &) {
             (void)api.memory_pool_destroy(api.ctx, pool);
-            return KU_STATUS_OUT_OF_HOST_MEMORY;
+            return std::unexpected(KU_STATUS_OUT_OF_HOST_MEMORY);
         } catch (...) {
             (void)api.memory_pool_destroy(api.ctx, pool);
-            return KU_STATUS_INTERNAL_ERROR;
+            return std::unexpected(KU_STATUS_INTERNAL_ERROR);
         }
     }
 

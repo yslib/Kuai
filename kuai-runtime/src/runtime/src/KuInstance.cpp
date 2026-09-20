@@ -70,19 +70,19 @@ public:
         }
 
         for (std::size_t index = 0; index < capabilities.device_count; ++index) {
-            const auto               &deviceCapabilities = capabilities.devices[index];
-            std::unique_ptr<KuDevice> device;
-            auto                      status = detail::KuDeviceAccess::create(
+            const auto &deviceCapabilities = capabilities.devices[index];
+            auto        deviceResult = detail::KuDeviceAccess::create(
                 m_vendorModule.vendor_api, deviceCapabilities.device_id, m_vendorModule.device_type,
-                deviceCapabilities, device);
-            if (status != KU_STATUS_SUCCESS) {
+                deviceCapabilities);
+            if (!deviceResult) {
                 clearDevices();
-                return status;
+                return deviceResult.error();
             }
+            auto device = std::move(*deviceResult);
             KU_ASSERT(device != nullptr);
 
             std::unique_ptr<KuHostTransfer> transfer;
-            status = detail::createDefaultHostTransfer(capabilities, *device, transfer);
+            const auto status = detail::createDefaultHostTransfer(capabilities, *device, transfer);
             if (status != KU_STATUS_SUCCESS) {
                 clearDevices();
                 return status;

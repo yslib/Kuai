@@ -177,6 +177,56 @@ fn instance_device_capabilities_and_lifecycle() {
 }
 
 #[test]
+fn failed_instance_initialization_preserves_status_and_allows_retry() {
+    let lock = CPU_LOCK.lock().unwrap_or_else(|poison| poison.into_inner());
+    let mut info = init_info(default_scheduler());
+    let devices = [
+        DEVICE,
+        ku_device_capabilities_t {
+            device_id: 1,
+            ..DEVICE
+        },
+    ];
+
+    // SAFETY: descriptors stay alive through initialization. The held lock
+    // serializes failed attempts and is transferred to the successful instance.
+    unsafe {
+        let mut instance = ptr::null_mut();
+        info.default_device_id = 1;
+        assert_eq!(
+            ku_instance_init(&info, &mut instance),
+            KU_STATUS_OUT_OF_RANGE
+        );
+        assert!(instance.is_null());
+
+        // CPU 0 is initialized before CPU 1 fails backend device validation.
+        info.default_device_id = 0;
+        info.capabilities.devices = devices.as_ptr();
+        info.capabilities.device_count = devices.len();
+        assert_eq!(
+            ku_instance_init(&info, &mut instance),
+            KU_STATUS_OUT_OF_RANGE
+        );
+        assert!(instance.is_null());
+
+        success(ku_instance_init(
+            &init_info(default_scheduler()),
+            &mut instance,
+        ));
+        let mut cpu = Cpu {
+            instance,
+            device: ptr::null_mut(),
+            _lock: lock,
+        };
+        success(ku_instance_get_default_device(
+            cpu.instance,
+            &mut cpu.device,
+        ));
+        success(ku_device_flush(cpu.device));
+    }
+}
+
+#[test]
 fn vendor_function_table_copies_memory() {
     let cpu = Cpu::new(default_scheduler());
     // SAFETY: table borrows cpu; allocations and stream remain live until all
@@ -434,6 +484,63 @@ fn tensor_descriptor_validation_and_late_completion_callback() {
         assert_eq!(receiver.try_recv().unwrap(), KU_STATUS_SUCCESS);
         success(ku_tensor_get_size(empty.0, &mut count));
         assert_eq!(count, 0);
+    }
+}
+
+#[test]
+fn tensor_shape_overflow_and_zero_extents_preserve_statuses() {
+    let cpu = Cpu::new(default_scheduler());
+    let mut desc = ku_tensor_create_desc_t {
+        device: cpu.device,
+        primitive_type: KU_PRIMITIVE_F32,
+        ndim: 0,
+        shape: ptr::null(),
+        strides: ptr::null(),
+    };
+
+    // SAFETY: all descriptor arrays remain live through each call. Successful
+    // creations are empty or small and their owned handles use Object guards.
+    unsafe {
+        let mut raw = ptr::null_mut();
+        for shape in [&[i64::MAX, 3][..], &[i64::MAX, 3, 0][..], &[-1, 2][..]] {
+            desc.ndim = shape.len() as i32;
+            desc.shape = shape.as_ptr();
+            assert_eq!(
+                ku_tensor_create(&desc, &mut raw),
+                KU_STATUS_INVALID_ARGUMENT
+            );
+            assert!(raw.is_null());
+        }
+
+        // A leading zero prevents overflow even with large later dimensions.
+        let empty_shape = [0_i64, i64::MAX, 3];
+        let empty_strides = [1_i64, 0, 0];
+        desc.ndim = empty_shape.len() as i32;
+        desc.shape = empty_shape.as_ptr();
+        for strides in [ptr::null(), empty_strides.as_ptr()] {
+            desc.strides = strides;
+            success(ku_tensor_create(&desc, &mut raw));
+            let tensor = Object(raw);
+            let mut count = 1;
+            success(ku_tensor_get_size(tensor.0, &mut count));
+            assert_eq!(count, 0);
+        }
+
+        let shape = [2_i64, 3];
+        let strides = [1_i64, 2];
+        desc.ndim = shape.len() as i32;
+        desc.shape = shape.as_ptr();
+        desc.strides = strides.as_ptr();
+        success(ku_tensor_create(&desc, &mut raw));
+        let tensor = Object(raw);
+        let mut count = 0;
+        success(ku_tensor_get_size(tensor.0, &mut count));
+        assert_eq!(count, 6);
+
+        let incompatible_strides = [3_i64, 1];
+        desc.strides = incompatible_strides.as_ptr();
+        assert_eq!(ku_tensor_create(&desc, &mut raw), KU_STATUS_NOT_SUPPORTED);
+        assert!(raw.is_null());
     }
 }
 

@@ -6,6 +6,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <stdckdint.h>
 
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuDevice.h>
@@ -17,6 +18,16 @@
 
 namespace kuai {
 namespace {
+
+bool multiplyOverflows(ku_size_t &result, ku_size_t lhs, ku_size_t rhs) noexcept {
+#if defined(_STDCKDINT_H) && defined(ckd_mul)
+    // Older GCC C headers expand ckd_mul using the C-only _Bool type, including
+    // when reached through Clang's include_next. Use the same builtin in C++.
+    return __builtin_mul_overflow(lhs, rhs, &result);
+#else
+    return ckd_mul(&result, lhs, rhs);
+#endif
+}
 
 bool isValidPrimitiveType(ku_primitive_type_t type) noexcept {
     switch (type) {
@@ -265,10 +276,9 @@ ku_status_t KuTensorViewBuilder::importTensor(KuDevice                 &device,
         if (!checkedExtent(tensor.shape[i], extent)) {
             return KU_STATUS_INVALID_ARGUMENT;
         }
-        if (extent != 0 && size > std::numeric_limits<ku_size_t>::max() / extent) {
+        if (multiplyOverflows(size, size, extent)) {
             return KU_STATUS_INVALID_ARGUMENT;
         }
-        size *= extent;
         if (tensor.strides != nullptr) {
             if (canonicalStride > static_cast<ku_size_t>(std::numeric_limits<int64_t>::max())) {
                 return KU_STATUS_INVALID_ARGUMENT;
@@ -278,10 +288,9 @@ ku_status_t KuTensorViewBuilder::importTensor(KuDevice                 &device,
             }
         }
         strides[static_cast<std::size_t>(i)] = canonicalStride;
-        if (extent != 0 && canonicalStride > std::numeric_limits<ku_size_t>::max() / extent) {
+        if (multiplyOverflows(canonicalStride, canonicalStride, extent)) {
             return KU_STATUS_INVALID_ARGUMENT;
         }
-        canonicalStride *= extent;
     }
     if (size != 0 && data == nullptr) {
         return KU_STATUS_INVALID_ARGUMENT;
@@ -328,11 +337,12 @@ bool KuTensorCreateBuilder::checkedShape(const ku_tensor_create_desc_t &desc,
             return false;
         }
         const auto extent = static_cast<ku_size_t>(desc.shape[i]);
-        if (extent != 0 && size > std::numeric_limits<ku_size_t>::max() / extent) {
+        ku_size_t  nextSize;
+        if (multiplyOverflows(nextSize, size, extent)) {
             return false;
         }
         out[static_cast<std::size_t>(i)] = extent;
-        size *= extent;
+        size = nextSize;
     }
     return true;
 }
@@ -351,10 +361,9 @@ bool KuTensorCreateBuilder::hasSupportedLayout(const ku_tensor_create_desc_t &de
             return false;
         }
         const auto extent = shape[static_cast<std::size_t>(i)];
-        if (extent != 0 && stride > std::numeric_limits<ku_size_t>::max() / extent) {
+        if (multiplyOverflows(stride, stride, extent)) {
             return false;
         }
-        stride *= extent;
     }
     return true;
 }
