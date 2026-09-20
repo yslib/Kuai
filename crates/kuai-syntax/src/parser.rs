@@ -48,7 +48,7 @@ impl<'source> Parser<'source> {
         }
     }
 
-    // --- 基础工具 ---
+    // --- Basic utilities ---
 
     fn peek(&self) -> Option<Token> {
         self.lexer.clone().next().and_then(|r| r.ok())
@@ -61,11 +61,11 @@ impl<'source> Parser<'source> {
 
     /// skip tokens until a reasonable point to continue parsing
     fn synchronize(&mut self) {
-        // 简单的同步逻辑：跳过直到下一个分号或块结束
+        // Simple synchronization: skip to the next semicolon or end of a block.
         while let Some(token) = &self.current_token {
             match token {
                 Token::SemiColon | Token::RBrace => {
-                    // 找到同步点
+                    // Found a synchronization point.
                     self.advance();
                     break;
                 }
@@ -98,7 +98,7 @@ impl<'source> Parser<'source> {
         }
     }
 
-    // 消费期望的 Token，否则 panic (生产环境应该返回 Result)
+    // Consume the expected token or panic (production code should return a Result).
     fn consume(&mut self, token: Token, msg: &str) {
         //self.advance();
         if self.check(token.clone()) {
@@ -263,7 +263,7 @@ impl<'source> Parser<'source> {
         // consume '@'
         let name = self.current_slice[1..].to_string();
         self.advance();
-        // 解析参数 (args...)
+        // Parse arguments (args...).
         if self.check(Token::LParen) {
             let args = self.parse_argument_list();
             Attribute { name, args }
@@ -275,22 +275,22 @@ impl<'source> Parser<'source> {
         }
     }
 
-    // --- 核心：属性解析器 (扩展性的基石) ---
+    // --- Attribute parser (the foundation for extensibility) ---
     //
     //Attribute = AttrTag, [ "(", ArgList, ")" ] ;
 
-    // (* 属性参数列表，比较宽容，支持 key=value 或直接 value *)
+    // (* Attribute argument lists accept either key=value pairs or bare values. *)
     // ArgList   = AttributeArg, { ",", AttributeArg } ;
     // AttributeArg = [ Identifier, "=" ], ( Literal | Identifier ) ;
 
-    // 这是一个高阶解析逻辑：先解析所有属性，再解析具体声明
+    // High-level parsing logic: parse all attributes before the declaration itself.
     fn parse_with_attributes<F, T>(&mut self, parse_fn: F) -> T
     where
         F: Fn(&mut Self, Vec<Attribute>) -> T,
     {
         let mut attributes = Vec::new();
 
-        // 只要看到 @，就一直解析属性
+        // Keep parsing attributes while the next token starts with @.
         while self.check(Token::Attribute) {
             let attr = self.parse_attribute();
             attributes.push(attr);
@@ -436,7 +436,7 @@ impl<'source> Parser<'source> {
                 Some(Token::KwIf) => p.parse_if(attrs),
                 Some(Token::KwReturn) => {
                     p.advance();
-                    let expr = p.parse_expr(0); // 0 是最低优先级
+                    let expr = p.parse_expr(0); // 0 is the lowest precedence.
                     if !p.expect(Token::SemiColon, "Expected ';' at end of return statement") {
                         p.synchronize();
                         Stmt {
@@ -833,7 +833,7 @@ impl<'source> Parser<'source> {
     }
 
     //
-    //(* 示例: @kernel
+    //(* Example: @kernel
     //         func forward(...) -> ... { ... } *)
     //FuncDecl= { Attribute }, "func", Identifier,["<", GenericParamList, ">"],
     //            "(", [ ParamList ], ")",
@@ -916,7 +916,7 @@ impl<'source> Parser<'source> {
         }
     }
 
-    // --- 表达式解析 (Pratt Parser 核心) ---
+    // --- Expression parsing (the core of the Pratt parser) ---
     fn infix_binding_power(&self, op: &BinaryOp) -> (u8, u8) {
         match op {
             BinaryOp::Plus | BinaryOp::Minus => (3, 4),
@@ -924,9 +924,9 @@ impl<'source> Parser<'source> {
         }
     }
 
-    // binding_power: 当前操作符的紧密度
+    // binding_power: how tightly the current operator binds.
     fn parse_expr(&mut self, min_bp: u8) -> Expr {
-        // 1. Prefix (前缀) 处理：字面量, 变量, (, [
+        // 1. Prefix handling: literals, variables, (, [
         let mut left = match self.current_token {
             Some(Token::IntegerLiteral) => {
                 let val = self.current_slice.parse().unwrap();
@@ -966,7 +966,7 @@ impl<'source> Parser<'source> {
             }
         };
 
-        // 2. Infix / Postfix (中缀/后缀) 处理：+, *, ., [, (
+        // 2. Infix / postfix handling: +, *, ., [, (
         loop {
             let op = match self.current_token {
                 Some(Token::Plus) => BinaryOp::Plus,
@@ -974,7 +974,7 @@ impl<'source> Parser<'source> {
                 Some(Token::Minus) => BinaryOp::Minus,
                 Some(Token::Slash) => BinaryOp::Slash,
                 Some(Token::Dot) => {
-                    // 成员/Swizzle 访问
+                    // Member/swizzle access
                     self.advance();
                     let member = self.parse_identifier();
                     left = Expr::MemberAccess {
@@ -1044,29 +1044,29 @@ impl<'source> Parser<'source> {
                     continue;
                 }
                 Some(Token::LBracket) => {
-                    // 索引访问/Einsum: variable[i, j]
-                    // 注意：这和上面的 parse_array 不同，这里 [ 是跟在表达式后面的
+                    // Indexing/Einsum: variable[i, j]
+                    // Unlike parse_array above, the [ here follows an expression.
                     left = self.parse_index_access(left);
                     continue;
                 }
-                // Some(Token::Assign) => BinaryOp::Assign, // 赋值作为表达式
-                _ => break, // 遇到不能处理的 Token，停止
+                // Some(Token::Assign) => BinaryOp::Assign, // Assignment as an expression
+                _ => break, // Stop at a token that cannot be handled here.
             };
 
-            // 获取操作符的优先级 (Binding Power)
+            // Get the operator's precedence (binding power).
             let (l_bp, r_bp) = self.infix_binding_power(&op);
 
-            // 如果新操作符优先级低于当前上下文，则停止，先处理当前的
+            // Stop if the new operator has lower precedence, finishing the current context first.
             if l_bp < min_bp {
                 break;
             }
 
-            // 消费操作符
+            // Consume the operator.
             if !matches!(self.current_token, Some(Token::Dot) | Some(Token::LBracket)) {
                 self.advance();
             }
 
-            // 递归解析右侧
+            // Recursively parse the right-hand side.
             let right = self.parse_expr(r_bp);
             left = Expr::Binary {
                 left: Box::new(left),

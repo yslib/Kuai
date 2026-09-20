@@ -7,7 +7,7 @@ pub use miette::Report;
 #[derive(Error, Debug, miette::Diagnostic)]
 #[error("{message}")]
 pub struct MietteDiagnostic {
-    // 错误消息
+    // Error message
     pub message: String,
 
     #[label("Here")]

@@ -142,12 +142,12 @@ pub enum TypeExpr {
     Named {
         name: Ident,
 
-        //  类型上下文中不用turbo-fish语法，只用尖括号包裹类型参数
+        // Type contexts use angle brackets for type arguments, without turbofish syntax.
         generics: Vec<TypeExpr>,
     },
 
-    // base类型本身可以是一个表达式类型
-    // 例如 Vector<f32>[128, 128]
+    // The base type can itself be a type expression.
+    // For example: Vector<f32>[128, 128].
     Tensor {
         base: Box<TypeExpr>,
         shape: Vec<Expr>,
@@ -215,32 +215,32 @@ pub enum Expr {
     Literal(Literal),
     Variable(Ident),
 
-    // 二元操作: a + b
+    // Binary operation: a + b
     Binary {
         left: Box<Expr>,
         op: BinaryOp,
         right: Box<Expr>,
     },
 
-    // 成员访问: a.b (可能是字段，可能是 Swizzle)
+    // Member access: a.b (a field or a swizzle)
     MemberAccess {
         target: Box<Expr>,
         member: Ident,
     },
 
-    // Namespace成员访问: a::b
+    // Namespace member access: a::b
     NamespaceAccess {
         namespace: Box<Expr>,
         member: Ident,
     },
 
-    // 索引/Einsum: a[i, j]
+    // Indexing/Einsum: a[i, j]
     Index {
         target: Box<Expr>,
         indices: Vec<Expr>,
     },
 
-    // 向量字面量: [1 2 3] 或 [1, 2, 3]
+    // Vector literal: [1 2 3] or [1, 2, 3]
     VectorLiteral(Vec<Expr>),
 
     Call {

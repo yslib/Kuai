@@ -11,10 +11,11 @@ fn line_comment(lex: &mut logos::Lexer<Token>) -> logos::Skip {
 }
 
 #[derive(Logos, Debug, PartialEq, Clone)]
-#[logos(skip r"[ \t\n\f]+")] // 忽略空格、换行符（核心：我们依靠方括号上下文来解析向量，而不是依靠换行）
+// Skip whitespace and newlines; vector parsing uses bracket context, not line breaks.
+#[logos(skip r"[ \t\n\f]+")]
 pub enum Token {
     // ============================================
-    // 1. 关键字 (Keywords)
+    // 1. Keywords
     // ============================================
     #[token("func")]
     KwFunc,
@@ -55,7 +56,7 @@ pub enum Token {
     #[token("continue")]
     KwContinue,
 
-    // 基础类型关键字 (虽然是渐进类型，但基础类型通常作为关键字保留)
+    // Primitive type keywords (reserved even with gradual typing).
     #[token("bool")]
     TypeBool,
     #[token("char")]
@@ -74,34 +75,35 @@ pub enum Token {
     TypeF64,
 
     // ============================================
-    // 2. 属性系统 (Attributes) - 核心扩展点
+    // 2. Attributes - the main extension point
     // ============================================
-    // 匹配 @ 后面跟标识符，例如 @kernel, @swizzle_set
-    // slice() 会包含 @ 符号，Parser 阶段可以去掉
+    // Match @ followed by an identifier, such as @kernel or @swizzle_set.
+    // slice() includes the @ prefix, which can be removed during parsing.
     #[regex(r"@[a-zA-Z_][a-zA-Z0-9_]*")]
     Attribute,
 
     // ============================================
     // 3. Literals
     // ============================================
-    // 浮点数：支持 1.0, 0.1, 1e10, 1.2e-5
-    // 注意：必须放在 Integer 之前，或者是更贪婪的匹配
+    // Floating-point numbers: supports 1.0, 0.1, 1e10, 1.2e-5.
+    // Note: must precede Integer or use a greedier match.
     #[regex(r"-?(?:0|[1-9]\d*)\.\d+(?:[eE][+-]?\d+)?")]
     #[regex(r"-?\.\d+(?:[eE][+-]?\d+)?")]
     FloatLiteral,
 
-    // 整数
+    // Integers
     #[regex(r"-?(?:0|[1-9]\d*)")]
     IntegerLiteral,
 
-    // 字符串字面量 (用于 import "path" 或 属性参数)
+    // String literals (for import "path" or attribute arguments).
     #[regex(r#""([^"\\]|\\[\s\S])*""#)]
     StringLiteral,
 
     // ============================================
     // 4. Identifiers
     // ============================================
-    // 包含变量名、函数名、Swizzle 分量名（如 .xyz 中的 xyz 部分会先被识别为 Dot 然后是 Ident）
+    // Variable names, function names, and swizzle components.
+    // For example, .xyz is tokenized as Dot followed by Identifier.
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
     Identifier,
 
@@ -109,7 +111,7 @@ pub enum Token {
     // 5. Symbols & Operators
     // ============================================
     #[token(".")]
-    Dot, // 成员访问或 Swizzle 的开始
+    Dot, // Start of member access or a swizzle.
 
     #[token("..")]
     DoubleDot, // range
@@ -130,15 +132,15 @@ pub enum Token {
     Assign,
 
     #[token("->")]
-    Arrow, // 函数返回值箭头
+    Arrow, // Function return type arrow.
 
-    // 括号
+    // Brackets
     #[token("(")]
     LParen,
     #[token(")")]
     RParen,
     #[token("[")]
-    LBracket, // 张量形状定义或索引
+    LBracket, // Tensor shape definition or indexing.
     #[token("]")]
     RBracket,
     #[token("{")]
@@ -146,7 +148,7 @@ pub enum Token {
     #[token("}")]
     RBrace,
 
-    // 数学运算
+    // Arithmetic operators
     #[token("+")]
     Plus,
     #[token("-")]
@@ -156,7 +158,7 @@ pub enum Token {
     #[token("/")]
     Slash,
 
-    // 比较
+    // Comparison operators
     #[token("==")]
     Eq,
     #[token("!=")]
@@ -166,7 +168,7 @@ pub enum Token {
     #[token(">")]
     Gt,
 
-    // 注释处理 (Logos 会自动忽略匹配到的内容，如果返回 Skip)
+    // Comment handling (Logos ignores the matched text when the callback returns Skip).
     #[regex(r"//", line_comment)]
     Comment,
 }

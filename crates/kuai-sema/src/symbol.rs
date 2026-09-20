@@ -29,7 +29,7 @@ pub struct Symbol {
 pub struct Scope {
     pub symbols: HashMap<Id, Symbol>,
     pub parent: Option<Arc<RwLock<Scope>>>,
-    // 记录这是什么类型的作用域：Global, Function, Block
+    // The scope kind: Global, Function, or Block.
     pub kind: ScopeKind,
 }
 impl Scope {
@@ -51,7 +51,7 @@ impl Scope {
         }
     }
 
-    // 在当前作用域定义符号（检查冲突）
+    // Define a symbol in the current scope, checking for conflicts.
     pub fn define(&mut self, sym: Symbol) -> Result<(), Symbol> {
         if let Some(old) = self.symbols.get(&sym.id) {
             Err(old.clone())

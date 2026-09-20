@@ -8,13 +8,13 @@ use syntax::lexer::Token;
 pub struct KuaiHelper;
 
 /// Color Code:
-/// \x1b[1;34m    粗体亮蓝 (适合 func, dim)
-/// \x1b[32m    绿色 (适合类型或字符串)
-/// \x1b[33m    黄色 (适合数字字面量)
-/// \x1b[35m    品红 (适合 @kernel)
-/// \x1b[36m    青色 (适合内置函数)
-/// \x1b[90m    灰色 (适合注释)
-/// \x1b[0m    重置 (必须加在末尾)
+/// \x1b[1;34m    Bold bright blue (for func and dim)
+/// \x1b[32m    Green (for types or strings)
+/// \x1b[33m    Yellow (for numeric literals)
+/// \x1b[35m    Magenta (for @kernel)
+/// \x1b[36m    Cyan (for built-in functions)
+/// \x1b[90m    Gray (for comments)
+/// \x1b[0m    Reset (must be appended at the end)
 
 impl Highlighter for KuaiHelper {
     fn highlight<'l>(&self, line: &'l str, _pos: usize) -> Cow<'l, str> {
@@ -24,12 +24,12 @@ impl Highlighter for KuaiHelper {
 
         while let Some(token_res) = le.next() {
             let span = le.span();
-            // 填充 Token 之间的空白（空格、注释等如果 Lexer 没跳过的话）
+            // Preserve text between tokens, such as whitespace and comments.
             highlighted.push_str(&line[last_end..span.start]);
 
             let slice = le.slice();
 
-            // 根据 Token 类型着色
+            // Choose a color based on the token type.
             let color = match token_res {
                 Ok(Token::KwDim) | Ok(Token::KwFunc) | Ok(Token::KwLet) | Ok(Token::KwStruct)
                 | Ok(Token::KwReturn) => "\x1b[1;34m",
@@ -43,11 +43,11 @@ impl Highlighter for KuaiHelper {
 
             highlighted.push_str(color);
             highlighted.push_str(slice);
-            highlighted.push_str("\x1b[0m"); // 重置颜色
+            highlighted.push_str("\x1b[0m"); // Reset the color.
             last_end = span.end;
         }
 
-        // 填充剩余部分
+        // Append the remaining text.
         highlighted.push_str(&line[last_end..]);
         Owned(highlighted)
     }
