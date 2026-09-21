@@ -31,8 +31,6 @@ cargo test -p kuai-sys
 
 Build and install artifacts are isolated below Cargo's `OUT_DIR`; the C++
 project's own `build/` and `install/` directories are not used by Cargo.
-The adapter always configures `KURT_REQUIRE_ATOMIC_REF_COUNT=ON`, requiring atomic
-native reference counting in the runtime and all enabled vendor modules.
 
 ## Bindings
 
