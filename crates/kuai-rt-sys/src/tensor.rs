@@ -23,6 +23,13 @@ unsafe extern "C" {
         out: *mut ku_object_t,
     ) -> ku_status_t;
     pub fn ku_tensor_get_size(tensor: ku_object_t, out: *mut ku_size_t) -> ku_status_t;
+    /// Returns the tensor's exact device handle, borrowed from its instance.
+    /// Do not release the device. It remains valid after tensor destruction until
+    /// instance destruction; tensors must still be released before their instance.
+    /// Does not retain, allocate, or synchronize. A non-tensor returns
+    /// `KU_STATUS_TYPE_MISMATCH` and clears `*out` to null.
+    /// Direct arguments must be valid and non-null; `out` must be writable.
+    pub fn ku_tensor_get_device(tensor: ku_object_t, out: *mut ku_device_t) -> ku_status_t;
     /// Copies exactly the tensor's logical byte size from borrowed host storage.
     /// On success, both outputs own one reference; on failure, both are null.
     /// Keep `src` valid and unchanged until completion; do not use the tensor

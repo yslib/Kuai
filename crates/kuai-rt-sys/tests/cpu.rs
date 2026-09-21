@@ -320,6 +320,48 @@ unsafe extern "C" fn send_completion(user_data: *mut c_void, status: ku_status_t
 }
 
 #[test]
+fn tensor_device_borrows_instance_and_preserves_creation_identity() {
+    let cpu = Cpu::new(default_scheduler());
+    let shape = [2_i64, 3];
+    let desc = ku_tensor_create_desc_t {
+        device: cpu.device,
+        primitive_type: KU_PRIMITIVE_I64,
+        ndim: 2,
+        shape: shape.as_ptr(),
+        strides: ptr::null(),
+    };
+    // SAFETY: each Object guard owns a native reference and is dropped before
+    // cpu. The queried device borrows cpu, so it remains live after both drops.
+    unsafe {
+        let mut raw = ptr::null_mut();
+        success(ku_tensor_create(&desc, &mut raw));
+        let original = Object(raw);
+        let mut device = ptr::null_mut();
+        for _ in 0..3 {
+            success(ku_tensor_get_device(original.0, &mut device));
+            assert_eq!(device, cpu.device);
+        }
+
+        success(ku_object_retain(original.0));
+        let retained = Object(original.0);
+        drop(original);
+        success(ku_tensor_get_device(retained.0, &mut device));
+        assert_eq!(device, cpu.device);
+        drop(retained);
+
+        let mut info = MaybeUninit::uninit();
+        success(ku_device_get_info(device, info.as_mut_ptr()));
+        assert_eq!(
+            info.assume_init(),
+            ku_device_info_t {
+                device_type: KU_DEVICE_CPU,
+                device_id: 0,
+            }
+        );
+    }
+}
+
+#[test]
 fn tensor_transfer_completion_and_dlpack_ownership() {
     let cpu = Cpu::new(default_scheduler());
     let input = [1_i64, -2, 3, 4, 5, 6];
@@ -362,6 +404,9 @@ fn tensor_transfer_completion_and_dlpack_ownership() {
         drop(completion);
         success(ku_completion_wait(retained.0));
 
+        let mut device = ptr::null_mut();
+        success(ku_tensor_get_device(tensor.0, &mut device));
+        assert_eq!(device, cpu.device);
         let mut count = 0;
         success(ku_tensor_get_size(tensor.0, &mut count));
         assert_eq!(count, 6);

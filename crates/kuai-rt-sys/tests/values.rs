@@ -180,6 +180,23 @@ fn slices_preserve_optional_bounds_and_negative_steps() {
 }
 
 #[test]
+fn tensor_device_query_rejects_string_and_clears_output() {
+    // SAFETY: the string is live and the output slot is writable. Its initial
+    // sentinel is never dereferenced and must be overwritten by the query.
+    unsafe {
+        let mut raw = ptr::null_mut();
+        success(ku_string_create(view(b"not a tensor"), &mut raw));
+        let string = Object(raw);
+        let mut device = ptr::dangling_mut();
+        assert_eq!(
+            ku_tensor_get_device(string.0, &mut device),
+            KU_STATUS_TYPE_MISMATCH
+        );
+        assert!(device.is_null());
+    }
+}
+
+#[test]
 fn invalid_values_and_wrong_object_kinds_return_statuses() {
     // SAFETY: only semantic values are invalid; direct pointer contracts hold.
     unsafe {

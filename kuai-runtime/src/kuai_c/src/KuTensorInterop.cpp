@@ -422,6 +422,18 @@ extern "C" ku_status_t ku_tensor_get_size(ku_object_t tensor, ku_size_t *out) {
     return KU_STATUS_SUCCESS;
 }
 
+extern "C" ku_status_t ku_tensor_get_device(ku_object_t tensor, ku_device_t *out) {
+    KU_ASSERT(tensor != nullptr, "ku_tensor_get_device requires a non-null tensor");
+    KU_ASSERT(out != nullptr, "ku_tensor_get_device requires a non-null output slot");
+    *out = nullptr;
+    const auto *typed = kuai::capi::fromHandle(tensor)->template as<kuai::KuTensor>();
+    if (typed == nullptr) {
+        return KU_STATUS_TYPE_MISMATCH;
+    }
+    *out = kuai::capi::toHandle<ku_device_t>(&typed->getDevice());
+    return KU_STATUS_SUCCESS;
+}
+
 extern "C" ku_status_t ku_tensor_create_from_host_async(const ku_tensor_create_desc_t *desc,
                                                         const void                    *src,
                                                         ku_size_t                      bytes,

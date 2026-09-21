@@ -99,6 +99,10 @@ unsafe {
 - Devices, builtin names, resolved call targets, and vendor tables borrow
   from the instance. String views borrow from their string object. Destroy
   frame contexts and device-dependent resources before destroying the instance.
+- `ku_tensor_get_device` returns the tensor's exact device handle borrowed from
+  its instance, without retaining it. Do not release the device; it remains
+  valid after the tensor is released while the instance is alive. Tensors must
+  still be released before their instance is destroyed.
 - Direct input and output pointers must be valid and non-null unless a C API
   explicitly permits null. In particular, empty string/array inputs and empty
   tensor host buffers still need non-null pointers. `MaybeUninit` is suitable

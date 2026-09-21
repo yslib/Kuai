@@ -48,6 +48,15 @@ ku_status_t ku_tensor_create(const ku_tensor_create_desc_t *desc, ku_object_t *o
 ku_status_t ku_tensor_get_size(ku_object_t tensor, ku_size_t *out);
 
 /*
+ * Returns KU_STATUS_SUCCESS and the exact device handle associated with tensor.
+ * The device borrows from its instance: do not release it. It remains valid after tensor
+ * destruction until the instance is destroyed. Tensors must still be released before their
+ * instance is destroyed. This query does not retain, allocate, or synchronize.
+ * For another object kind, returns KU_STATUS_TYPE_MISMATCH and sets *out to NULL.
+ */
+ku_status_t ku_tensor_get_device(ku_object_t tensor, ku_device_t *out);
+
+/*
  * Creates a tensor and asynchronously copies exactly bytes from borrowed host storage.
  * bytes must equal the tensor's logical byte size. On success both outputs own one reference;
  * release them through ku_object_release() and ku_completion_release(). On failure both outputs
