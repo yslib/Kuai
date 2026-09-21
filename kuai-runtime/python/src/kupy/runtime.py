@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -9,7 +9,6 @@ from ._native import (
     Device,
     Instance,
     Tensor,
-    _from_dlpack,
     _primitive_types,
     _to_device,
     _to_host,
@@ -50,23 +49,10 @@ def to_device(value: np.ndarray[Any, Any], *, device: Device) -> Tensor:
     return _to_device(device, memoryview(normalized), primitive_type, list(normalized.shape))
 
 
-def from_dlpack(
-    source: object,
-    *,
-    device: Device,
-    copy: Optional[bool] = None,
-) -> Tensor:
-    if not isinstance(device, Device):
-        raise TypeError("device must be a kupy.Device")
-    if copy is not None and type(copy) is not bool:
-        raise TypeError("copy must be bool or None")
-    return _from_dlpack(device, source, copy)
-
-
 def to_host(value: Tensor) -> np.ndarray[Any, Any]:
     if not isinstance(value, Tensor):
         raise TypeError("to_host expects a kupy.Tensor")
     return _to_host(value)
 
 
-__all__ = ["Device", "Instance", "Tensor", "from_dlpack", "to_device", "to_host"]
+__all__ = ["Device", "Instance", "Tensor", "to_device", "to_host"]

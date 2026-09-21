@@ -10,58 +10,6 @@ namespace kuai {
 
 class KuDevice;
 
-class KuDLPackBuilder final {
-public:
-    KuDLPackBuilder() = delete;
-
-    static ku_status_t toDLPack(KuTensor &tensor, DLManagedTensorVersioned **out) noexcept;
-
-private:
-    struct ExportContext {
-        DLManagedTensorVersioned               m_managed{};
-        ku_sp<KuTensor>                        m_tensor;
-        std::array<int64_t, KuTensor::MaxRank> m_shape{};
-        std::array<int64_t, KuTensor::MaxRank> m_strides{};
-    };
-
-    static bool        toDataType(ku_primitive_type_t type, DLDataType &out) noexcept;
-    static bool        fillDevice(const KuTensor &tensor, DLDevice &out) noexcept;
-    static void        deleteExport(DLManagedTensorVersioned *managed) noexcept;
-    static ku_status_t fillExport(ExportContext &context) noexcept;
-};
-
-class KuTensorViewBuilder final {
-public:
-    KuTensorViewBuilder() = delete;
-
-    static ku_status_t
-    fromDLPack(KuDevice &device, DLManagedTensorVersioned *managed, ku_sp<KuTensor> &out) noexcept;
-
-private:
-    class ImportOwner final {
-    public:
-        void adopt(DLManagedTensorVersioned *managed) noexcept {
-            m_managed = managed;
-        }
-
-        ~ImportOwner() {
-            if (m_managed != nullptr && m_managed->deleter != nullptr) {
-                m_managed->deleter(m_managed);
-            }
-        }
-
-    private:
-        DLManagedTensorVersioned *m_managed = nullptr;
-    };
-
-    static bool  fromDataType(const DLDataType &type, ku_primitive_type_t &out) noexcept;
-    static bool  requiresExplicitStrides(const DLPackVersion &version) noexcept;
-    static bool  checkedExtent(int64_t extent, ku_size_t &out) noexcept;
-    static void *offsetData(const DLTensor &tensor) noexcept;
-    static ku_status_t
-    importTensor(KuDevice &device, DLManagedTensorVersioned *managed, ku_sp<KuTensor> &out);
-};
-
 class KuTensorCreateBuilder final {
 public:
     KuTensorCreateBuilder() = delete;

@@ -25,7 +25,6 @@
 #[macro_use]
 mod macros;
 mod builtin;
-pub mod dlpack;
 mod object;
 mod runtime;
 mod tensor;

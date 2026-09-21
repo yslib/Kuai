@@ -229,11 +229,27 @@ fn invalid_values_and_wrong_object_kinds_return_statuses() {
             ku_scalar_get_value(string.0, scalar.as_mut_ptr()),
             KU_STATUS_TYPE_MISMATCH
         );
-        let mut count = 0;
+        let mut info = ku_tensor_info_t {
+            primitive_type: KU_PRIMITIVE_F64,
+            ndim: 2,
+            shape: ptr::dangling(),
+            strides: ptr::dangling(),
+        };
         assert_eq!(
-            ku_tensor_get_size(string.0, &mut count),
+            ku_tensor_get_info(string.0, &mut info),
             KU_STATUS_TYPE_MISMATCH
         );
+        assert_eq!(info.primitive_type, KU_PRIMITIVE_NONE);
+        assert_eq!(info.ndim, 0);
+        assert!(info.shape.is_null());
+        assert!(info.strides.is_null());
+        let mut data = ptr::dangling_mut();
+        assert_eq!(
+            ku_tensor_get_data(string.0, &mut data),
+            KU_STATUS_TYPE_MISMATCH
+        );
+        assert!(data.is_null());
+        let mut count = 0;
         assert_eq!(
             ku_array_get_size(string.0, &mut count),
             KU_STATUS_TYPE_MISMATCH

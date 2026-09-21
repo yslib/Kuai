@@ -8,7 +8,6 @@ use std::ptr;
 use std::sync::{Mutex, MutexGuard, mpsc};
 use std::time::Duration;
 
-use kuai_sys::dlpack::*;
 use kuai_sys::*;
 use support::{Object, success, view};
 
@@ -97,19 +96,21 @@ impl Drop for FrameContext {
     }
 }
 
-struct Export(*mut DLManagedTensorVersioned);
-
-impl Drop for Export {
-    fn drop(&mut self) {
-        if !self.0.is_null() {
-            // SAFETY: this is the original owning export, not a copied descriptor.
-            unsafe {
-                let deleter = (*self.0).deleter;
-                assert!(!deleter.is_null());
-                let deleter: DLManagedTensorVersionedDeleter = std::mem::transmute(deleter);
-                deleter(self.0);
-            }
+fn tensor_size(tensor: &Object) -> usize {
+    // SAFETY: the owned object stays alive while its borrowed shape is read.
+    // Successful kind checking establishes that all ndim entries are valid.
+    unsafe {
+        let mut info = MaybeUninit::uninit();
+        success(ku_tensor_get_info(tensor.0, info.as_mut_ptr()));
+        let info = info.assume_init();
+        if info.ndim == 0 {
+            assert!(info.shape.is_null());
+            assert!(info.strides.is_null());
+            return 1;
         }
+        std::slice::from_raw_parts(info.shape, info.ndim as usize)
+            .iter()
+            .product()
     }
 }
 
@@ -362,7 +363,7 @@ fn tensor_device_borrows_instance_and_preserves_creation_identity() {
 }
 
 #[test]
-fn tensor_transfer_completion_and_dlpack_ownership() {
+fn tensor_transfer_completion_and_borrowed_info() {
     let cpu = Cpu::new(default_scheduler());
     let input = [1_i64, -2, 3, 4, 5, 6];
     let shape = [2_i64, 3];
@@ -373,7 +374,7 @@ fn tensor_transfer_completion_and_dlpack_ownership() {
         shape: shape.as_ptr(),
         strides: ptr::null(),
     };
-    // SAFETY: all host storage outlives transfer completion; exported CPU data
+    // SAFETY: all host storage outlives transfer completion; borrowed CPU data
     // is accessed only after a successful wait. Guards preserve ownership order.
     unsafe {
         let mut tensor = ptr::null_mut();
@@ -407,58 +408,54 @@ fn tensor_transfer_completion_and_dlpack_ownership() {
         let mut device = ptr::null_mut();
         success(ku_tensor_get_device(tensor.0, &mut device));
         assert_eq!(device, cpu.device);
-        let mut count = 0;
-        success(ku_tensor_get_size(tensor.0, &mut count));
-        assert_eq!(count, 6);
+        assert_eq!(tensor_size(&tensor), 6);
         let mut kind = 0;
         success(ku_object_get_value_kind(tensor.0, &mut kind));
         assert_eq!(kind, KU_VALUE_TENSOR);
-        let mut raw = ptr::null_mut();
-        success(ku_tensor_to_dlpack(tensor.0, &mut raw));
-        let exported = Export(raw);
-        assert_eq!((*raw).version.major, DLPACK_MAJOR_VERSION);
-        let dl = &(*raw).dl_tensor;
+        let mut info = MaybeUninit::uninit();
+        success(ku_tensor_get_info(tensor.0, info.as_mut_ptr()));
+        let info = info.assume_init();
+        assert_eq!(info.primitive_type, KU_PRIMITIVE_I64);
+        assert_eq!(info.ndim, 2);
+        assert_eq!(std::slice::from_raw_parts(info.shape, 2), [2, 3]);
+        assert_eq!(std::slice::from_raw_parts(info.strides, 2), [1, 2]);
+        let copied_shape = std::slice::from_raw_parts(info.shape, 2).to_vec();
+        let copied_strides = std::slice::from_raw_parts(info.strides, 2).to_vec();
+        let mut data = ptr::null_mut();
+        success(ku_tensor_get_data(tensor.0, &mut data));
+        assert!(!data.is_null());
         assert_eq!(
-            dl.device,
-            DLDevice {
-                device_type: kDLCPU,
-                device_id: 0
-            }
+            std::slice::from_raw_parts(data.cast::<i64>(), input.len()),
+            input
         );
-        assert_eq!(
-            dl.dtype,
-            DLDataType {
-                code: kDLInt as u8,
-                bits: 64,
-                lanes: 1
-            }
-        );
-        assert_eq!(dl.ndim, 2);
-        assert_eq!(std::slice::from_raw_parts(dl.shape, 2), shape);
-        assert_eq!(std::slice::from_raw_parts(dl.strides, 2), [1, 2]);
-        let data = dl
-            .data
-            .cast::<u8>()
-            .add(dl.byte_offset as usize)
-            .cast::<i64>();
-        assert_eq!(std::slice::from_raw_parts(data, input.len()), input);
+        success(ku_object_retain(tensor.0));
+        let retained_tensor = Object(tensor.0);
         drop(tensor);
 
-        let mut imported = ptr::null_mut();
-        // The current runtime imports only CUDA device 0. On CPU, rejection
-        // must leave the owning export (and its data) valid for the caller.
-        assert_eq!(
-            ku_tensor_from_dlpack(cpu.device, exported.0, &mut imported),
-            KU_STATUS_NOT_SUPPORTED
-        );
-        assert!(imported.is_null());
-        let dl = &(*exported.0).dl_tensor;
-        let data = dl
-            .data
-            .cast::<u8>()
-            .add(dl.byte_offset as usize)
-            .cast::<i64>();
-        assert_eq!(std::slice::from_raw_parts(data, input.len()), input);
+        // Any retained reference to the same tensor preserves both borrowed views.
+        assert_eq!(std::slice::from_raw_parts(info.shape, 2), [2, 3]);
+        assert_eq!(std::slice::from_raw_parts(info.strides, 2), [1, 2]);
+        let mut output = [0_i64; 6];
+        let mut stream = ptr::null_mut();
+        success(ku_device_get_default_stream(cpu.device, &mut stream));
+        let mut copied = ptr::null_mut();
+        success(ku_device_copy_async(
+            cpu.device,
+            output.as_mut_ptr().cast(),
+            data,
+            size_of_val(&output),
+            KU_MEMCPY_DEVICE_TO_HOST,
+            stream,
+            &mut copied,
+        ));
+        let copied = Completion(copied);
+        success(ku_completion_wait(copied.0));
+        assert_eq!(output, input);
+        drop(copied);
+        drop(retained_tensor);
+        // Only independent copies can be observed after the final tensor release.
+        assert_eq!(copied_shape, [2, 3]);
+        assert_eq!(copied_strides, [1, 2]);
     }
 }
 
@@ -501,9 +498,17 @@ fn tensor_descriptor_validation_and_late_completion_callback() {
         desc.shape = ptr::null();
         success(ku_tensor_create(&desc, &mut raw));
         let scalar_tensor = Object(raw);
-        let mut count = 0;
-        success(ku_tensor_get_size(scalar_tensor.0, &mut count));
-        assert_eq!(count, 1);
+        assert_eq!(tensor_size(&scalar_tensor), 1);
+        let mut info = MaybeUninit::uninit();
+        success(ku_tensor_get_info(scalar_tensor.0, info.as_mut_ptr()));
+        let info = info.assume_init();
+        assert_eq!(info.primitive_type, KU_PRIMITIVE_F32);
+        assert_eq!(info.ndim, 0);
+        assert!(info.shape.is_null());
+        assert!(info.strides.is_null());
+        let mut data = ptr::null_mut();
+        success(ku_tensor_get_data(scalar_tensor.0, &mut data));
+        assert!(!data.is_null());
 
         let empty_shape = [0_i64];
         desc.ndim = 1;
@@ -527,8 +532,16 @@ fn tensor_descriptor_validation_and_late_completion_callback() {
         success(status);
         // Registration after completion invokes the callback before returning.
         assert_eq!(receiver.try_recv().unwrap(), KU_STATUS_SUCCESS);
-        success(ku_tensor_get_size(empty.0, &mut count));
-        assert_eq!(count, 0);
+        assert_eq!(tensor_size(&empty), 0);
+        let mut info = MaybeUninit::uninit();
+        success(ku_tensor_get_info(empty.0, info.as_mut_ptr()));
+        let info = info.assume_init();
+        assert_eq!(info.primitive_type, KU_PRIMITIVE_F32);
+        assert_eq!(info.ndim, 1);
+        assert_eq!(std::slice::from_raw_parts(info.shape, 1), [0]);
+        assert_eq!(std::slice::from_raw_parts(info.strides, 1), [1]);
+        success(ku_tensor_get_data(empty.0, &mut data));
+        assert!(data.is_null());
     }
 }
 
@@ -566,9 +579,19 @@ fn tensor_shape_overflow_and_zero_extents_preserve_statuses() {
             desc.strides = strides;
             success(ku_tensor_create(&desc, &mut raw));
             let tensor = Object(raw);
-            let mut count = 1;
-            success(ku_tensor_get_size(tensor.0, &mut count));
-            assert_eq!(count, 0);
+            assert_eq!(tensor_size(&tensor), 0);
+            let mut info = MaybeUninit::uninit();
+            success(ku_tensor_get_info(tensor.0, info.as_mut_ptr()));
+            let info = info.assume_init();
+            assert_eq!(info.ndim, 3);
+            assert_eq!(
+                std::slice::from_raw_parts(info.shape, 3),
+                [0, i64::MAX as usize, 3]
+            );
+            assert_eq!(std::slice::from_raw_parts(info.strides, 3), [1, 0, 0]);
+            let mut data = ptr::dangling_mut::<c_void>();
+            success(ku_tensor_get_data(tensor.0, &mut data));
+            assert!(data.is_null());
         }
 
         let shape = [2_i64, 3];
@@ -578,9 +601,7 @@ fn tensor_shape_overflow_and_zero_extents_preserve_statuses() {
         desc.strides = strides.as_ptr();
         success(ku_tensor_create(&desc, &mut raw));
         let tensor = Object(raw);
-        let mut count = 0;
-        success(ku_tensor_get_size(tensor.0, &mut count));
-        assert_eq!(count, 6);
+        assert_eq!(tensor_size(&tensor), 6);
 
         let incompatible_strides = [3_i64, 1];
         desc.strides = incompatible_strides.as_ptr();

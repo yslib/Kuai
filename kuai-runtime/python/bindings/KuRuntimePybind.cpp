@@ -22,7 +22,6 @@
 #include <kuai/kuai_c/ku_string.h>
 #include <kuai/kuai_c/ku_tensor.h>
 
-#include "KuDLPackPybind.h"
 #include "KuPyHandle.h"
 #include "pybind11/numpy.h"
 #include "pybind11/stl.h"
@@ -112,62 +111,6 @@ PrimitiveInfo primitiveInfo(ku_primitive_type_t type) {
     }
 }
 
-DLDataType primitiveDLPackType(ku_primitive_type_t type) {
-    switch (type) {
-        case KU_PRIMITIVE_BOOLEAN:
-            return {.code = static_cast<std::uint8_t>(kDLBool), .bits = 8, .lanes = 1};
-        case KU_PRIMITIVE_BYTE:
-            return {.code = static_cast<std::uint8_t>(kDLInt), .bits = 8, .lanes = 1};
-        case KU_PRIMITIVE_I16:
-            return {.code = static_cast<std::uint8_t>(kDLInt), .bits = 16, .lanes = 1};
-        case KU_PRIMITIVE_I32:
-            return {.code = static_cast<std::uint8_t>(kDLInt), .bits = 32, .lanes = 1};
-        case KU_PRIMITIVE_I64:
-            return {.code = static_cast<std::uint8_t>(kDLInt), .bits = 64, .lanes = 1};
-        case KU_PRIMITIVE_F32:
-            return {.code = static_cast<std::uint8_t>(kDLFloat), .bits = 32, .lanes = 1};
-        case KU_PRIMITIVE_F64:
-            return {.code = static_cast<std::uint8_t>(kDLFloat), .bits = 64, .lanes = 1};
-        case KU_PRIMITIVE_NONE:
-            break;
-    }
-    throw py::value_error("unsupported kuai tensor primitive type");
-}
-
-ku_primitive_type_t primitiveTypeFromDLPack(const DLDataType &type) {
-    if (type.lanes != 1) {
-        throw py::value_error("unsupported DLPack tensor dtype lanes");
-    }
-    if (type.code == kDLBool && type.bits == 8) {
-        return KU_PRIMITIVE_BOOLEAN;
-    }
-    if (type.code == kDLInt) {
-        switch (type.bits) {
-            case 8:
-                return KU_PRIMITIVE_BYTE;
-            case 16:
-                return KU_PRIMITIVE_I16;
-            case 32:
-                return KU_PRIMITIVE_I32;
-            case 64:
-                return KU_PRIMITIVE_I64;
-            default:
-                break;
-        }
-    }
-    if (type.code == kDLFloat) {
-        switch (type.bits) {
-            case 32:
-                return KU_PRIMITIVE_F32;
-            case 64:
-                return KU_PRIMITIVE_F64;
-            default:
-                break;
-        }
-    }
-    throw py::value_error("unsupported DLPack tensor dtype");
-}
-
 py::dtype primitiveNumpyDType(ku_primitive_type_t type) {
     switch (type) {
         case KU_PRIMITIVE_BOOLEAN:
@@ -220,50 +163,20 @@ private:
     ku_completion_t m_value;
 };
 
-struct ManagedTensorDeleter {
-    void operator()(DLManagedTensorVersioned *managed) const noexcept {
-        if (managed != nullptr && managed->deleter != nullptr) {
-            managed->deleter(managed);
-        }
-    }
-};
-
-using ManagedTensor = std::unique_ptr<DLManagedTensorVersioned, ManagedTensorDeleter>;
-
-ManagedTensor inspectTensor(ku_object_t tensor) {
-    DLManagedTensorVersioned *rawManaged = nullptr;
-    const ku_status_t         status = ku_tensor_to_dlpack(tensor, &rawManaged);
-    ManagedTensor             managed(rawManaged);
-    requireSuccess(status, "unable to inspect the kuai tensor");
-    if (!managed) {
-        throw std::runtime_error("kuai tensor inspection returned no descriptor");
-    }
-    if (managed->version.major != DLPACK_MAJOR_VERSION) {
-        throw py::value_error("unsupported DLPack tensor version");
-    }
-
-    const DLTensor &descriptor = managed->dl_tensor;
-    if (descriptor.ndim < 0 || descriptor.ndim > 8) {
-        throw py::value_error("invalid kuai tensor rank");
-    }
-    if (descriptor.ndim != 0 && (descriptor.shape == nullptr || descriptor.strides == nullptr)) {
-        throw py::value_error("invalid kuai tensor shape or strides");
-    }
-    return managed;
+// The caller keeps the native tensor alive while reading the borrowed arrays.
+ku_tensor_info_t inspectTensor(ku_object_t tensor) {
+    ku_tensor_info_t info{};
+    requireSuccess(ku_tensor_get_info(tensor, &info), "unable to inspect the kuai tensor");
+    return info;
 }
 
 class KuPyInstance;
 class KuPyDevice;
 
-enum class KuPyTensorStorage {
-    RuntimeManaged,
-    DLPackImported,
-};
-
 class KuPyTensor final {
 public:
-    KuPyTensor(KuPyHandle handle, std::shared_ptr<KuPyDevice> device, KuPyTensorStorage storage)
-        : m_device(std::move(device)), m_handle(std::move(handle)), m_storage(storage) {
+    KuPyTensor(KuPyHandle handle, std::shared_ptr<KuPyDevice> device)
+        : m_device(std::move(device)), m_handle(std::move(handle)) {
         if (!m_device || !m_handle) {
             throw std::invalid_argument("Tensor requires a device and a non-null object");
         }
@@ -282,15 +195,10 @@ public:
         return m_device;
     }
 
-    [[nodiscard]] bool requiresSynchronizationAfterUse() const noexcept {
-        return m_storage == KuPyTensorStorage::DLPackImported;
-    }
-
 private:
     // Declaration order is intentional: handle is destroyed before device.
     std::shared_ptr<KuPyDevice> m_device;
     KuPyHandle                  m_handle;
-    KuPyTensorStorage           m_storage;
 };
 
 class KuPyDevice final {
@@ -444,10 +352,8 @@ std::shared_ptr<KuPyTensor> tensorFromHost(const std::shared_ptr<KuPyDevice> &de
     }
 
     const PrimitiveInfo primitive = primitiveInfo(primitiveType);
-    const DLDataType    dlpackType = primitiveDLPackType(primitiveType);
-    if (dlpackType.lanes != 1
-        || (static_cast<std::size_t>(dlpackType.bits) + 7) / 8 != primitive.m_size) {
-        throw std::runtime_error("inconsistent kuai primitive type metadata");
+    if (primitiveType == KU_PRIMITIVE_NONE) {
+        throw py::value_error("unsupported kuai tensor primitive type");
     }
 
     const py::buffer_info info = host.request();
@@ -532,44 +438,38 @@ std::shared_ptr<KuPyTensor> tensorFromHost(const std::shared_ptr<KuPyDevice> &de
         completionStatus = ku_completion_wait(completion.get());
     }
     requireSuccess(completionStatus, "kuai host tensor upload failed");
-    return std::make_shared<KuPyTensor>(std::move(tensor), device,
-                                        KuPyTensorStorage::RuntimeManaged);
+    return std::make_shared<KuPyTensor>(std::move(tensor), device);
 }
 
 ku_primitive_type_t tensorPrimitiveType(ku_object_t tensor) {
-    const ManagedTensor managed = inspectTensor(tensor);
-    return primitiveTypeFromDLPack(managed->dl_tensor.dtype);
+    return inspectTensor(tensor).primitive_type;
 }
 
 py::tuple tensorShape(ku_object_t tensor) {
-    const ManagedTensor managed = inspectTensor(tensor);
-    const DLTensor     &descriptor = managed->dl_tensor;
-    py::tuple           shape(descriptor.ndim);
+    const auto descriptor = inspectTensor(tensor);
+    py::tuple  shape(descriptor.ndim);
     for (std::int32_t index = 0; index < descriptor.ndim; ++index) {
-        if (descriptor.shape[index] < 0) {
-            throw py::value_error("invalid negative kuai tensor extent");
-        }
         shape[index] = descriptor.shape[index];
     }
     return shape;
 }
 
 py::tuple tensorStrides(ku_object_t tensor) {
-    const ManagedTensor managed = inspectTensor(tensor);
-    const DLTensor     &descriptor = managed->dl_tensor;
-    py::tuple           strides(descriptor.ndim);
+    const auto descriptor = inspectTensor(tensor);
+    py::tuple  strides(descriptor.ndim);
     for (std::int32_t index = 0; index < descriptor.ndim; ++index) {
-        if (descriptor.strides[index] < 0) {
-            throw py::value_error("invalid negative kuai tensor stride");
-        }
         strides[index] = descriptor.strides[index];
     }
     return strides;
 }
 
 ku_size_t tensorSize(ku_object_t tensor) {
-    ku_size_t size = 0;
-    requireSuccess(ku_tensor_get_size(tensor, &size), "unable to query the kuai tensor size");
+    const auto info = inspectTensor(tensor);
+    ku_size_t  size = 1;
+    // Native tensor construction validates these prefix products for overflow.
+    for (int32_t index = 0; index < info.ndim; ++index) {
+        size *= info.shape[index];
+    }
     return size;
 }
 
@@ -747,14 +647,10 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
     arguments.reserve(operands.size());
     std::vector<KuPyHandle> boxedObjects;
     boxedObjects.reserve(operands.size());
-    std::unordered_set<ku_object_t> importedInputHandles;
     for (py::handle operand : operands) {
         if (py::isinstance<KuPyTensor>(operand)) {
             const auto &tensor = py::cast<const KuPyTensor &>(operand);
             arguments.push_back(tensor.handle());
-            if (tensor.requiresSynchronizationAfterUse()) {
-                importedInputHandles.insert(tensor.handle());
-            }
         } else if (operand.is_none() || PyBool_Check(operand.ptr()) != 0
                    || PyLong_CheckExact(operand.ptr()) != 0
                    || PyFloat_CheckExact(operand.ptr()) != 0) {
@@ -780,12 +676,6 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
         throwBuiltinStatus(name, "lookup failed", lookupStatus);
     }
 
-    ku_stream_t inputSynchronizationStream = nullptr;
-    if (!importedInputHandles.empty() && deviceInfo(*device).device_type != KU_DEVICE_CPU) {
-        requireSuccess(ku_device_get_default_stream(device->handle(), &inputSynchronizationStream),
-                       "unable to query the builtin input synchronization stream");
-    }
-
     ku_object_t argumentSentinel = nullptr;
     ku_object_t resultSlot = nullptr;
     ku_frame_t  frame{
@@ -799,21 +689,11 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
          .result_count = 0,
     };
     ku_status_t invocationStatus = KU_STATUS_INTERNAL_ERROR;
-    ku_status_t inputSynchronizationStatus = KU_STATUS_SUCCESS;
     {
         py::gil_scoped_release release;
         invocationStatus = invokeCallTarget(target, &frame);
-        if (inputSynchronizationStream != nullptr) {
-            inputSynchronizationStatus =
-                ku_device_synchronize(device->handle(), inputSynchronizationStream);
-        }
     }
     KuPyHandle result = KuPyHandle::adopt(resultSlot);
-
-    if (inputSynchronizationStatus != KU_STATUS_SUCCESS) {
-        throwBuiltinStatus(name, "input lifetime synchronization failed",
-                           inputSynchronizationStatus);
-    }
 
     if (invocationStatus == KU_STATUS_BUFFER_TOO_SMALL) {
         throw std::runtime_error(builtinStatusMessage(name, "invocation failed", invocationStatus)
@@ -835,13 +715,8 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
         throwBuiltinStatus(name, "result kind query failed", kindStatus);
     }
     switch (resultKind) {
-        case KU_VALUE_TENSOR: {
-            const auto storage =
-                importedInputHandles.find(result.get()) != importedInputHandles.end()
-                    ? KuPyTensorStorage::DLPackImported
-                    : KuPyTensorStorage::RuntimeManaged;
-            return py::cast(std::make_shared<KuPyTensor>(std::move(result), device, storage));
-        }
+        case KU_VALUE_TENSOR:
+            return py::cast(std::make_shared<KuPyTensor>(std::move(result), device));
         case KU_VALUE_SCALAR:
             return scalarToPython(result.get(), name);
         case KU_VALUE_STRING:
@@ -857,16 +732,10 @@ py::array tensorToHost(const std::shared_ptr<KuPyTensor> &tensor) {
         throw py::value_error("kuai host transfer requires a tensor");
     }
 
-    const ManagedTensor       managed = inspectTensor(tensor->handle());
-    const DLTensor           &descriptor = managed->dl_tensor;
-    const ku_primitive_type_t primitiveType = primitiveTypeFromDLPack(descriptor.dtype);
+    const auto                descriptor = inspectTensor(tensor->handle());
+    const ku_primitive_type_t primitiveType = descriptor.primitive_type;
     const PrimitiveInfo       primitive = primitiveInfo(primitiveType);
-    const DLDataType          expectedDType = primitiveDLPackType(primitiveType);
-    if (descriptor.dtype.code != expectedDType.code || descriptor.dtype.bits != expectedDType.bits
-        || descriptor.dtype.lanes != expectedDType.lanes) {
-        throw py::value_error("inconsistent kuai tensor dtype descriptor");
-    }
-    const py::dtype numpyDType = primitiveNumpyDType(primitiveType);
+    const py::dtype           numpyDType = primitiveNumpyDType(primitiveType);
     if (numpyDType.itemsize() < 0
         || static_cast<std::size_t>(numpyDType.itemsize()) != primitive.m_size) {
         throw std::runtime_error("inconsistent NumPy and kuai primitive type sizes");
@@ -877,10 +746,8 @@ py::array tensorToHost(const std::shared_ptr<KuPyTensor> &tensor) {
     numpyShape.reserve(rank);
     std::size_t elementCount = 1;
     for (std::size_t index = 0; index < rank; ++index) {
-        const std::int64_t extent = descriptor.shape[index];
-        if (extent < 0
-            || static_cast<std::uint64_t>(extent)
-                   > static_cast<std::uint64_t>(std::numeric_limits<py::ssize_t>::max())) {
+        const ku_size_t extent = descriptor.shape[index];
+        if (extent > static_cast<ku_size_t>(std::numeric_limits<py::ssize_t>::max())) {
             throw py::value_error("kuai tensor extent exceeds the NumPy range");
         }
         numpyShape.push_back(static_cast<py::ssize_t>(extent));
@@ -898,11 +765,7 @@ py::array tensorToHost(const std::shared_ptr<KuPyTensor> &tensor) {
     numpyStrides.reserve(rank);
     std::size_t canonicalStride = 1;
     for (std::size_t index = 0; index < rank; ++index) {
-        const std::int64_t rawStride = descriptor.strides[index];
-        if (rawStride < 0) {
-            throw py::value_error("negative kuai tensor strides are unsupported");
-        }
-        const std::size_t stride = static_cast<std::size_t>(rawStride);
+        const ku_size_t stride = descriptor.strides[index];
         if (elementCount != 0 && descriptor.shape[index] > 1 && stride != canonicalStride) {
             throw py::value_error("noncontiguous kuai tensor strides are unsupported");
         }
@@ -922,42 +785,13 @@ py::array tensorToHost(const std::shared_ptr<KuPyTensor> &tensor) {
         canonicalStride = nextCanonicalStride;
     }
 
-    ku_size_t runtimeElementCount = 0;
-    requireSuccess(ku_tensor_get_size(tensor->handle(), &runtimeElementCount),
-                   "unable to query the kuai tensor size");
-    if (runtimeElementCount != elementCount) {
-        throw py::value_error("kuai tensor descriptor and element count disagree");
-    }
-
     std::size_t byteCount = 0;
     if (!checkedMultiply(elementCount, primitive.m_size, byteCount)) {
         throw py::value_error("kuai tensor byte count exceeds the supported range");
     }
-    if (descriptor.byte_offset > std::numeric_limits<std::size_t>::max()) {
-        throw py::value_error("kuai tensor byte offset exceeds the supported range");
-    }
-    const std::size_t byteOffset = static_cast<std::size_t>(descriptor.byte_offset);
-    if (byteOffset > std::numeric_limits<std::size_t>::max() - byteCount) {
-        throw py::value_error("kuai tensor byte offset arithmetic overflow");
-    }
-
-    const void *source = nullptr;
-    if (descriptor.data == nullptr) {
-        if (byteCount != 0 || byteOffset != 0) {
-            throw py::value_error("invalid null kuai tensor data pointer");
-        }
-    } else {
-        const auto dataAddress = reinterpret_cast<std::uintptr_t>(descriptor.data);
-        if (byteOffset > std::numeric_limits<std::uintptr_t>::max() - dataAddress) {
-            throw py::value_error("kuai tensor byte offset address overflow");
-        }
-        const auto sourceAddress = dataAddress + byteOffset;
-        if (byteCount != 0
-            && byteCount - 1 > std::numeric_limits<std::uintptr_t>::max() - sourceAddress) {
-            throw py::value_error("kuai tensor byte range address overflow");
-        }
-        source = reinterpret_cast<const void *>(sourceAddress);
-    }
+    void *source = nullptr;
+    requireSuccess(ku_tensor_get_data(tensor->handle(), &source),
+                   "unable to query the kuai tensor data");
 
     py::array storage(numpyDType, static_cast<py::ssize_t>(elementCount));
     if (byteCount != 0) {
@@ -1002,17 +836,6 @@ void bindKuRuntime(py::module_ &module) {
     module.def("_to_device", &tensorFromHost, py::arg("device"), py::arg("host"),
                py::arg("primitive_type"), py::arg("shape"));
     module.def("_to_host", &tensorToHost, py::arg("tensor"));
-    module.def(
-        "_from_dlpack",
-        [](const std::shared_ptr<KuPyDevice> &device, py::handle source, py::object copy) {
-            if (!device) {
-                throw py::value_error("kuai DLPack import requires a device");
-            }
-            return std::make_shared<KuPyTensor>(
-                kuTensorFromDLPack(device->handle(), source, std::move(copy)), device,
-                KuPyTensorStorage::DLPackImported);
-        },
-        py::arg("device"), py::arg("source"), py::arg("copy"));
     module.def("_invoke_builtin", &invokeBuiltin, py::arg("device"), py::arg("name"),
                py::arg("operands"));
 
@@ -1050,22 +873,8 @@ void bindKuRuntime(py::module_ &module) {
             "strides", [](const KuPyTensor &tensor) { return tensorStrides(tensor.handle()); })
         .def_property_readonly(
             "ndim", [](const KuPyTensor &tensor) { return tensorShape(tensor.handle()).size(); })
-        .def_property_readonly("size",
-                               [](const KuPyTensor &tensor) { return tensorSize(tensor.handle()); })
-        .def("__dlpack_device__",
-             [](const KuPyTensor &tensor) {
-                 return kuTensorDLPackDevice(tensor.device()->handle());
-             })
-        .def(
-            "__dlpack__",
-            [](KuPyTensor &tensor, py::object stream, py::object maxVersion, py::object dlDevice,
-               py::object copy) {
-                return kuTensorToDLPack(tensor.handle(), tensor.device()->handle(),
-                                        std::move(stream), std::move(maxVersion),
-                                        std::move(dlDevice), std::move(copy), tensor.device());
-            },
-            py::kw_only(), py::arg("stream") = py::none(), py::arg("max_version") = py::none(),
-            py::arg("dl_device") = py::none(), py::arg("copy") = py::none());
+        .def_property_readonly(
+            "size", [](const KuPyTensor &tensor) { return tensorSize(tensor.handle()); });
 }
 
 } // namespace kuai

@@ -38,8 +38,9 @@ The crate exposes the current public C API from
 `kuai-runtime/src/kuai_c/include/kuai/kuai_c/`: instance and device management,
 vendor and scheduler callback tables, frame contexts, objects, scalars,
 strings, arrays, slices, completions, tensors, and builtin lookup and calls.
-Kuai declarations are re-exported at the crate root. The bundled DLPack 1.3
-types and constants live in `kuai_sys::dlpack`.
+Kuai declarations are re-exported at the crate root. Tensor inspection uses
+`ku_tensor_info_t`, `ku_tensor_get_info`, and `ku_tensor_get_data`; it does not
+depend on an interchange protocol.
 
 These are raw, unsafe bindings for a separate safe crate to build on. Integer
 enums use their C integer types and named constants; structs and unions use
@@ -48,8 +49,8 @@ follow the public headers. Macros define opaque handles, integer constants,
 and primitive payloads. No runtime dependencies or binding generator are required.
 
 Required callbacks use `unsafe extern "C" fn(...)` directly. Slots that permit
-null use `*const c_void`: `ku_scheduler_t.submit`, `ku_builtin_destroy_t`, the
-DLPack deleters, and `DLPackDLTensorFromPyObjectNoSync`. Their documented type
+null use `*const c_void`: `ku_scheduler_t.submit` and `ku_builtin_destroy_t`.
+Their documented type
 aliases preserve the callable signatures. Set an absent callback with
 `std::ptr::null()`; install a callback by casting its typed function pointer
 to `*const c_void`. Before calling a raw callback, check for null and explicitly
@@ -103,6 +104,24 @@ unsafe {
   its instance, without retaining it. Do not release the device; it remains
   valid after the tensor is released while the instance is alive. Tensors must
   still be released before their instance is destroyed.
+- `ku_tensor_get_info` copies the type/rank and borrows immutable shape/stride
+  arrays from the tensor. Strides are in element units. Keep any owned reference
+  to that same tensor and its instance alive while reading the arrays. Copy the
+  arrays separately if metadata needs to outlive the tensor. The query does not
+  allocate, retain, or synchronize. Wrong-kind objects return
+  `KU_STATUS_TYPE_MISMATCH` and reset type/rank/pointers to NONE/zero/null.
+- Rank zero has null shape/stride pointers and one element. Never pass these
+  null pointers to Rust `slice::from_raw_parts`, even for a zero-length slice;
+  handle rank zero separately. Otherwise multiply shape extents in their
+  original order to derive the element count; a zero extent gives zero.
+  Native construction checks those prefix products against `ku_size_t`
+  overflow. Byte counts and conversions to other size types still need checks.
+- `ku_tensor_get_data` borrows the address of the logical first element in the
+  device address space; empty tensors succeed with null data. Wrong-kind objects
+  return `KU_STATUS_TYPE_MISMATCH` and clear the pointer. Do not free it or infer
+  exclusive access, allocation capacity, or host accessibility. Keep tensor and
+  instance owners alive through pending operations, respecting storage access
+  and synchronization rules. The query itself never synchronizes or retains.
 - Direct input and output pointers must be valid and non-null unless a C API
   explicitly permits null. In particular, empty string/array inputs and empty
   tensor host buffers still need non-null pointers. `MaybeUninit` is suitable
@@ -113,14 +132,20 @@ unsafe {
 - Completion callbacks can run on worker threads, or immediately if already
   complete. They must not unwind. Waiting for completion does not wait for a
   callback to return; keep callback state alive independently.
-- An exported DLPack descriptor owns a reference and must be passed to its
-  deleter exactly once. Import consumes the descriptor only on success. The
-  current runtime imports only CUDA device 0; CPU export works, while CPU
-  import returns `KU_STATUS_NOT_SUPPORTED` and leaves ownership with the caller.
 - `kuVendorModule` is a vendor-module entry point exported by
   `libkurt_<vendor>`, not by the linked `libkurt`. Ordinary runtime callers use
   `ku_instance_init` to load a backend; directly using the entry point requires
   resolving/linking the vendor module and supplying a valid host handle.
+
+## Tensor API migration
+
+`ku_tensor_get_size` has been removed; derive the count from
+`ku_tensor_get_info` as described above. The `kuai_sys::dlpack` module and
+`ku_tensor_to_dlpack` / `ku_tensor_from_dlpack` functions have also been removed.
+Use info/data queries for native tensor inspection and downloads via
+`ku_device_copy_async`. They do not replace external-memory import, which is
+not currently exposed by the tensor C API. Protocol adapters belong in higher
+language bindings, not this raw runtime ABI.
 
 ## Tests
 
@@ -134,6 +159,6 @@ Value tests exercise the linked runtime on every preset. CPU integration tests
 are enabled for `debug-cpu`, `release-cpu`, and `release-all`, and serialize
 instance lifecycles because only one instance per vendor may be active. They
 cover device capabilities, vendor memory operations, custom scheduling,
-completion callbacks, tensor transfers, DLPack ownership, and builtin calls.
+completion callbacks, tensor transfers, borrowed tensor metadata/data, and builtin calls.
 CUDA-only presets run the value tests without requiring a GPU; they do not
-exercise device operations or successful DLPack import.
+exercise device operations.
