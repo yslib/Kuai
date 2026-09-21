@@ -9,6 +9,11 @@
 #define KURT_ATOMIC_REF_COUNT 1
 #endif
 
+#if defined(KURT_REQUIRE_ATOMIC_REF_COUNT) && KURT_REQUIRE_ATOMIC_REF_COUNT \
+    && !KURT_ATOMIC_REF_COUNT
+#error "KURT_REQUIRE_ATOMIC_REF_COUNT requires KURT_ATOMIC_REF_COUNT"
+#endif
+
 namespace kuai {
 
 class KuRefCounted {

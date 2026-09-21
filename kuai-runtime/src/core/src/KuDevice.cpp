@@ -29,7 +29,10 @@ public:
         if (guard.status() != KU_STATUS_SUCCESS) {
             return guard.status();
         }
-        m_defaultStream = m_vendorApi.get_per_thread_stream(m_vendorApi.ctx);
+        const auto status = m_vendorApi.stream_create(m_vendorApi.ctx, &m_defaultStream);
+        if (status != KU_STATUS_SUCCESS) {
+            return status;
+        }
         if (m_defaultStream == nullptr) {
             return KU_STATUS_INVALID_STATE;
         }
@@ -42,11 +45,34 @@ public:
     }
 
     ku_status_t shutdown() noexcept {
+        // Destruction stops submissions and waits for active host transfers.
         m_hostTransfer.reset();
-        const auto status = m_resource != nullptr
-                                ? detail::KuMemoryResourceAccess::shutdown(*m_resource)
-                                : KU_STATUS_SUCCESS;
+        if (m_defaultStream == nullptr && m_resource == nullptr) {
+            return KU_STATUS_SUCCESS;
+        }
+        KuDeviceGuard guard(*q_ptr);
+        auto          status = guard.status();
+        if (status == KU_STATUS_SUCCESS && m_defaultStream != nullptr) {
+            status = m_vendorApi.stream_synchronize(m_vendorApi.ctx, m_defaultStream);
+        }
+        if (status != KU_STATUS_SUCCESS) {
+            // An unrecoverable backend error leaves context or completion
+            // unknown. Intentionally leak these resources instead of freeing
+            // memory that may still be in use. Do not retry during destruction.
+            (void)m_resource.release();
+            m_defaultStream = nullptr;
+            return status;
+        }
+        if (m_resource != nullptr) {
+            status = detail::KuMemoryResourceAccess::shutdown(*m_resource);
+        }
         m_resource.reset();
+        if (const auto stream = std::exchange(m_defaultStream, nullptr)) {
+            const auto streamStatus = m_vendorApi.stream_destroy(m_vendorApi.ctx, stream);
+            if (status == KU_STATUS_SUCCESS) {
+                status = streamStatus;
+            }
+        }
         return status;
     }
 

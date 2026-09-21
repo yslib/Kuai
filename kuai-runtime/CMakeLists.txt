@@ -15,6 +15,10 @@ set(KURT_WERROR_LIST
 
 option(KURT_ENABLE_TRACY "enable tracy profiler" OFF)
 option(KURT_ENABLE_BENCHMARK "enable benchmark" OFF)
+option(KURT_REQUIRE_ATOMIC_REF_COUNT "require atomic runtime reference counting" OFF)
+if(KURT_REQUIRE_ATOMIC_REF_COUNT)
+    add_compile_definitions(KURT_REQUIRE_ATOMIC_REF_COUNT=1)
+endif()
 
 option(KURT_INSTALL_CMAKE_PACKAGE "install the kuai CMake config package"
        ON)

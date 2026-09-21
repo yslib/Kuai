@@ -31,6 +31,8 @@ cargo test -p kuai-sys
 
 Build and install artifacts are isolated below Cargo's `OUT_DIR`; the C++
 project's own `build/` and `install/` directories are not used by Cargo.
+The adapter always configures `KURT_REQUIRE_ATOMIC_REF_COUNT=ON`, requiring atomic
+native reference counting in the runtime and all enabled vendor modules.
 
 ## Bindings
 
@@ -100,6 +102,12 @@ unsafe {
 - Devices, builtin names, resolved call targets, and vendor tables borrow
   from the instance. String views borrow from their string object. Destroy
   frame contexts and device-dependent resources before destroying the instance.
+- Each device owns an explicit default stream distinct from the vendor's
+  per-thread stream. The returned stream is borrowed; callers must not destroy
+  it. Teardown drains host transfers and the default stream before releasing
+  the memory pool and destroying the stream. Default-stream and memory-pool
+  cleanup reports selection or synchronization failures as diagnostic statuses
+  and abandons those resources when safe release cannot be established.
 - `ku_tensor_get_device` returns the tensor's exact device handle borrowed from
   its instance, without retaining it. Do not release the device; it remains
   valid after the tensor is released while the instance is alive. Tensors must

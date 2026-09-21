@@ -115,6 +115,45 @@ fn tensor_size(tensor: &Object) -> usize {
 }
 
 #[test]
+fn explicit_streams_are_owned_and_distinct_from_the_per_thread_stream() {
+    let cpu = Cpu::new(default_scheduler());
+    // SAFETY: the vendor table and all streams stay within the Cpu lifetime.
+    // Each explicitly created stream is destroyed once after synchronization.
+    unsafe {
+        let mut table = ptr::null();
+        success(ku_device_get_vendor_api(cpu.device, &mut table));
+        let api = &*table;
+        let mut first = ptr::null_mut();
+        let mut second = ptr::null_mut();
+        success((api.stream_create)(api.ctx, &mut first));
+        success((api.stream_create)(api.ctx, &mut second));
+        let mut default_stream = ptr::null_mut();
+        success(ku_device_get_default_stream(
+            cpu.device,
+            &mut default_stream,
+        ));
+        let per_thread = (api.get_per_thread_stream)(api.ctx);
+        let distinct = !first.is_null()
+            && !second.is_null()
+            && first != second
+            && first != per_thread
+            && second != per_thread;
+        for stream in [first, second] {
+            success((api.stream_synchronize)(api.ctx, stream));
+            success((api.stream_query)(api.ctx, stream));
+            success((api.stream_destroy)(api.ctx, stream));
+        }
+        assert!(
+            distinct,
+            "explicit live streams must have independent owned handles"
+        );
+        assert!(!default_stream.is_null());
+        assert_ne!(default_stream, per_thread);
+        success(ku_device_synchronize(cpu.device, default_stream));
+    }
+}
+
+#[test]
 fn instance_device_capabilities_and_lifecycle() {
     let cpu = Cpu::new(default_scheduler());
     // SAFETY: handles remain live under the Cpu guard; outputs are writable.

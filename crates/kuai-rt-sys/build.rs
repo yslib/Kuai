@@ -92,6 +92,7 @@ impl BuildConfig {
         self.run_cmake([
             OsString::from("--preset"),
             OsString::from(&self.preset),
+            OsString::from("-DKURT_REQUIRE_ATOMIC_REF_COUNT=ON"),
             OsString::from("-B"),
             self.build_dir.as_os_str().to_owned(),
             OsString::from(format!(

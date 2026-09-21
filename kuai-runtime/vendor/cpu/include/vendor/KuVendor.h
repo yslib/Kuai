@@ -140,14 +140,13 @@ public:
 
     static NativeResult onKuStreamCreate(void *ctx, ku_stream_t *stream) noexcept {
         (void)ctx;
-        *stream = nullptr; // No stream in CPU
-        return KU_STATUS_SUCCESS;
+        *stream = reinterpret_cast<ku_stream_t>(new (std::nothrow) std::byte{});
+        return *stream != nullptr ? KU_STATUS_SUCCESS : KU_STATUS_OUT_OF_HOST_MEMORY;
     }
 
     static NativeResult onKuStreamDestroy(void *ctx, ku_stream_t stream) noexcept {
-        // No stream to destroy in CPU
         (void)ctx;
-        (void)stream;
+        delete reinterpret_cast<std::byte *>(stream);
         return KU_STATUS_SUCCESS;
     }
 

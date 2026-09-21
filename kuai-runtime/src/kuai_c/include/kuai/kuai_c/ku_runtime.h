@@ -162,6 +162,14 @@ ku_status_t ku_instance_get_capabilities(ku_instance_t instance, ku_instance_cap
 
 ku_status_t ku_device_get_capabilities(ku_device_t device, ku_device_capabilities_t *out);
 
+/*
+ * Borrows the device's explicit owned stream until instance destruction.
+ * This is independent of get_per_thread_stream(); callers must not destroy it.
+ * Teardown drains host transfers and this stream before releasing the device
+ * memory pool and destroying the stream. During default-stream and memory-pool
+ * cleanup, failed selection or synchronization is diagnostic: those resources
+ * are abandoned when safe release cannot be established.
+ */
 ku_status_t ku_device_get_default_stream(ku_device_t device, ku_stream_t *out);
 
 ku_status_t ku_device_synchronize(ku_device_t device, ku_stream_t stream);
