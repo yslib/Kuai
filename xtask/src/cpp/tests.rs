@@ -41,7 +41,7 @@ fn selection_sorts_deduplicates_and_keeps_all_supported_extensions() {
 #[test]
 fn default_selection_is_root_relative() {
     let temp = tempfile::tempdir().unwrap();
-    let mut expected: Vec<_> = ["src", "vendor", "python/bindings"]
+    let mut expected: Vec<_> = ["src", "vendor"]
         .iter()
         .map(|dir| fixture(temp.path(), &format!("kurt-cpp/{dir}/source.cpp")))
         .collect();

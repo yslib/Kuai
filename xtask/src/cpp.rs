@@ -6,11 +6,7 @@ use std::process::{Command, Stdio};
 
 use walkdir::WalkDir;
 
-const DEFAULT_ROOTS: [&str; 3] = [
-    "kurt-cpp/src",
-    "kurt-cpp/vendor",
-    "kurt-cpp/python/bindings",
-];
+const DEFAULT_ROOTS: [&str; 2] = ["kurt-cpp/src", "kurt-cpp/vendor"];
 // Leave headroom for the process environment and platform command-line limits.
 const ARGUMENT_BUDGET: usize = 16 * 1024;
 

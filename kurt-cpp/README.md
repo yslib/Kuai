@@ -26,19 +26,6 @@ Use `cmake --list-presets` to list the remaining debug, native-CUDA, and
 combined presets. Build and install trees are written below `build/` and
 `install/`.
 
-## Python wheel
-
-The optional runtime-only Python binding remains part of this C++ project. It
-requires a local Python environment containing the packages declared by
-`python/pyproject.toml`.
-
-```bash
-./build-wheel.sh release-cpu
-```
-
-Set `KUAI_PYTHON` to choose the build interpreter. Set `KU_VENV_PYTHON` to
-install the resulting wheel into another environment after it is built.
-
 ## Formatting and CI images
 
 The C++ formatting rules live in `.clang-format`. The `docker/*.ci.lock` files
