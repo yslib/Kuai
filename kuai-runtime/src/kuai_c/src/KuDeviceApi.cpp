@@ -7,6 +7,9 @@
 KU_DEFINE_C_API_VALUE_METHOD(
     ku_device_get_info, (ku_device_t device, ku_device_info_t *out), device, out, getDeviceInfo)
 
+KU_DEFINE_C_API_BORROWED_METHOD(
+    ku_device_get_instance, (ku_device_t device, ku_instance_t *out), device, out, getInstance)
+
 KU_DEFINE_C_API_VALUE_METHOD(ku_device_get_capabilities,
                              (ku_device_t device, ku_device_capabilities_t *out),
                              device,

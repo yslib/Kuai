@@ -9,6 +9,7 @@
 
 namespace kuai {
 
+class KuInstance;
 class KuMemoryResource;
 class KuHostTransfer;
 class KuCompletion;
@@ -31,6 +32,7 @@ public:
 
     ~KuDevice();
 
+    [[nodiscard]] KuInstance              *getInstance() const noexcept;
     [[nodiscard]] const ku_vendor_api_t   &getVendorApi() const noexcept;
     [[nodiscard]] ku_device_info_t         getDeviceInfo() const noexcept;
     [[nodiscard]] ku_device_capabilities_t getCapabilities() const noexcept;
@@ -60,7 +62,8 @@ public:
 private:
     friend class detail::KuDeviceAccess;
 
-    KuDevice(ku_vendor_api_t          vendorApi,
+    KuDevice(KuInstance              &instance,
+             ku_vendor_api_t          vendorApi,
              ku_device_info_t         deviceInfo,
              ku_device_capabilities_t capabilities);
 

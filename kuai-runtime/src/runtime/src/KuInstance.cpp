@@ -72,8 +72,8 @@ public:
         for (std::size_t index = 0; index < capabilities.device_count; ++index) {
             const auto &deviceCapabilities = capabilities.devices[index];
             auto        deviceResult = detail::KuDeviceAccess::create(
-                m_vendorModule.vendor_api, deviceCapabilities.device_id, m_vendorModule.device_type,
-                deviceCapabilities);
+                *q_ptr, m_vendorModule.vendor_api, deviceCapabilities.device_id,
+                m_vendorModule.device_type, deviceCapabilities);
             if (!deviceResult) {
                 clearDevices();
                 return deviceResult.error();

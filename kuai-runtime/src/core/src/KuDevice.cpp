@@ -18,10 +18,12 @@ class KuDevice::Impl {
 
 public:
     Impl(KuDevice                *api,
+         KuInstance              &instance,
          ku_vendor_api_t          vendor,
          ku_device_info_t         info,
          ku_device_capabilities_t deviceCapabilities)
-        : q_ptr(api), m_vendorApi(vendor), m_deviceInfo(info), m_capabilities(deviceCapabilities) {
+        : q_ptr(api), m_instance(instance), m_vendorApi(vendor), m_deviceInfo(info),
+          m_capabilities(deviceCapabilities) {
     }
 
     ku_status_t initialize() noexcept {
@@ -76,6 +78,7 @@ public:
         return status;
     }
 
+    KuInstance                       &m_instance;
     ku_vendor_api_t                   m_vendorApi;
     ku_device_info_t                  m_deviceInfo;
     ku_stream_t                       m_defaultStream = nullptr;
@@ -87,7 +90,8 @@ public:
 namespace detail {
 
 std::expected<std::unique_ptr<KuDevice>, ku_status_t>
-KuDeviceAccess::create(const ku_vendor_api_t          &vendorApi,
+KuDeviceAccess::create(KuInstance                     &instance,
+                       const ku_vendor_api_t          &vendorApi,
                        ku_device_id_t                  deviceId,
                        ku_device_type_t                deviceType,
                        const ku_device_capabilities_t &capabilities) noexcept {
@@ -102,7 +106,7 @@ KuDeviceAccess::create(const ku_vendor_api_t          &vendorApi,
 
     try {
         auto device = std::unique_ptr<KuDevice>(
-            new KuDevice(vendorApi, {deviceType, deviceId}, capabilities));
+            new KuDevice(instance, vendorApi, {deviceType, deviceId}, capabilities));
         const auto initializeStatus = device->initialize();
         if (initializeStatus != KU_STATUS_SUCCESS) {
             return std::unexpected(initializeStatus);
@@ -126,10 +130,11 @@ ku_status_t KuDeviceAccess::shutdown(KuDevice &device) noexcept {
 
 } // namespace detail
 
-KuDevice::KuDevice(ku_vendor_api_t          vendorApi,
+KuDevice::KuDevice(KuInstance              &instance,
+                   ku_vendor_api_t          vendorApi,
                    ku_device_info_t         deviceInfo,
                    ku_device_capabilities_t capabilities)
-    : d_ptr(std::make_unique<Impl>(this, vendorApi, deviceInfo, capabilities)) {
+    : d_ptr(std::make_unique<Impl>(this, instance, vendorApi, deviceInfo, capabilities)) {
 }
 
 KuDevice::~KuDevice() {
@@ -150,6 +155,10 @@ void KuDevice::installHostTransfer(std::unique_ptr<KuHostTransfer> transfer) noe
 
 ku_status_t KuDevice::shutdown() noexcept {
     return d_ptr->shutdown();
+}
+
+KuInstance *KuDevice::getInstance() const noexcept {
+    return &d_ptr->m_instance;
 }
 
 const ku_vendor_api_t &KuDevice::getVendorApi() const noexcept {

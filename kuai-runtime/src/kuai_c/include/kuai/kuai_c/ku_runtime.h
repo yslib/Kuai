@@ -50,6 +50,14 @@ ku_instance_get_device(ku_instance_t instance, ku_device_id_t device_id, ku_devi
 ku_status_t ku_device_get_info(ku_device_t device, ku_device_info_t *out);
 
 /*
+ * Returns the device's exact owning instance as a borrowed, stable handle, valid
+ * until that instance is destroyed. This query does not retain, allocate, or
+ * synchronize. Callers must not destroy the borrowed instance handle.
+ * device must be valid and non-NULL; out must be valid, writable, and non-NULL.
+ */
+ku_status_t ku_device_get_instance(ku_device_t device, ku_instance_t *out);
+
+/*
  * Borrowed, type-erased access to the backend primitives required by the
  * host instance. The descriptor and its ctx do not carry ownership. Every
  * function pointer is required to be non-NULL once installed in an instance.
