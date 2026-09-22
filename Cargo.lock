@@ -390,14 +390,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "kuai-rt"
+name = "kurt"
 version = "0.1.0"
 dependencies = [
- "kuai-sys",
+ "kurt-sys",
 ]
 
 [[package]]
-name = "kuai-sys"
+name = "kurt-sys"
 version = "0.1.0"
 
 [[package]]

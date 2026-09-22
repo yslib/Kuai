@@ -4,7 +4,7 @@ use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::ptr;
 
-use kuai_sys::*;
+use kurt_sys::*;
 use support::{Object, success, view};
 
 #[test]

@@ -43,7 +43,7 @@ fn default_selection_is_root_relative() {
     let temp = tempfile::tempdir().unwrap();
     let mut expected: Vec<_> = ["src", "vendor", "python/bindings"]
         .iter()
-        .map(|dir| fixture(temp.path(), &format!("kuai-runtime/{dir}/source.cpp")))
+        .map(|dir| fixture(temp.path(), &format!("kurt-cpp/{dir}/source.cpp")))
         .collect();
     fixture(temp.path(), "unrelated/source.cpp");
     expected.sort();
@@ -165,9 +165,9 @@ fn actual_version_must_match_the_pin() {
 #[test]
 fn configuration_requires_valid_version_and_style_files() {
     let temp = tempfile::tempdir().unwrap();
-    fs::create_dir(temp.path().join("kuai-runtime")).unwrap();
-    let version = temp.path().join("kuai-runtime/.clang-format-version");
-    let style = temp.path().join("kuai-runtime/.clang-format");
+    fs::create_dir(temp.path().join("kurt-cpp")).unwrap();
+    let version = temp.path().join("kurt-cpp/.clang-format-version");
+    let style = temp.path().join("kurt-cpp/.clang-format");
     assert!(Formatter::load(temp.path()).is_err());
     fs::write(&version, "not a version").unwrap();
     fs::write(&style, "BasedOnStyle: LLVM\n").unwrap();

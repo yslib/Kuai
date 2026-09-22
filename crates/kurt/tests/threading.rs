@@ -1,6 +1,6 @@
 #![cfg(kuai_runtime_cpu)]
 
-use kuai_rt::*;
+use kurt::*;
 use std::sync::Mutex;
 
 static CPU: Mutex<()> = Mutex::new(());

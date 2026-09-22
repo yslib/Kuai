@@ -1,4 +1,4 @@
-use kuai_rt::{HasObjectKind, *};
+use kurt::{HasObjectKind, *};
 
 #[test]
 fn typed_value_accessors_return_values_directly() -> Result<()> {
@@ -40,8 +40,8 @@ fn native_object_trait_passes_typed_and_erased_handles_to_ffi() -> Result<()> {
         // SAFETY: the sealed capability supplies a live borrowed object; this
         // synchronous query neither mutates nor retains it.
         assert_eq!(
-            unsafe { kuai_sys::ku_object_get_value_kind(raw, &mut kind) },
-            kuai_sys::KU_STATUS_SUCCESS
+            unsafe { kurt_sys::ku_object_get_value_kind(raw, &mut kind) },
+            kurt_sys::KU_STATUS_SUCCESS
         );
         assert_eq!(kind, expected);
     }
@@ -50,18 +50,18 @@ fn native_object_trait_passes_typed_and_erased_handles_to_ffi() -> Result<()> {
     let string = KuArc::<KuString>::new(b"native\0object")?;
     let slice = KuArc::<KuSlice>::new(SliceSpec::default())?;
     let array = KuArc::<KuArray>::new(&[scalar.clone().into()])?;
-    check_kind(&scalar, kuai_sys::KU_VALUE_SCALAR);
-    check_kind(&string, kuai_sys::KU_VALUE_STRING);
-    check_kind(&slice, kuai_sys::KU_VALUE_SLICE);
-    check_kind(&array, kuai_sys::KU_VALUE_ARRAY);
+    check_kind(&scalar, kurt_sys::KU_VALUE_SCALAR);
+    check_kind(&string, kurt_sys::KU_VALUE_STRING);
+    check_kind(&slice, kurt_sys::KU_VALUE_SLICE);
+    check_kind(&array, kurt_sys::KU_VALUE_ARRAY);
 
     let objects: [KuArc<KuObject<'_>>; 4] =
         [scalar.into(), string.into(), slice.into(), array.into()];
     let expected = [
-        kuai_sys::KU_VALUE_SCALAR,
-        kuai_sys::KU_VALUE_STRING,
-        kuai_sys::KU_VALUE_SLICE,
-        kuai_sys::KU_VALUE_ARRAY,
+        kurt_sys::KU_VALUE_SCALAR,
+        kurt_sys::KU_VALUE_STRING,
+        kurt_sys::KU_VALUE_SLICE,
+        kurt_sys::KU_VALUE_ARRAY,
     ];
     for (object, kind) in objects.iter().zip(expected) {
         check_kind(object, kind);
@@ -223,20 +223,20 @@ fn native_owner_outlives_rust_wrappers() -> Result<()> {
     let raw = value.as_raw();
     // SAFETY: acquire our own native reference while the Rust owner is live.
     assert_eq!(
-        unsafe { kuai_sys::ku_object_retain(raw) },
-        kuai_sys::KU_STATUS_SUCCESS
+        unsafe { kurt_sys::ku_object_retain(raw) },
+        kurt_sys::KU_STATUS_SUCCESS
     );
     let cloned = value.clone();
     drop(value);
     drop(cloned);
     let mut kind = 0;
     // SAFETY: our separately retained reference survives both Rust wrappers.
-    let status = unsafe { kuai_sys::ku_object_get_value_kind(raw, &mut kind) };
+    let status = unsafe { kurt_sys::ku_object_get_value_kind(raw, &mut kind) };
     // SAFETY: release exactly the reference explicitly retained above.
-    let released = unsafe { kuai_sys::ku_object_release(raw) };
-    assert_eq!(status, kuai_sys::KU_STATUS_SUCCESS);
-    assert_eq!(released, kuai_sys::KU_STATUS_SUCCESS);
-    assert_eq!(kind, kuai_sys::KU_VALUE_SCALAR);
+    let released = unsafe { kurt_sys::ku_object_release(raw) };
+    assert_eq!(status, kurt_sys::KU_STATUS_SUCCESS);
+    assert_eq!(released, kurt_sys::KU_STATUS_SUCCESS);
+    assert_eq!(kind, kurt_sys::KU_VALUE_SCALAR);
     Ok(())
 }
 
@@ -246,14 +246,14 @@ fn rust_clone_outlives_other_native_and_rust_owners() -> Result<()> {
     let raw = value.as_raw();
     // SAFETY: independently retain this live string, then release that same reference.
     assert_eq!(
-        unsafe { kuai_sys::ku_object_retain(raw) },
-        kuai_sys::KU_STATUS_SUCCESS
+        unsafe { kurt_sys::ku_object_retain(raw) },
+        kurt_sys::KU_STATUS_SUCCESS
     );
     let cloned = value.clone();
     drop(value);
     assert_eq!(
-        unsafe { kuai_sys::ku_object_release(raw) },
-        kuai_sys::KU_STATUS_SUCCESS
+        unsafe { kurt_sys::ku_object_release(raw) },
+        kurt_sys::KU_STATUS_SUCCESS
     );
     assert_eq!(cloned.as_raw(), raw);
     assert_eq!(cloned.as_bytes(), b"shared\0value");
@@ -286,45 +286,45 @@ fn primitive_type_mappings_are_preserved() {
 #[test]
 fn status_constants_match_the_native_abi() {
     for (status, raw) in [
-        (Status::SUCCESS, kuai_sys::KU_STATUS_SUCCESS),
-        (Status::NOT_READY, kuai_sys::KU_STATUS_NOT_READY),
+        (Status::SUCCESS, kurt_sys::KU_STATUS_SUCCESS),
+        (Status::NOT_READY, kurt_sys::KU_STATUS_NOT_READY),
         (
             Status::BUFFER_TOO_SMALL,
-            kuai_sys::KU_STATUS_BUFFER_TOO_SMALL,
+            kurt_sys::KU_STATUS_BUFFER_TOO_SMALL,
         ),
         (
             Status::INVALID_ARGUMENT,
-            kuai_sys::KU_STATUS_INVALID_ARGUMENT,
+            kurt_sys::KU_STATUS_INVALID_ARGUMENT,
         ),
-        (Status::OUT_OF_RANGE, kuai_sys::KU_STATUS_OUT_OF_RANGE),
-        (Status::TYPE_MISMATCH, kuai_sys::KU_STATUS_TYPE_MISMATCH),
-        (Status::INVALID_STATE, kuai_sys::KU_STATUS_INVALID_STATE),
-        (Status::NOT_FOUND, kuai_sys::KU_STATUS_NOT_FOUND),
+        (Status::OUT_OF_RANGE, kurt_sys::KU_STATUS_OUT_OF_RANGE),
+        (Status::TYPE_MISMATCH, kurt_sys::KU_STATUS_TYPE_MISMATCH),
+        (Status::INVALID_STATE, kurt_sys::KU_STATUS_INVALID_STATE),
+        (Status::NOT_FOUND, kurt_sys::KU_STATUS_NOT_FOUND),
         (
             Status::ALREADY_INITIALIZED,
-            kuai_sys::KU_STATUS_ALREADY_INITIALIZED,
+            kurt_sys::KU_STATUS_ALREADY_INITIALIZED,
         ),
-        (Status::NOT_SUPPORTED, kuai_sys::KU_STATUS_NOT_SUPPORTED),
+        (Status::NOT_SUPPORTED, kurt_sys::KU_STATUS_NOT_SUPPORTED),
         (
             Status::OUT_OF_HOST_MEMORY,
-            kuai_sys::KU_STATUS_OUT_OF_HOST_MEMORY,
+            kurt_sys::KU_STATUS_OUT_OF_HOST_MEMORY,
         ),
         (
             Status::OUT_OF_DEVICE_MEMORY,
-            kuai_sys::KU_STATUS_OUT_OF_DEVICE_MEMORY,
+            kurt_sys::KU_STATUS_OUT_OF_DEVICE_MEMORY,
         ),
         (
             Status::BACKEND_UNAVAILABLE,
-            kuai_sys::KU_STATUS_BACKEND_UNAVAILABLE,
+            kurt_sys::KU_STATUS_BACKEND_UNAVAILABLE,
         ),
         (
             Status::DEVICE_UNAVAILABLE,
-            kuai_sys::KU_STATUS_DEVICE_UNAVAILABLE,
+            kurt_sys::KU_STATUS_DEVICE_UNAVAILABLE,
         ),
-        (Status::DEVICE_LOST, kuai_sys::KU_STATUS_DEVICE_LOST),
-        (Status::DEVICE_ERROR, kuai_sys::KU_STATUS_DEVICE_ERROR),
-        (Status::BUILTIN_ERROR, kuai_sys::KU_STATUS_BUILTIN_ERROR),
-        (Status::INTERNAL_ERROR, kuai_sys::KU_STATUS_INTERNAL_ERROR),
+        (Status::DEVICE_LOST, kurt_sys::KU_STATUS_DEVICE_LOST),
+        (Status::DEVICE_ERROR, kurt_sys::KU_STATUS_DEVICE_ERROR),
+        (Status::BUILTIN_ERROR, kurt_sys::KU_STATUS_BUILTIN_ERROR),
+        (Status::INTERNAL_ERROR, kurt_sys::KU_STATUS_INTERNAL_ERROR),
     ] {
         assert_eq!(status.0, raw);
     }

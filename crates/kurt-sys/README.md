@@ -1,13 +1,13 @@
-# kuai-sys
+# kurt-sys
 
-`kuai-sys` is the unsafe Rust adapter for the adjacent, independently
+`kurt-sys` is the unsafe Rust adapter for the adjacent, independently
 buildable `kuai-runtime` C++ project. Its build script invokes the runtime's
 CMake presets and links the installed `libkurt` shared library.
 
 A plain Cargo build uses the local toolchain and the `release-cpu` preset:
 
 ```bash
-cargo build -p kuai-sys
+cargo build -p kurt-sys
 ```
 
 The build can be configured with these environment variables:
@@ -26,7 +26,7 @@ For example:
 KUAI_RUNTIME_BUILD_MODE=docker \
 KUAI_RUNTIME_DOCKER_IMAGE=ghcr.io/example/kuai-runtime-base:tag \
 KUAI_RUNTIME_PRESET=release-cpu \
-cargo test -p kuai-sys
+cargo test -p kurt-sys
 ```
 
 Build and install artifacts are isolated below Cargo's `OUT_DIR`; the C++
@@ -35,7 +35,7 @@ project's own `build/` and `install/` directories are not used by Cargo.
 ## Bindings
 
 The crate exposes the current public C API from
-`kuai-runtime/src/kuai_c/include/kuai/kuai_c/`: instance and device management,
+`kurt-cpp/src/kuai_c/include/kuai/kuai_c/`: instance and device management,
 vendor and scheduler callback tables, frame contexts, objects, scalars,
 strings, arrays, slices, completions, tensors, and builtin lookup and calls.
 Kuai declarations are re-exported at the crate root. Tensor inspection uses
@@ -70,7 +70,7 @@ through `ku_union_t.value`. Its active field must match `ku_union_t.tag`.
 ```rust
 use std::mem::MaybeUninit;
 use std::ptr;
-use kuai_sys::*;
+use kurt_sys::*;
 
 let input = ku_union_t {
     value: ku_union_value_t { i64: 42 },
@@ -146,7 +146,7 @@ unsafe {
 ## Tensor API migration
 
 `ku_tensor_get_size` has been removed; derive the count from
-`ku_tensor_get_info` as described above. The `kuai_sys::dlpack` module and
+`ku_tensor_get_info` as described above. The `kurt_sys::dlpack` module and
 `ku_tensor_to_dlpack` / `ku_tensor_from_dlpack` functions have also been removed.
 Use info/data queries for native tensor inspection and downloads via
 `ku_device_copy_async`. They do not replace external-memory import, which is
@@ -156,9 +156,9 @@ language bindings, not this raw runtime ABI.
 ## Tests
 
 ```bash
-cargo test -p kuai-sys --locked
-cargo fmt -p kuai-sys --check
-cargo clippy -p kuai-sys --all-targets --locked -- -D warnings
+cargo test -p kurt-sys --locked
+cargo fmt -p kurt-sys --check
+cargo clippy -p kurt-sys --all-targets --locked -- -D warnings
 ```
 
 Value tests exercise the linked runtime on every preset. CPU integration tests

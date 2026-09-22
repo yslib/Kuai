@@ -7,9 +7,9 @@ use std::process::{Command, Stdio};
 use walkdir::WalkDir;
 
 const DEFAULT_ROOTS: [&str; 3] = [
-    "kuai-runtime/src",
-    "kuai-runtime/vendor",
-    "kuai-runtime/python/bindings",
+    "kurt-cpp/src",
+    "kurt-cpp/vendor",
+    "kurt-cpp/python/bindings",
 ];
 // Leave headroom for the process environment and platform command-line limits.
 const ARGUMENT_BUDGET: usize = 16 * 1024;
@@ -178,11 +178,11 @@ struct Formatter {
 
 impl Formatter {
     fn load(root: &Path) -> Result<Self, String> {
-        let version_path = root.join("kuai-runtime/.clang-format-version");
+        let version_path = root.join("kurt-cpp/.clang-format-version");
         let contents = fs::read_to_string(&version_path)
             .map_err(|error| format!("cannot read {}: {error}", version_path.display()))?;
         let version = parse_version(&contents)?;
-        let style = canonical(&root.join("kuai-runtime/.clang-format"))?;
+        let style = canonical(&root.join("kurt-cpp/.clang-format"))?;
         if !style.is_file() {
             return Err(format!("style is not a regular file: {}", style.display()));
         }

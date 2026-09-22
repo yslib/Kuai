@@ -1,6 +1,6 @@
 #![cfg(kuai_runtime_cpu)]
 
-use kuai_rt::{HasObjectKind, *};
+use kurt::{HasObjectKind, *};
 use std::sync::Mutex;
 
 static CPU: Mutex<()> = Mutex::new(());

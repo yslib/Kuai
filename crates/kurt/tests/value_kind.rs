@@ -1,4 +1,4 @@
-use kuai_rt::{
+use kurt::{
     HasObjectKind, KuArc, KuArray, KuObject, KuObjectKind, KuScalar, KuSlice, KuString,
     NativeObject, NativeType, Result, SliceSpec,
 };
@@ -62,7 +62,7 @@ fn independent_kinds_and_erased_retention_preserve_native_identity() -> Result<(
 #[cfg(kuai_runtime_cpu)]
 #[test]
 fn tensor_kind_and_erased_roundtrip_preserve_native_identity() -> Result<()> {
-    use kuai_rt::{KuInstance, KuTensor, Vendor};
+    use kurt::{KuInstance, KuTensor, Vendor};
 
     let instance = KuInstance::new(Vendor::Cpu)?;
     let tensor = instance

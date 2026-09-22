@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use kuai_sys::*;
+use kurt_sys::*;
 
 pub fn success(status: ku_status_t) {
     // SAFETY: the status function returns a static nul-terminated string.

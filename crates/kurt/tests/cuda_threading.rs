@@ -1,7 +1,7 @@
 //! Opt-in CUDA hardware coverage. This file compiles on CPU-only presets too.
 
-use kuai_rt::*;
-use kuai_sys as sys;
+use kurt::*;
+use kurt_sys as sys;
 use std::{ptr, sync::Mutex};
 
 static CUDA: Mutex<()> = Mutex::new(());

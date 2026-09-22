@@ -1,8 +1,8 @@
 [package]
-name = "kuai-rt"
+name = "kurt"
 version = "0.1.0"
 edition = "2024"
 description = "Rust interface to Kuai with intrusive native ownership and borrowed runtime views"
 
 [dependencies]
-kuai-sys = { path = "../kuai-rt-sys" }
+kurt-sys = { path = "../kurt-sys" }

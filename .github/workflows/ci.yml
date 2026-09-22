@@ -25,7 +25,7 @@ jobs:
         with:
           version: "0.12.7"
           enable-cache: true
-          cache-dependency-glob: kuai-runtime/.clang-format-version
+          cache-dependency-glob: kurt-cpp/.clang-format-version
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -47,7 +47,7 @@ jobs:
       - name: Resolve CPU toolchain image
         shell: bash
         run: |
-          image="$(<kuai-runtime/docker/Docker_base.ci.lock)"
+          image="$(<kurt-cpp/docker/Docker_base.ci.lock)"
           [[ "$image" =~ ^ghcr\.io/yslib/kuai-runtime-base:[0-9a-f]{40}$ ]]
           echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
       - name: Build Rust workspace with CPU runtime
@@ -59,7 +59,7 @@ jobs:
         env:
           KUAI_RUNTIME_BUILD_MODE: docker
           KUAI_RUNTIME_PRESET: release-cpu
-        run: cargo test -p kuai-sys -p kuai-rt --locked
+        run: cargo test -p kurt-sys -p kurt --locked
 
   cargo-cuda:
     runs-on: ubuntu-24.04
@@ -72,11 +72,11 @@ jobs:
       - name: Resolve CUDA toolchain image
         shell: bash
         run: |
-          image="$(<kuai-runtime/docker/Docker_cuda.ci.lock)"
+          image="$(<kurt-cpp/docker/Docker_cuda.ci.lock)"
           [[ "$image" =~ ^ghcr\.io/yslib/kuai-runtime-cuda:[0-9a-f]{40}$ ]]
           echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
       - name: Test Rust runtime interfaces with CUDA runtime
         env:
           KUAI_RUNTIME_BUILD_MODE: docker
           KUAI_RUNTIME_PRESET: release-cuda
-        run: cargo test -p kuai-sys -p kuai-rt --locked
+        run: cargo test -p kurt-sys -p kurt --locked

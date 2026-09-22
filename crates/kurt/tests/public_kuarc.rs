@@ -1,4 +1,4 @@
-use kuai_rt::{HasObjectKind, *};
+use kurt::{HasObjectKind, *};
 
 #[test]
 fn erased_retention_preserves_native_identity() {
@@ -18,15 +18,15 @@ fn clone_preserves_payload_after_other_rust_and_native_owners_drop() -> Result<(
     let raw = original.as_raw();
     // SAFETY: original keeps this real object live while we acquire one C reference.
     assert_eq!(
-        unsafe { kuai_sys::ku_object_retain(raw) },
-        kuai_sys::KU_STATUS_SUCCESS
+        unsafe { kurt_sys::ku_object_retain(raw) },
+        kurt_sys::KU_STATUS_SUCCESS
     );
     let clone = original.clone();
     drop(original);
     // SAFETY: release exactly the separate C reference, leaving the clone alive.
     assert_eq!(
-        unsafe { kuai_sys::ku_object_release(raw) },
-        kuai_sys::KU_STATUS_SUCCESS
+        unsafe { kurt_sys::ku_object_release(raw) },
+        kurt_sys::KU_STATUS_SUCCESS
     );
     assert_eq!(clone.as_raw(), raw);
     assert_eq!(clone.as_bytes(), b"native\0shared");

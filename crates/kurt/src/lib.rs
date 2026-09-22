@@ -28,7 +28,7 @@ pub use ku_string::KuString;
 pub use ku_tensor::{KuTensor, TensorMetadata};
 pub use native::{NativeObject, NativeType};
 
-use kuai_sys as sys;
+use kurt_sys as sys;
 
 fn string_view(bytes: &[u8]) -> sys::ku_string_view_t {
     sys::ku_string_view_t {

@@ -8,7 +8,7 @@ use std::ptr;
 use std::sync::{Mutex, MutexGuard, mpsc};
 use std::time::Duration;
 
-use kuai_sys::*;
+use kurt_sys::*;
 use support::{Object, success, view};
 
 // The runtime permits only one active instance per vendor in a process.

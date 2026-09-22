@@ -1,12 +1,12 @@
-# kuai-rt
+# kurt
 
-A safe Rust interface to `kuai-sys` with intrusive native ownership and borrowed
+A safe Rust interface to `kurt-sys` with intrusive native ownership and borrowed
 runtime dependencies. `KuArc<T>` owns one C reference; `T` is a lightweight Rust
 view. Fallible operations return `Result`. The crate uses only the standard
 library and the sys dependency.
 
 ```rust
-use kuai_rt::{KuArc, KuArray, KuScalar, KuString, ScalarValue};
+use kurt::{KuArc, KuArray, KuScalar, KuString, ScalarValue};
 
 let number = KuArc::<KuScalar>::new(42_i64)?;
 let text = KuArc::<KuString>::new(b"Kuai\0runtime")?;
@@ -14,7 +14,7 @@ let array = KuArc::<KuArray>::new(&[number.clone().into(), text.into()])?;
 assert_eq!(array.len(), 2);
 let number = KuArc::<KuScalar>::try_from(array.get(0)?)?;
 assert_eq!(number.value(), ScalarValue::I64(42));
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 ## Native ownership and views
@@ -51,7 +51,7 @@ is exposed.
 KuObjectKind`. Ordinary Rust values may implement it; doing so does not establish
 a native handle, prove that a native object's type matches the reported kind,
 or justify unchecked casts. `NativeObject` and `NativeType` remain sealed.
-Import `use kuai_rt::HasObjectKind;` for `kind()` method syntax: these methods
+Import `use kurt::HasObjectKind;` for `kind()` method syntax: these methods
 are no longer inherent. Each concrete view returns its constant KuObjectKind
 without a native query. Erased `KuObject` queries the native object every time,
 then checks the status with a debug assertion and validates the supported kind.
@@ -61,14 +61,14 @@ release, or allocation.
 Generic code can classify both owners and borrowed views:
 
 ```rust
-use kuai_rt::{HasObjectKind, KuArc, KuObjectKind, KuScalar};
+use kurt::{HasObjectKind, KuArc, KuObjectKind, KuScalar};
 
 fn kind_of<T: HasObjectKind + ?Sized>(value: &T) -> KuObjectKind { value.kind() }
 
 let scalar = KuArc::<KuScalar>::new(42_i64)?;
 assert_eq!(kind_of(&scalar), KuObjectKind::Scalar);
 assert_eq!(kind_of(&*scalar), KuObjectKind::Scalar);
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 Consuming conversions between typed owners and `KuArc<KuObject<'r>>` transfer
@@ -81,7 +81,7 @@ unsafe shortcut in this safe API. Clone before conversion only when the
 original owner is still needed, or retain the erased view explicitly:
 
 ```rust
-use kuai_rt::{HasObjectKind, KuArc, KuObject, KuObjectKind, KuScalar, NativeObject, ScalarValue};
+use kurt::{HasObjectKind, KuArc, KuObject, KuObjectKind, KuScalar, NativeObject, ScalarValue};
 
 let original = KuArc::<KuScalar>::new(42_i64)?;
 let raw = original.as_raw();
@@ -94,7 +94,7 @@ let retained = match retained.kind() {
 };
 assert_eq!(retained.as_raw(), raw);
 assert_eq!(retained.value(), ScalarValue::I64(42));
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 ## Instances, devices, and arrays
@@ -130,7 +130,7 @@ Its runtime lifetime remains the array's conservative common lifetime.
 Temporary KuDevice and KuArray variables may end before an extracted tensor:
 
 ```no_run
-use kuai_rt::{KuArray, KuInstance, KuArc, KuTensor, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, KuTensor, Vendor};
 
 let instance = KuInstance::new(Vendor::Cpu)?;
 let tensor = {
@@ -147,7 +147,7 @@ let another = device.zeros::<i64>(&[1])?;
 assert_eq!(device.to_vec::<i64>(&another)?, [0]);
 drop(another);
 instance.close()?;
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 Arrays accept mixed devices and KuInstance owners. All transitive dependencies
@@ -157,7 +157,7 @@ happens to contain only leaves. Empty arrays and arrays constructed entirely
 from independent leaves need no KuInstance.
 
 ```no_run
-use kuai_rt::{KuArray, KuInstance, KuArc, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, Vendor};
 
 let cpu = KuInstance::new(Vendor::Cpu)?;
 let cuda = KuInstance::new(Vendor::Cuda)?;
@@ -169,7 +169,7 @@ assert_eq!(array.len(), 2);
 drop(array);
 cpu.close()?;
 cuda.close()?;
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 Downcasting an erased KuObject to an independent KuScalar, KuString, or KuSlice
@@ -177,7 +177,7 @@ removes its conservative runtime lifetime. Retaining an erased view alone keeps
 that lifetime; the checked leaf conversion establishes independence:
 
 ```no_run
-use kuai_rt::{KuArray, KuInstance, KuArc, KuScalar, ScalarValue, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, KuScalar, ScalarValue, Vendor};
 
 let scalar = {
     let instance = KuInstance::new(Vendor::Cpu)?;
@@ -191,7 +191,7 @@ let scalar = {
     scalar
 };
 assert_eq!(scalar.value(), ScalarValue::I64(42));
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 An explicit KuInstance clone keeps the runtime alive, but does not rebind an
@@ -199,7 +199,7 @@ existing view's borrow to a different Rust wrapper. Create views from the
 wrapper that will remain alive:
 
 ```no_run
-use kuai_rt::{Error, KuInstance, Vendor};
+use kurt::{Error, KuInstance, Vendor};
 
 let instance = KuInstance::new(Vendor::Cpu)?;
 let remaining = instance.clone();
@@ -208,7 +208,7 @@ let tensor = remaining.default_device().tensor_from_slice(&[2], &[7_i64, 11])?;
 assert_eq!(tensor.device().to_vec::<i64>(&tensor)?, [7, 11]);
 drop(tensor);
 remaining.close()?;
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 ## Synchronous tensors and typed access
@@ -225,10 +225,10 @@ without cloning or retaining it. Empty downloads skip copying after validation.
 Internal guards wait before borrowed buffers or unpublished tensor references
 can be cleaned up, including errors and unwinding, and release the completion
 exactly once. Safe Rust exposes no async transfers or completion objects.
-Native/sys asynchronous APIs remain available through `kuai-sys`.
+Native/sys asynchronous APIs remain available through `kurt-sys`.
 
 ```no_run
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 
 let instance = KuInstance::new(Vendor::Cpu)?;
 let device = instance.default_device();
@@ -237,7 +237,7 @@ let tensor = device.tensor_from_slice(&[2], &input)?;
 input.fill(0);
 drop(input);
 assert_eq!(device.to_vec::<i64>(&tensor)?, [3, 5]);
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 The sealed Element types are `i8`, `i16`, `i32`, `i64`, `f32`, `f64`, and
@@ -270,7 +270,7 @@ while the KuInstance remains outside the scope. Clone retains only the native
 object, so it cannot turn a runtime borrow into a `'static` owner.
 
 ```no_run
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 
 let instance = KuInstance::new(Vendor::Cpu)?;
 let tensor = instance.default_device().tensor_from_slice(&[2], &[3_i64, 5])?;
@@ -282,17 +282,17 @@ std::thread::scope(|scope| {
 });
 drop(tensor);
 instance.close()?;
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 Independent leaves can move to ordinary unscoped threads:
 
 ```rust
-use kuai_rt::{KuArc, KuScalar, ScalarValue};
+use kurt::{KuArc, KuScalar, ScalarValue};
 let scalar = KuArc::<KuScalar>::new(42_i64)?;
 std::thread::spawn(move || assert_eq!(scalar.value(), ScalarValue::I64(42)))
     .join().unwrap();
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 Every native KuDevice owns a stable explicit default stream, distinct from the
@@ -304,18 +304,18 @@ Send and Sync alone do not define that order.
 `as_raw()` borrows a native object without retaining or transferring ownership:
 
 ```rust
-use kuai_rt::{KuArc, KuScalar, NativeObject};
+use kurt::{KuArc, KuScalar, NativeObject};
 fn native_kind<T: NativeObject + ?Sized>(value: &T) -> i32 {
     let mut kind = 0;
     // SAFETY: the value and its dependencies stay borrowed through the query.
-    let status = unsafe { kuai_sys::ku_object_get_value_kind(value.as_raw(), &mut kind) };
-    assert_eq!(status, kuai_sys::KU_STATUS_SUCCESS);
+    let status = unsafe { kurt_sys::ku_object_get_value_kind(value.as_raw(), &mut kind) };
+    assert_eq!(status, kurt_sys::KU_STATUS_SUCCESS);
     kind
 }
 let scalar = KuArc::<KuScalar>::new(42_i64)?;
-assert_eq!(native_kind(&scalar), kuai_sys::KU_VALUE_SCALAR);
-assert_eq!(native_kind(&*scalar), kuai_sys::KU_VALUE_SCALAR);
-# Ok::<(), kuai_rt::Error>(())
+assert_eq!(native_kind(&scalar), kurt_sys::KU_VALUE_SCALAR);
+assert_eq!(native_kind(&*scalar), kurt_sys::KU_VALUE_SCALAR);
+# Ok::<(), kurt::Error>(())
 ```
 
 Raw pointers erase Rust's borrow information. Keep the native owner and all
@@ -354,7 +354,7 @@ Results are `KuArc<KuObject<'r>>` with the context's runtime lifetime; they need
 not borrow the local arguments, context variable, or callable:
 
 ```no_run
-use kuai_rt::{KuArc, KuCCall, KuInstance, KuObject, KuTensor, Vendor};
+use kurt::{KuArc, KuCCall, KuInstance, KuObject, KuTensor, Vendor};
 
 let instance = KuInstance::new(Vendor::Cpu)?;
 let result = {
@@ -371,7 +371,7 @@ let tensor = KuArc::<KuTensor>::try_from(result)?;
 assert_eq!(tensor.device().to_vec::<i64>(&tensor)?, [11, 22]);
 drop(tensor);
 instance.close()?;
-# Ok::<(), kuai_rt::Error>(())
+# Ok::<(), kurt::Error>(())
 ```
 
 ## Compile-time boundaries
@@ -379,7 +379,7 @@ instance.close()?;
 A KuTensor owner cannot escape its borrowed KuInstance:
 
 ```compile_fail,E0597
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let tensor = {
     let instance = KuInstance::new(Vendor::Cpu).unwrap();
     instance.default_device().zeros::<i64>(&[1]).unwrap()
@@ -390,7 +390,7 @@ println!("{}", tensor.len());
 A KuArray containing that tensor preserves the same dependency:
 
 ```compile_fail,E0597
-use kuai_rt::{KuArray, KuInstance, KuArc, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, Vendor};
 let array = {
     let instance = KuInstance::new(Vendor::Cpu).unwrap();
     let tensor = instance.default_device().zeros::<i64>(&[1]).unwrap();
@@ -402,7 +402,7 @@ println!("{}", array.len());
 Queried KuDevice and KuInstanceRef views cannot escape either:
 
 ```compile_fail,E0597
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let device = {
     let instance = KuInstance::new(Vendor::Cpu).unwrap();
     let tensor = instance.default_device().zeros::<i64>(&[1]).unwrap();
@@ -412,7 +412,7 @@ println!("{:?}", device.info());
 ```
 
 ```compile_fail,E0597
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let owner = {
     let instance = KuInstance::new(Vendor::Cpu).unwrap();
     instance.default_device().instance()
@@ -423,7 +423,7 @@ println!("{:?}", owner.as_raw());
 Implicit KuArc destruction still needs the runtime, even without a later read:
 
 ```compile_fail,E0505
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let instance = KuInstance::new(Vendor::Cpu).unwrap();
 let _tensor = instance.default_device().zeros::<i64>(&[1]).unwrap();
 drop(instance);
@@ -433,7 +433,7 @@ Nested arrays with CPU and CUDA objects cannot outlive the CUDA dependency or
 the CPU dependency. These examples are compile-only and do not require hardware:
 
 ```compile_fail,E0597
-use kuai_rt::{KuArray, KuInstance, KuArc, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, Vendor};
 let cpu = KuInstance::new(Vendor::Cpu).unwrap();
 let outer = {
     let cuda = KuInstance::new(Vendor::Cuda).unwrap();
@@ -447,7 +447,7 @@ println!("{}", outer.len());
 ```
 
 ```compile_fail,E0597
-use kuai_rt::{KuArray, KuInstance, KuArc, Vendor};
+use kurt::{KuArray, KuInstance, KuArc, Vendor};
 let cuda = KuInstance::new(Vendor::Cuda).unwrap();
 let outer = {
     let cpu = KuInstance::new(Vendor::Cpu).unwrap();
@@ -463,14 +463,14 @@ println!("{}", outer.len());
 Bare views cannot be moved out of a borrowed owner or mutably dereferenced:
 
 ```compile_fail,E0507
-use kuai_rt::{KuArc, KuScalar};
+use kurt::{KuArc, KuScalar};
 let owner = KuArc::<KuScalar>::new(42_i64).unwrap();
 let view = *owner;
 println!("{:?}", view.value());
 ```
 
 ```compile_fail,E0596
-use kuai_rt::{KuArc, KuScalar};
+use kurt::{KuArc, KuScalar};
 let mut owner = KuArc::<KuScalar>::new(42_i64).unwrap();
 let _: &mut KuScalar = &mut *owner;
 ```
@@ -480,21 +480,21 @@ owner is not itself a native view:
 
 ```compile_fail,E0277
 struct Fake;
-impl kuai_rt::HasObjectKind for Fake {
-    fn kind(&self) -> kuai_rt::KuObjectKind { kuai_rt::KuObjectKind::Scalar }
+impl kurt::HasObjectKind for Fake {
+    fn kind(&self) -> kurt::KuObjectKind { kurt::KuObjectKind::Scalar }
 }
-impl kuai_rt::NativeType for Fake {}
+impl kurt::NativeType for Fake {}
 ```
 
 ```compile_fail,E0277
-use kuai_rt::{KuArc, KuScalar};
+use kurt::{KuArc, KuScalar};
 let _: Option<KuArc<KuArc<KuScalar>>> = None;
 ```
 
 Runtime-dependent owners cannot be moved into a thread requiring `'static`:
 
 ```compile_fail,E0597
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let instance = KuInstance::new(Vendor::Cpu).unwrap();
 let tensor = instance.default_device().zeros::<i64>(&[1]).unwrap();
 std::thread::spawn(move || tensor.len()).join().unwrap();
@@ -503,7 +503,7 @@ std::thread::spawn(move || tensor.len()).join().unwrap();
 Another KuInstance clone does not rebind an existing borrow:
 
 ```compile_fail,E0505
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let instance = KuInstance::new(Vendor::Cpu).unwrap();
 let remaining = instance.clone();
 let tensor = instance.default_device().zeros::<i64>(&[1]).unwrap();
@@ -516,7 +516,7 @@ remaining.close().unwrap();
 Borrowed bytes cannot escape their native owner:
 
 ```compile_fail,E0597
-use kuai_rt::{KuArc, KuString};
+use kurt::{KuArc, KuString};
 let bytes = {
     let value = KuArc::<KuString>::new("temporary").unwrap();
     value.as_bytes()
@@ -529,30 +529,30 @@ Downstream code cannot invent element layouts or native object capabilities:
 ```compile_fail,E0277
 #[derive(Clone, Copy, Default)]
 struct Invalid(bool);
-impl kuai_rt::Element for Invalid {
-    const TYPE: kuai_rt::PrimitiveType = kuai_rt::PrimitiveType::Boolean;
+impl kurt::Element for Invalid {
+    const TYPE: kurt::PrimitiveType = kurt::PrimitiveType::Boolean;
 }
 ```
 
 ```compile_fail,E0277
 struct Fake;
-impl kuai_rt::HasObjectKind for Fake {
-    fn kind(&self) -> kuai_rt::KuObjectKind { kuai_rt::KuObjectKind::Scalar }
+impl kurt::HasObjectKind for Fake {
+    fn kind(&self) -> kurt::KuObjectKind { kurt::KuObjectKind::Scalar }
 }
-impl kuai_rt::NativeObject for Fake {
-    fn as_raw(&self) -> kuai_sys::ku_object_t { std::ptr::null_mut() }
+impl kurt::NativeObject for Fake {
+    fn as_raw(&self) -> kurt_sys::ku_object_t { std::ptr::null_mut() }
 }
 ```
 
 ```compile_fail,E0277
-fn needs_native<T: kuai_rt::NativeObject + ?Sized>(_: &T) {}
+fn needs_native<T: kurt::NativeObject + ?Sized>(_: &T) {}
 needs_native(&String::from("not a runtime string"));
 ```
 
 KuCCall keeps its KuInstance borrow:
 
 ```compile_fail,E0597
-use kuai_rt::{KuInstance, Vendor};
+use kurt::{KuInstance, Vendor};
 let builtin = {
     let instance = KuInstance::new(Vendor::Cpu).unwrap();
     instance.builtin("add").unwrap()
@@ -564,22 +564,22 @@ Frame contexts and builtins remain thread-confined:
 
 ```compile_fail,E0277
 fn needs_send<T: Send>() {}
-needs_send::<kuai_rt::KuFrameContext<'static>>();
+needs_send::<kurt::KuFrameContext<'static>>();
 ```
 
 ```compile_fail,E0277
 fn needs_sync<T: Sync>() {}
-needs_sync::<kuai_rt::KuFrameContext<'static>>();
+needs_sync::<kurt::KuFrameContext<'static>>();
 ```
 
 ```compile_fail,E0277
 fn needs_send<T: Send>() {}
-needs_send::<kuai_rt::KuCCall<'static>>();
+needs_send::<kurt::KuCCall<'static>>();
 ```
 
 ```compile_fail,E0277
 fn needs_sync<T: Sync>() {}
-needs_sync::<kuai_rt::KuCCall<'static>>();
+needs_sync::<kurt::KuCCall<'static>>();
 ```
 
 ## Migration and verification
@@ -610,7 +610,7 @@ names.
 
 Use KuArc owners instead of constructing or cloning bare views. Convert typed
 owners with `.into()` and `KuArc::<Typed>::try_from(object)`. Import
-`use kuai_rt::HasObjectKind;` because `kind()` is now a trait method rather than
+`use kurt::HasObjectKind;` because `kind()` is now a trait method rather than
 an inherent method. `NativeType` is a sealed native view trait requiring
 `HasObjectKind`; classification alone does not grant native view or handle access.
 Match `object.kind()` for classification, then use a checked conversion for payload
@@ -623,11 +623,11 @@ The sys crate controls CMake. Its default preset is `release-cpu`; existing
 `KUAI_RUNTIME_*` environment variables apply:
 
 ```bash
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kuai-rt -p kuai-sys --locked -j 8
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kuai-rt -p kuai-sys --locked --release -j 8
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kuai-rt --doc --locked -- --show-output
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kurt -p kurt-sys --locked -j 8
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kurt -p kurt-sys --locked --release -j 8
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo test -p kurt --doc --locked -- --show-output
 cargo fmt --all --check
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo clippy -p kuai-rt -p kuai-sys --all-targets --locked -- -D warnings
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cpu cargo clippy -p kurt -p kurt-sys --all-targets --locked -- -D warnings
 ```
 
 Runtime examples marked `no_run` are compiled, not executed by rustdoc. CPU
@@ -648,8 +648,8 @@ identity and cross-vendor rejection after parent arrays are released.
 On Linux with a compatible CUDA toolchain and hardware, run:
 
 ```bash
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cuda cargo test -p kuai-rt --test cuda_threading --locked -- --ignored
-KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-all cargo test -p kuai-rt --test cuda_threading --locked -- --ignored
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-cuda cargo test -p kurt --test cuda_threading --locked -- --ignored
+KUAI_RUNTIME_BUILD_MODE=local KUAI_RUNTIME_PRESET=release-all cargo test -p kurt --test cuda_threading --locked -- --ignored
 ```
 
 An unavailable backend fails an explicitly requested hardware run. CPU-only

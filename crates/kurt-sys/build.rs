@@ -46,7 +46,7 @@ struct BuildConfig {
 impl BuildConfig {
     fn from_env() -> Self {
         let manifest_dir = required_path("CARGO_MANIFEST_DIR");
-        let runtime_root = manifest_dir.join("../../kuai-runtime");
+        let runtime_root = manifest_dir.join("../../kurt-cpp");
         let runtime_root = canonicalize(&runtime_root, "kuai-runtime source directory");
         let repository_root = runtime_root
             .parent()
@@ -195,11 +195,11 @@ fn require_success(status: ExitStatus, description: &str) {
 
 fn main() {
     for path in [
-        "../../kuai-runtime/CMakeLists.txt",
-        "../../kuai-runtime/CMakePresets.json",
-        "../../kuai-runtime/cmake",
-        "../../kuai-runtime/src",
-        "../../kuai-runtime/vendor",
+        "../../kurt-cpp/CMakeLists.txt",
+        "../../kurt-cpp/CMakePresets.json",
+        "../../kurt-cpp/cmake",
+        "../../kurt-cpp/src",
+        "../../kurt-cpp/vendor",
     ] {
         println!("cargo:rerun-if-changed={path}");
     }
