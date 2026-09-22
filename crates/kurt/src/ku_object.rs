@@ -26,11 +26,11 @@ pub trait HasObjectKind {
 impl KuObjectKind {
     fn from_raw(raw: i32) -> Result<Self> {
         match raw {
-            sys::KU_VALUE_SCALAR => Ok(Self::Scalar),
-            sys::KU_VALUE_TENSOR => Ok(Self::Tensor),
-            sys::KU_VALUE_ARRAY => Ok(Self::Array),
-            sys::KU_VALUE_STRING => Ok(Self::String),
-            sys::KU_VALUE_SLICE => Ok(Self::Slice),
+            sys::KU_OBJECT_SCALAR => Ok(Self::Scalar),
+            sys::KU_OBJECT_TENSOR => Ok(Self::Tensor),
+            sys::KU_OBJECT_ARRAY => Ok(Self::Array),
+            sys::KU_OBJECT_STRING => Ok(Self::String),
+            sys::KU_OBJECT_SLICE => Ok(Self::Slice),
             _ => Err(Error::TypeMismatch),
         }
     }
@@ -64,7 +64,7 @@ impl HasObjectKind for KuObject<'_> {
     fn kind(&self) -> KuObjectKind {
         let mut kind = 0;
         // SAFETY: this view borrows a live immutable object of a supported kind.
-        let status = unsafe { sys::ku_object_get_value_kind(self.as_raw(), &mut kind) };
+        let status = unsafe { sys::ku_object_get_kind(self.as_raw(), &mut kind) };
         debug_assert_eq!(status, sys::KU_STATUS_SUCCESS);
         KuObjectKind::from_raw(kind).expect("valid object has a supported native kind")
     }
@@ -93,7 +93,7 @@ impl<'r> KuObject<'r> {
         let raw = native.as_raw();
         let mut kind = 0;
         // SAFETY: native owns a live reference and guards all error cleanup.
-        check(unsafe { sys::ku_object_get_value_kind(raw, &mut kind) })?;
+        check(unsafe { sys::ku_object_get_kind(raw, &mut kind) })?;
         KuObjectKind::from_raw(kind)?;
         // SAFETY: classification proves a supported kind; the caller supplies
         // payload and runtime validity. The guard still owns the reference.

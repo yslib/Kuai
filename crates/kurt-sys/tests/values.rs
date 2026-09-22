@@ -55,8 +55,8 @@ macro_rules! scalar_roundtrips {
                         success(ku_scalar_create(&input, &mut raw));
                         let scalar = Object(raw);
                         let mut kind = 0;
-                        success(ku_object_get_value_kind(scalar.0, &mut kind));
-                        assert_eq!(kind, KU_VALUE_SCALAR);
+                        success(ku_object_get_kind(scalar.0, &mut kind));
+                        assert_eq!(kind, KU_OBJECT_SCALAR);
                         let mut output = MaybeUninit::uninit();
                         success(ku_scalar_get_value(scalar.0, output.as_mut_ptr()));
                         let output = output.assume_init();
@@ -104,8 +104,8 @@ fn string_copies_arbitrary_bytes_and_retain_keeps_them_alive() {
             let actual = std::slice::from_raw_parts(output.data.cast::<u8>(), output.size);
             assert_eq!(actual, bytes);
             let mut kind = 0;
-            success(ku_object_get_value_kind(retained.0, &mut kind));
-            assert_eq!(kind, KU_VALUE_STRING);
+            success(ku_object_get_kind(retained.0, &mut kind));
+            assert_eq!(kind, KU_OBJECT_STRING);
         }
     }
 }
@@ -125,8 +125,8 @@ fn arrays_retain_elements_and_get_returns_an_owned_reference() {
         success(ku_array_get_size(array.0, &mut count));
         assert_eq!(count, 2);
         let mut kind = 0;
-        success(ku_object_get_value_kind(array.0, &mut kind));
-        assert_eq!(kind, KU_VALUE_ARRAY);
+        success(ku_object_get_kind(array.0, &mut kind));
+        assert_eq!(kind, KU_OBJECT_ARRAY);
         assert_eq!(ku_array_get(array.0, 2, &mut raw), KU_STATUS_OUT_OF_RANGE);
         assert!(raw.is_null());
         success(ku_array_get(array.0, 1, &mut raw));
@@ -170,8 +170,8 @@ fn slices_preserve_optional_bounds_and_negative_steps() {
             success(ku_slice_create(&desc, &mut raw));
             let slice = Object(raw);
             let mut kind = 0;
-            success(ku_object_get_value_kind(slice.0, &mut kind));
-            assert_eq!(kind, KU_VALUE_SLICE);
+            success(ku_object_get_kind(slice.0, &mut kind));
+            assert_eq!(kind, KU_OBJECT_SLICE);
             let mut output = MaybeUninit::uninit();
             success(ku_slice_get_value(slice.0, output.as_mut_ptr()));
             assert_eq!(output.assume_init(), desc);

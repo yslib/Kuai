@@ -37,7 +37,7 @@ public:
 
     // Writes an invocable target on success. A missing builtin returns
     // KU_STATUS_NOT_FOUND and leaves the output slot unchanged.
-    ku_status_t getKuProcAddress(ku_string_view_t name, ku_call_target_t *out) noexcept;
+    ku_status_t getKuProcAddress(ku_string_view_t name, ku_call_t *out) noexcept;
 
     ku_status_t getCapabilities(ku_instance_capabilities_t *out) noexcept;
 

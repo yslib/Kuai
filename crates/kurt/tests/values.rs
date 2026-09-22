@@ -40,7 +40,7 @@ fn native_object_trait_passes_typed_and_erased_handles_to_ffi() -> Result<()> {
         // SAFETY: the sealed capability supplies a live borrowed object; this
         // synchronous query neither mutates nor retains it.
         assert_eq!(
-            unsafe { kurt_sys::ku_object_get_value_kind(raw, &mut kind) },
+            unsafe { kurt_sys::ku_object_get_kind(raw, &mut kind) },
             kurt_sys::KU_STATUS_SUCCESS
         );
         assert_eq!(kind, expected);
@@ -50,18 +50,18 @@ fn native_object_trait_passes_typed_and_erased_handles_to_ffi() -> Result<()> {
     let string = KuArc::<KuString>::new(b"native\0object")?;
     let slice = KuArc::<KuSlice>::new(SliceSpec::default())?;
     let array = KuArc::<KuArray>::new(&[scalar.clone().into()])?;
-    check_kind(&scalar, kurt_sys::KU_VALUE_SCALAR);
-    check_kind(&string, kurt_sys::KU_VALUE_STRING);
-    check_kind(&slice, kurt_sys::KU_VALUE_SLICE);
-    check_kind(&array, kurt_sys::KU_VALUE_ARRAY);
+    check_kind(&scalar, kurt_sys::KU_OBJECT_SCALAR);
+    check_kind(&string, kurt_sys::KU_OBJECT_STRING);
+    check_kind(&slice, kurt_sys::KU_OBJECT_SLICE);
+    check_kind(&array, kurt_sys::KU_OBJECT_ARRAY);
 
     let objects: [KuArc<KuObject<'_>>; 4] =
         [scalar.into(), string.into(), slice.into(), array.into()];
     let expected = [
-        kurt_sys::KU_VALUE_SCALAR,
-        kurt_sys::KU_VALUE_STRING,
-        kurt_sys::KU_VALUE_SLICE,
-        kurt_sys::KU_VALUE_ARRAY,
+        kurt_sys::KU_OBJECT_SCALAR,
+        kurt_sys::KU_OBJECT_STRING,
+        kurt_sys::KU_OBJECT_SLICE,
+        kurt_sys::KU_OBJECT_ARRAY,
     ];
     for (object, kind) in objects.iter().zip(expected) {
         check_kind(object, kind);
@@ -231,12 +231,12 @@ fn native_owner_outlives_rust_wrappers() -> Result<()> {
     drop(cloned);
     let mut kind = 0;
     // SAFETY: our separately retained reference survives both Rust wrappers.
-    let status = unsafe { kurt_sys::ku_object_get_value_kind(raw, &mut kind) };
+    let status = unsafe { kurt_sys::ku_object_get_kind(raw, &mut kind) };
     // SAFETY: release exactly the reference explicitly retained above.
     let released = unsafe { kurt_sys::ku_object_release(raw) };
     assert_eq!(status, kurt_sys::KU_STATUS_SUCCESS);
     assert_eq!(released, kurt_sys::KU_STATUS_SUCCESS);
-    assert_eq!(kind, kurt_sys::KU_VALUE_SCALAR);
+    assert_eq!(kind, kurt_sys::KU_OBJECT_SCALAR);
     Ok(())
 }
 

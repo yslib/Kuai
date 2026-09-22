@@ -68,9 +68,7 @@ KU_DEFINE_C_API_STATUS_METHOD(
     out_count)
 
 KU_DEFINE_C_API_STATUS_METHOD(ku_instance_get_proc_address,
-                              (ku_instance_t     instance,
-                               ku_string_view_t  name,
-                               ku_call_target_t *out),
+                              (ku_instance_t instance, ku_string_view_t name, ku_call_t *out),
                               instance,
                               getKuProcAddress,
                               name,

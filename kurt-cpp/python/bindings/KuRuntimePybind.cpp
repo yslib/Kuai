@@ -82,11 +82,11 @@ throwBuiltinStatus(std::string_view name, std::string_view stage, ku_status_t st
     throwStatusMessage(status, std::move(message));
 }
 
-ku_status_t invokeCallTarget(const ku_call_target_t &target, ku_frame_t *frame) noexcept {
+ku_status_t invokeCallTarget(const ku_call_t &target, ku_frame_t *frame) noexcept {
     switch (target.kind) {
-        case KU_CALL_TARGET_FFI:
+        case KU_CALL_FFI:
             return target.value.ffi(frame);
-        case KU_CALL_TARGET_CALLABLE:
+        case KU_CALL_CALLABLE:
             return target.value.closure.ffi(target.value.closure.capture, frame);
         default:
             frame->result_count = 0;
@@ -668,7 +668,7 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
         }
     }
 
-    ku_call_target_t       target{};
+    ku_call_t              target{};
     const ku_string_view_t nameView{name.data(), name.size()};
     const ku_status_t      lookupStatus =
         ku_instance_get_proc_address(device->instance()->handle(), nameView, &target);
@@ -709,19 +709,19 @@ py::object invokeBuiltin(const std::shared_ptr<KuPyDevice> &device,
         throw std::runtime_error("builtin '" + name + "' returned a null result");
     }
 
-    ku_value_kind_t   resultKind = 0;
-    const ku_status_t kindStatus = ku_object_get_value_kind(result.get(), &resultKind);
+    ku_object_kind_t  resultKind = 0;
+    const ku_status_t kindStatus = ku_object_get_kind(result.get(), &resultKind);
     if (kindStatus != KU_STATUS_SUCCESS) {
         throwBuiltinStatus(name, "result kind query failed", kindStatus);
     }
     switch (resultKind) {
-        case KU_VALUE_TENSOR:
+        case KU_OBJECT_TENSOR:
             return py::cast(std::make_shared<KuPyTensor>(std::move(result), device));
-        case KU_VALUE_SCALAR:
+        case KU_OBJECT_SCALAR:
             return scalarToPython(result.get(), name);
-        case KU_VALUE_STRING:
+        case KU_OBJECT_STRING:
             return stringToPython(result.get(), name);
-        case KU_VALUE_ARRAY:
+        case KU_OBJECT_ARRAY:
         default:
             throw std::runtime_error("builtin '" + name + "' returned an unsupported result kind");
     }

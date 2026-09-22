@@ -73,29 +73,29 @@ struct KuBuiltinGroup {
     std::vector<KuRegisteredBuiltin> m_records;
 };
 
-bool isValidTarget(const ku_call_target_t &target) noexcept {
+bool isValidTarget(const ku_call_t &target) noexcept {
     switch (target.kind) {
-        case KU_CALL_TARGET_FFI:
+        case KU_CALL_FFI:
             return target.value.ffi != nullptr;
-        case KU_CALL_TARGET_CALLABLE:
+        case KU_CALL_CALLABLE:
             return target.value.closure.ffi != nullptr;
         default:
             return false;
     }
 }
 
-ku_status_t invokeCallTarget(const ku_call_target_t &target, ku_frame_t *frame) {
+ku_status_t invokeCallTarget(const ku_call_t &target, ku_frame_t *frame) {
     if (frame == nullptr) {
         return KU_STATUS_INVALID_ARGUMENT;
     }
 
     switch (target.kind) {
-        case KU_CALL_TARGET_FFI:
+        case KU_CALL_FFI:
             if (target.value.ffi != nullptr) {
                 return target.value.ffi(frame);
             }
             break;
-        case KU_CALL_TARGET_CALLABLE:
+        case KU_CALL_CALLABLE:
             if (target.value.closure.ffi != nullptr) {
                 return target.value.closure.ffi(target.value.closure.capture, frame);
             }
@@ -207,15 +207,14 @@ std::vector<std::string_view> KuBuiltinRegistry::functionNames() const {
     return d_ptr->m_groups | std::views::keys | std::ranges::to<std::vector<std::string_view>>();
 }
 
-std::optional<ku_call_target_t>
-KuBuiltinRegistry::getCallTarget(std::string_view name) const noexcept {
+std::optional<ku_call_t> KuBuiltinRegistry::getCallTarget(std::string_view name) const noexcept {
     const auto found = d_ptr->m_groups.find(name);
     if (found == d_ptr->m_groups.end() || found->second->m_records.empty()) {
         return std::nullopt;
     }
 
-    ku_call_target_t target{};
-    target.kind = KU_CALL_TARGET_CALLABLE;
+    ku_call_t target{};
+    target.kind = KU_CALL_CALLABLE;
     target.value.closure =
         ku_closure_t{.capture = found->second.get(), .ffi = &dispatchBuiltinGroup};
     return target;

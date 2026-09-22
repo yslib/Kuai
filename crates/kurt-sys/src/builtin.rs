@@ -41,15 +41,15 @@ pub struct ku_closure_t {
 }
 
 c_enum! {
-    ku_call_target_kind_t: i32 {
-        KU_CALL_TARGET_FFI = 1,
-        KU_CALL_TARGET_CALLABLE = 2,
+    ku_call_kind_t: i32 {
+        KU_CALL_FFI = 1,
+        KU_CALL_CALLABLE = 2,
     }
 }
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub union ku_call_target_value_t {
+pub union ku_call_value_t {
     pub ffi: ku_ffi_t,
     pub closure: ku_closure_t,
 }
@@ -57,9 +57,9 @@ pub union ku_call_target_value_t {
 /// Only access the union member selected by `kind`.
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct ku_call_target_t {
-    pub kind: ku_call_target_kind_t,
-    pub value: ku_call_target_value_t,
+pub struct ku_call_t {
+    pub kind: ku_call_kind_t,
+    pub value: ku_call_value_t,
 }
 
 c_enum! {
@@ -82,7 +82,7 @@ pub type ku_builtin_destroy_fn_t = unsafe extern "C" fn(state: *mut c_void);
 pub struct ku_builtin_registration_t {
     pub name: ku_string_view_t,
     pub overload_key: *const c_void,
-    pub target: ku_call_target_t,
+    pub target: ku_call_t,
     pub state: *mut c_void,
     pub r#match: ku_builtin_match_t,
     pub destroy: ku_builtin_destroy_t,
@@ -114,6 +114,6 @@ unsafe extern "C" {
     pub fn ku_instance_get_proc_address(
         instance: ku_instance_t,
         name: ku_string_view_t,
-        out: *mut ku_call_target_t,
+        out: *mut ku_call_t,
     ) -> ku_status_t;
 }

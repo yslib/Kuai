@@ -49,7 +49,7 @@ impl Drop for KuFrameContext<'_> {
 /// execution requires the callable's native contract.
 #[derive(Clone)]
 pub struct KuCCall<'instance> {
-    target: sys::ku_call_target_t,
+    target: sys::ku_call_t,
     instance: &'instance InstanceInner,
     _thread: PhantomData<Rc<()>>,
 }
@@ -228,8 +228,8 @@ impl KuCCall<'_> {
             // frame pointers, live handles, capacities, and devices are checked.
             let status = unsafe {
                 match self.target.kind {
-                    sys::KU_CALL_TARGET_FFI => (self.target.value.ffi)(&mut frame),
-                    sys::KU_CALL_TARGET_CALLABLE => {
+                    sys::KU_CALL_FFI => (self.target.value.ffi)(&mut frame),
+                    sys::KU_CALL_CALLABLE => {
                         let closure = self.target.value.closure;
                         (closure.ffi)(closure.capture, &mut frame)
                     }

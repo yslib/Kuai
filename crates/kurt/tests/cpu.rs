@@ -54,7 +54,7 @@ fn native_object_trait_accepts_tensor_and_device_dependent_array() -> Result<()>
         // SAFETY: the borrowed object and its KuInstance remain live throughout
         // this synchronous, read-only query.
         assert_eq!(
-            unsafe { kurt_sys::ku_object_get_value_kind(object.as_raw(), &mut kind) },
+            unsafe { kurt_sys::ku_object_get_kind(object.as_raw(), &mut kind) },
             kurt_sys::KU_STATUS_SUCCESS
         );
         assert_eq!(kind, expected);
@@ -65,15 +65,15 @@ fn native_object_trait_accepts_tensor_and_device_dependent_array() -> Result<()>
     let tensor = instance
         .default_device()
         .tensor_from_slice(&[2], &[7_i64, 8])?;
-    check_kind(&tensor, kurt_sys::KU_VALUE_TENSOR);
+    check_kind(&tensor, kurt_sys::KU_OBJECT_TENSOR);
     let raw = NativeObject::as_raw(&tensor);
     let object: KuArc<KuObject<'_>> = tensor.into();
-    check_kind(&object, kurt_sys::KU_VALUE_TENSOR);
+    check_kind(&object, kurt_sys::KU_OBJECT_TENSOR);
     assert_eq!(NativeObject::as_raw(&object), raw);
     let erased: &dyn NativeObject = &object;
-    check_kind(erased, kurt_sys::KU_VALUE_TENSOR);
+    check_kind(erased, kurt_sys::KU_OBJECT_TENSOR);
     let array = KuArc::<KuArray>::new(&[object])?;
-    check_kind(&array, kurt_sys::KU_VALUE_ARRAY);
+    check_kind(&array, kurt_sys::KU_OBJECT_ARRAY);
     let tensor = KuArc::<KuTensor>::try_from(array.get(0)?)?;
     drop(array);
     assert_eq!(NativeObject::as_raw(&tensor), raw);

@@ -52,22 +52,22 @@ typedef struct ku_closure_t {
 } ku_closure_t;
 
 /* A call target is either a direct FFI or a captured callable; every other kind is invalid. */
-typedef int32_t ku_call_target_kind_t;
+typedef int32_t ku_call_kind_t;
 
 enum {
-    KU_CALL_TARGET_FFI = 1,
-    KU_CALL_TARGET_CALLABLE = 2,
+    KU_CALL_FFI = 1,
+    KU_CALL_CALLABLE = 2,
 };
 
-typedef union ku_call_target_value_t {
+typedef union ku_call_value_t {
     ku_ffi_t     ffi;
     ku_closure_t closure;
-} ku_call_target_value_t;
+} ku_call_value_t;
 
-typedef struct ku_call_target_t {
-    ku_call_target_kind_t  kind;
-    ku_call_target_value_t value;
-} ku_call_target_t;
+typedef struct ku_call_t {
+    ku_call_kind_t  kind;
+    ku_call_value_t value;
+} ku_call_t;
 
 /*
  * Writes a borrowed invocable target only on success. A resolved target invokes the registered
@@ -75,7 +75,7 @@ typedef struct ku_call_target_t {
  * when a name has only one registration.
  */
 ku_status_t
-ku_instance_get_proc_address(ku_instance_t instance, ku_string_view_t name, ku_call_target_t *out);
+ku_instance_get_proc_address(ku_instance_t instance, ku_string_view_t name, ku_call_t *out);
 
 typedef int32_t ku_builtin_match_rank_t;
 
@@ -94,7 +94,7 @@ typedef void (*ku_builtin_destroy_t)(void *state);
 typedef struct ku_builtin_registration_t {
     ku_string_view_t     name;
     const void          *overload_key;
-    ku_call_target_t     target;
+    ku_call_t            target;
     void                *state;
     ku_builtin_match_t   match;
     ku_builtin_destroy_t destroy;

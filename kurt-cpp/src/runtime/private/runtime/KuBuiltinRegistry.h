@@ -22,8 +22,7 @@ public:
 
     [[nodiscard]] ku_builtin_builder_t          builder() noexcept;
     [[nodiscard]] std::vector<std::string_view> functionNames() const;
-    [[nodiscard]] std::optional<ku_call_target_t>
-    getCallTarget(std::string_view name) const noexcept;
+    [[nodiscard]] std::optional<ku_call_t>      getCallTarget(std::string_view name) const noexcept;
 
 private:
     static ku_status_t add(void *context, const ku_builtin_registration_t *registration) noexcept;

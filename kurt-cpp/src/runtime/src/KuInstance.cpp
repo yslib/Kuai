@@ -236,7 +236,7 @@ ku_status_t KuInstance::getBuiltinInfo(ku_builtin_info_t *out,
     }
 }
 
-ku_status_t KuInstance::getKuProcAddress(ku_string_view_t name, ku_call_target_t *out) noexcept {
+ku_status_t KuInstance::getKuProcAddress(ku_string_view_t name, ku_call_t *out) noexcept {
     KU_ASSERT(out != nullptr, "getKuProcAddress requires a non-null output slot");
     const auto target =
         d_ptr->m_builtinRegistry.getCallTarget(std::string_view(name.data, name.size));

@@ -308,13 +308,13 @@ use kurt::{KuArc, KuScalar, NativeObject};
 fn native_kind<T: NativeObject + ?Sized>(value: &T) -> i32 {
     let mut kind = 0;
     // SAFETY: the value and its dependencies stay borrowed through the query.
-    let status = unsafe { kurt_sys::ku_object_get_value_kind(value.as_raw(), &mut kind) };
+    let status = unsafe { kurt_sys::ku_object_get_kind(value.as_raw(), &mut kind) };
     assert_eq!(status, kurt_sys::KU_STATUS_SUCCESS);
     kind
 }
 let scalar = KuArc::<KuScalar>::new(42_i64)?;
-assert_eq!(native_kind(&scalar), kurt_sys::KU_VALUE_SCALAR);
-assert_eq!(native_kind(&*scalar), kurt_sys::KU_VALUE_SCALAR);
+assert_eq!(native_kind(&scalar), kurt_sys::KU_OBJECT_SCALAR);
+assert_eq!(native_kind(&*scalar), kurt_sys::KU_OBJECT_SCALAR);
 # Ok::<(), kurt::Error>(())
 ```
 

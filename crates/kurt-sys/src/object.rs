@@ -1,12 +1,12 @@
 use crate::types::*;
 
 c_enum! {
-    ku_value_kind_t: i32 {
-        KU_VALUE_SCALAR = 1,
-        KU_VALUE_TENSOR = 2,
-        KU_VALUE_ARRAY = 3,
-        KU_VALUE_STRING = 4,
-        KU_VALUE_SLICE = 5,
+    ku_object_kind_t: i32 {
+        KU_OBJECT_SCALAR = 1,
+        KU_OBJECT_TENSOR = 2,
+        KU_OBJECT_ARRAY = 3,
+        KU_OBJECT_STRING = 4,
+        KU_OBJECT_SLICE = 5,
     }
 }
 
@@ -33,7 +33,7 @@ unsafe extern "C" {
     /// Releases one owned reference; the handle may become invalid.
     pub fn ku_object_release(object: ku_object_t) -> ku_status_t;
     /// Writes the stable materializable value kind.
-    pub fn ku_object_get_value_kind(object: ku_object_t, out: *mut ku_value_kind_t) -> ku_status_t;
+    pub fn ku_object_get_kind(object: ku_object_t, out: *mut ku_object_kind_t) -> ku_status_t;
     /// Copies a tagged primitive into a new scalar with one owned reference.
     pub fn ku_scalar_create(value: *const ku_union_t, out: *mut ku_object_t) -> ku_status_t;
     /// Copies the scalar payload and its tag into `out`.

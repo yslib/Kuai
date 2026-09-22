@@ -41,7 +41,7 @@ typedef struct ku_tensor_info_t {
  * Creates an owning contiguous column-major kuai tensor on desc->device.
  * ndim must be in [0, 8]. shape may be NULL only when ndim is zero. strides may be
  * NULL for the canonical layout; when supplied, it must describe that same canonical
- * layout in element units. The returned object has KU_VALUE_TENSOR kind, owns one reference,
+ * layout in element units. The returned object has KU_OBJECT_TENSOR kind, owns one reference,
  * and must be released with ku_object_release().
  */
 ku_status_t ku_tensor_create(const ku_tensor_create_desc_t *desc, ku_object_t *out);

@@ -471,8 +471,8 @@ fn tensor_transfer_completion_and_borrowed_info() {
         assert_eq!(device, cpu.device);
         assert_eq!(tensor_size(&tensor), 6);
         let mut kind = 0;
-        success(ku_object_get_value_kind(tensor.0, &mut kind));
-        assert_eq!(kind, KU_VALUE_TENSOR);
+        success(ku_object_get_kind(tensor.0, &mut kind));
+        assert_eq!(kind, KU_OBJECT_TENSOR);
         let mut info = MaybeUninit::uninit();
         success(ku_tensor_get_info(tensor.0, info.as_mut_ptr()));
         let info = info.assume_init();
@@ -749,8 +749,8 @@ fn builtin_enumeration_lookup_and_invocation() {
             result_count: 0,
         };
         let invoke = |frame: &mut ku_frame_t| match target.kind {
-            KU_CALL_TARGET_FFI => (target.value.ffi)(frame),
-            KU_CALL_TARGET_CALLABLE => {
+            KU_CALL_FFI => (target.value.ffi)(frame),
+            KU_CALL_CALLABLE => {
                 let closure = target.value.closure;
                 (closure.ffi)(closure.capture, frame)
             }

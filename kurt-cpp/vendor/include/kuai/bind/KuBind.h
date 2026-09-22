@@ -550,14 +550,14 @@ KuFunctionRegistration makeKuFunctionRegistration(const char *name, Fn &&fn, Ext
     registration.match = &ku_match_handler<FnType, std::decay_t<Extra>...>;
 
     if constexpr (ku_uses_direct_ffi_v<FnType, Extra...>) {
-        registration.target.kind = KU_CALL_TARGET_FFI;
+        registration.target.kind = KU_CALL_FFI;
         registration.target.value.ffi = &erased_ffi_entry<FnType>;
     } else {
         using State = KuCapturedFunctionState<BoundType>;
         auto parameters = makeKuParameterRecords<FnType>(extra...);
         auto bound = makeKuBoundFunction(std::forward<Fn>(fn), std::forward<Extra>(extra)...);
         auto state = std::make_unique<State>(std::move(bound), std::move(parameters));
-        registration.target.kind = KU_CALL_TARGET_CALLABLE;
+        registration.target.kind = KU_CALL_CALLABLE;
         registration.target.value.closure =
             ku_closure_t{.capture = state.get(), .ffi = &captured_erased_ffi_entry<State>};
         registration.state = state.get();
