@@ -1,8 +1,8 @@
 use crate::attr::traits::*;
 use crate::context::Context;
+use crate::diagnostic::{CompileResult, Diagnostic};
 use crate::pipeline::Pipeline;
 use crate::session::Session;
-use kuai_core::diagnostic::{CompileResult, Diagnostic};
 use sema::resolver::Resolver;
 use std::sync::Arc;
 use syntax::ast::*;
@@ -30,7 +30,7 @@ impl Compiler {
         let parse_result = parser.parse();
 
         // Collect parse diagnostics
-        diagnostics.extend(parse_result.diagnostics.clone());
+        diagnostics.extend(parse_result.diagnostics.into_iter().map(Diagnostic::from));
 
         // If parsing failed completely (no output), return early
         let module = match parse_result.output {
@@ -65,7 +65,7 @@ impl Compiler {
             span: module.span.clone(),
         };
         resolver.resolve(&temp_module);
-        diagnostics.extend(resolver.diagnostics().clone());
+        diagnostics.extend(resolver.diagnostics().iter().cloned().map(Diagnostic::from));
 
         // Stage 4: Resolved Stage
         stmts = match self.apply_stage(ctx, stmts, CompileStage::Resolved, &pipeline) {

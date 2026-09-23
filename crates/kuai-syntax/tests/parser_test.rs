@@ -1,4 +1,4 @@
-use kuai_core::Interner;
+use syntax::name::Interner;
 use syntax::parser::Parser;
 use syntax::pretty::print_ast;
 

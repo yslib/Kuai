@@ -1,12 +1,12 @@
 use crate::attr::traits::Artifact;
-use kuai_core::Interner;
-use kuai_core::spur::Id;
 use sema::symbol::*;
+use syntax::name::Interner;
+use syntax::name::NameId;
 
 use std::sync::{Arc, RwLock};
 
 pub struct Context {
-    pub interner: kuai_core::Interner,
+    pub interner: Interner,
     pub global_scope: Arc<RwLock<Scope>>,
     pub artifacts: Vec<Artifact>,
 }
@@ -20,7 +20,7 @@ impl Context {
         }
     }
 
-    pub fn lookup(&self, id: Id) -> &str {
+    pub fn lookup(&self, id: NameId) -> &str {
         self.interner.resolve(&id)
     }
 

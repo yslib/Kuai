@@ -1,7 +1,7 @@
-use kuai_core::spur::Id;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use syntax::ast::*;
+use syntax::name::NameId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SymbolKind {
@@ -20,14 +20,14 @@ pub enum ScopeKind {
 
 #[derive(Debug, Clone)]
 pub struct Symbol {
-    pub id: Id,
+    pub id: NameId,
     pub kind: SymbolKind,
     pub ty: Option<TypeExpr>,
     pub span: Span,
 }
 
 pub struct Scope {
-    pub symbols: HashMap<Id, Symbol>,
+    pub symbols: HashMap<NameId, Symbol>,
     pub parent: Option<Arc<RwLock<Scope>>>,
     // The scope kind: Global, Function, or Block.
     pub kind: ScopeKind,
@@ -41,7 +41,7 @@ impl Scope {
         }
     }
 
-    pub fn resolve(&self, name: Id) -> Option<Symbol> {
+    pub fn resolve(&self, name: NameId) -> Option<Symbol> {
         if let Some(sym) = self.symbols.get(&name) {
             Some(sym.clone())
         } else {

@@ -1,6 +1,6 @@
 use crate::attr::{registry::*, traits::*};
 use crate::context::Context;
-use kuai_core::diagnostic::*;
+use crate::diagnostic::*;
 use syntax::ast::*;
 
 pub struct Pipeline<'a> {

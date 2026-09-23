@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+mod diagnostic;
 mod highligher;
 use driver::attr::registry::AttributeRegistry;
 use driver::compiler::Compiler;
@@ -41,7 +42,7 @@ fn compile_and_run(input: &str, ctx: &mut Context, compiler: &Compiler, session:
 
     // Print diagnostics
     for diag in &result.diagnostics {
-        let adapter = diag.render_as_miette("stdin".to_string(), input.to_string());
+        let adapter = diagnostic::render_as_miette(diag, "stdin".to_string(), input.to_string());
         println!("{:?}", Report::new(adapter));
     }
 

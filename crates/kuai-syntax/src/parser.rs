@@ -1,8 +1,8 @@
 use crate::ast::*;
+use crate::diagnostic::Severity;
+use crate::diagnostic::{CompileResult, Diagnostic};
 use crate::lexer::Token;
-use kuai_core::Interner;
-use kuai_core::diagnostic::Severity;
-use kuai_core::diagnostic::{CompileResult, Diagnostic};
+use crate::name::Interner;
 use logos::{Lexer, Logos};
 
 pub trait FromToken {
@@ -492,7 +492,7 @@ impl<'source> Parser<'source> {
             let name = self.current_slice.to_string();
             let span = self.lexer.span();
             self.advance();
-            let name = self.interner.get_or_intern(name);
+            let name = self.interner.get_or_intern(&name);
             Ident { id: name, span }
         } else {
             self.report_error(&format!(

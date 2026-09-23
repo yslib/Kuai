@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-kuai_core = { path = "../kuai-core" }
+lasso = "0.7.3"
 logos = "0.16.0"
 pretty = "0.10.0"
 

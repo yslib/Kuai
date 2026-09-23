@@ -1,5 +1,5 @@
 use crate::context::Context;
-use kuai_core::diagnostic::Diagnostic;
+use crate::diagnostic::Diagnostic;
 use std::any::Any;
 use std::collections::HashMap;
 use syntax::ast::*;

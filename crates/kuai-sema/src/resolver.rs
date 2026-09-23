@@ -1,9 +1,9 @@
+use crate::diagnostic::*;
 use crate::symbol::ScopeKind;
 use crate::symbol::{Scope, Symbol, SymbolKind};
-use kuai_core::Interner;
-use kuai_core::diagnostic::*;
 use std::sync::{Arc, RwLock};
 use syntax::ast::*;
+use syntax::name::Interner;
 
 pub struct Resolver<'ctx> {
     interner: &'ctx Interner,

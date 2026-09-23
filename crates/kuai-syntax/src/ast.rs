@@ -1,4 +1,4 @@
-use kuai_core::spur::Id;
+use crate::name::NameId;
 pub type Span = std::ops::Range<usize>;
 pub const ERROR_IDENT_NAME: &str = "<error_ident>";
 
@@ -11,7 +11,7 @@ pub struct Module {
 
 #[derive(Clone, PartialEq)]
 pub struct Ident {
-    pub id: Id,
+    pub id: NameId,
     pub span: Span,
 }
 

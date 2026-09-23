@@ -1,8 +1,8 @@
-use kuai_core::Interner;
-use kuai_core::diagnostic::Severity;
+use sema::diagnostic::Severity;
 use sema::resolver::Resolver;
 use sema::symbol::{Scope, ScopeKind};
 use std::sync::{Arc, RwLock};
+use syntax::name::Interner;
 use syntax::parser::Parser;
 
 #[test]

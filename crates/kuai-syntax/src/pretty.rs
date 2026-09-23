@@ -1,5 +1,5 @@
 use crate::ast::*;
-use kuai_core::Interner;
+use crate::name::Interner;
 use pretty::{Arena, DocAllocator, DocBuilder};
 
 pub struct PrintContext<'a> {
