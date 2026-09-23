@@ -4,7 +4,6 @@ name = "kuai"
 members = [
 "crates/*",
 "kuai",
-"kurt-python",
 "xtask",
 ]
 default-members = ["crates/*", "kuai"]

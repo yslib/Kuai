@@ -4,7 +4,6 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 mod cpp;
-mod python;
 
 #[derive(Parser)]
 #[command(name = "cargo xtask", about = "Kuai repository development tasks")]
@@ -19,11 +18,6 @@ enum Task {
     Cpp {
         #[command(subcommand)]
         command: CppTask,
-    },
-    /// Build or install the KuPy Python package.
-    Python {
-        #[command(subcommand)]
-        command: python::PythonTask,
     },
 }
 
@@ -49,19 +43,6 @@ fn main() -> ExitCode {
             }
             Err(error) => {
                 eprintln!("cpp fmt: {error}");
-                ExitCode::FAILURE
-            }
-        },
-        Task::Python { command } => match python::run(root, &command) {
-            Ok(result) => {
-                println!("python {}: {}", command.action(), result.wheel.display());
-                if let Some(destination) = result.destination {
-                    println!("python install: {}", destination.display());
-                }
-                ExitCode::SUCCESS
-            }
-            Err(error) => {
-                eprintln!("python {}: {error}", command.action());
                 ExitCode::FAILURE
             }
         },
