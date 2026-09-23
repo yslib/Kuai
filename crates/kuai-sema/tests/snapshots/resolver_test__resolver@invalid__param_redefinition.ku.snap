@@ -1,0 +1,6 @@
+---
+source: crates/kuai-sema/tests/resolver_test.rs
+expression: output
+input_file: crates/kuai-sema/tests/cases/invalid/param_redefinition.ku
+---
+[Error] Param symbol 'a' is already defined at 10..17

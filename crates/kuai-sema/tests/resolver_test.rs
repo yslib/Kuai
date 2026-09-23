@@ -1,4 +1,5 @@
 use kuai_core::Interner;
+use kuai_core::diagnostic::Severity;
 use sema::resolver::Resolver;
 use sema::symbol::{Scope, ScopeKind};
 use std::sync::{Arc, RwLock};
@@ -13,6 +14,12 @@ fn test_resolver() {
         // Parse the input
         let mut parser = Parser::new(&input, &mut interner);
         let parse_result = parser.parse();
+        assert!(
+            parse_result.is_ok(),
+            "resolver fixture {} must parse successfully: {:?}",
+            path.display(),
+            parse_result.diagnostics
+        );
 
         // Check if this is an invalid test case
         let is_invalid = path.to_str().unwrap().contains("/invalid/");
@@ -29,6 +36,13 @@ fn test_resolver() {
 
             if is_invalid {
                 // Invalid test case - should have errors
+                assert!(
+                    diagnostics
+                        .iter()
+                        .any(|diag| matches!(diag.severity, Severity::Error)),
+                    "invalid fixture {} must produce a semantic error",
+                    path.display()
+                );
                 let mut output = String::new();
                 for diag in diagnostics {
                     output.push_str(&format!("[{:?}] {}\n", diag.severity, diag.message));
@@ -36,6 +50,12 @@ fn test_resolver() {
                 insta::assert_snapshot!(output);
             } else {
                 // Valid test case - should have no errors
+                assert!(
+                    diagnostics.is_empty(),
+                    "valid fixture {} must not produce diagnostics: {:?}",
+                    path.display(),
+                    diagnostics
+                );
                 if !diagnostics.is_empty() {
                     let mut output = String::new();
                     for diag in diagnostics {

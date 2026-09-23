@@ -1,0 +1,6 @@
+---
+source: crates/kuai-sema/tests/resolver_test.rs
+expression: "\"No errors\""
+input_file: crates/kuai-sema/tests/cases/valid/function_scope.ku
+---
+No errors

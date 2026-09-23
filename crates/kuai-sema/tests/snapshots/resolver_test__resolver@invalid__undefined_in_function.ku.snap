@@ -1,0 +1,6 @@
+---
+source: crates/kuai-sema/tests/resolver_test.rs
+expression: output
+input_file: crates/kuai-sema/tests/cases/invalid/undefined_in_function.ku
+---
+[Error] Variable 'undefined_var' is not defined
