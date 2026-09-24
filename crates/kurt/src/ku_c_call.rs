@@ -4,9 +4,8 @@ use std::ptr::{self, NonNull};
 use std::rc::Rc;
 
 use crate::{
-    Error, HasObjectKind, KuArc, KuArray, KuDevice, KuInstance, KuObject, KuObjectKind, KuTensor,
-    NativeObject, Result, error::check, ku_arc::OwnedRaw, ku_instance::InstanceInner, string_view,
-    sys,
+    Error, KuArc, KuDevice, KuInstance, KuObject, NativeObject, Result, error::check,
+    ku_arc::OwnedRaw, ku_instance::InstanceInner, string_view, sys,
 };
 
 #[derive(Debug)]
@@ -139,36 +138,13 @@ impl Drop for Outputs<'_> {
     }
 }
 
-fn validate_device<'r>(object: &KuObject<'r>, device: &KuDevice<'_>) -> Result<()> {
-    match object.kind() {
-        KuObjectKind::Scalar | KuObjectKind::String | KuObjectKind::Slice => Ok(()),
-        KuObjectKind::Tensor => {
-            // SAFETY: the checked kind and borrowed source establish a valid
-            // tensor with dependencies in 'r. This non-owning local never escapes.
-            let tensor: KuTensor<'r> = unsafe { KuTensor::from_raw(object.as_raw()) };
-            if tensor.is_on(device) {
-                Ok(())
-            } else {
-                Err(Error::DeviceMismatch)
-            }
-        }
-        KuObjectKind::Array => {
-            // SAFETY: the checked kind and borrowed source establish a valid
-            // array with dependencies in 'r. This non-owning local never escapes.
-            let array: KuArray<'r> = unsafe { KuArray::from_raw(object.as_raw()) };
-            for index in 0..array.len() {
-                validate_device(&*array.get(index)?, device)?;
-            }
-            Ok(())
-        }
-    }
-}
-
 impl KuCCall<'_> {
     /// Calls a native builtin with borrowed arguments and owned result management.
-    /// Validates device identity and waits for the context's default stream
-    /// before returning results or releasing inputs. `None` is a nullable C
-    /// argument/result, distinct from the `ScalarValue::None` primitive.
+    /// Validates callable/context instance identity and waits for the context's
+    /// default stream before returning results or releasing inputs. Argument
+    /// device compatibility is interpreted by the runtime, not this wrapper.
+    /// `None` is a nullable C argument/result, distinct from the
+    /// `ScalarValue::None` primitive.
     /// Results borrow the context's runtime lifetime. They can outlive the
     /// context, callable, and argument wrappers, but not that runtime borrow.
     ///
@@ -200,9 +176,6 @@ impl KuCCall<'_> {
                 .ok_or(Error::InvalidArgument("too many builtin arguments"))?,
         );
         for argument in arguments {
-            if let Some(object) = argument {
-                validate_device(object, &context.device)?;
-            }
             argv.push(argument.map_or(ptr::null_mut(), KuObject::as_raw));
         }
         let names: Vec<_> = keywords
@@ -225,7 +198,7 @@ impl KuCCall<'_> {
                 result_count: 0,
             };
             // SAFETY: the caller supplies native semantic preconditions. All
-            // frame pointers, live handles, capacities, and devices are checked.
+            // frame storage and handles remain live with valid capacities.
             let status = unsafe {
                 match self.target.kind {
                     sys::KU_CALL_FFI => (self.target.value.ffi)(&mut frame),

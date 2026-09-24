@@ -346,10 +346,12 @@ materializable object whose transitive device resources belong to the context's
 KuInstance. Checking the C frame layout cannot establish those guarantees for
 arbitrary vendor code.
 
-The wrapper checks exact native KuInstance identity and recursively validates
-tensor KuDevice identities in arguments, including nested arrays. It manages
-result slots and native references and synchronizes default-stream work on success and
-failure. `None` is a nullable C argument/result, distinct from ScalarValue::None.
+The wrapper checks exact native KuInstance identity between the callable and
+context. Argument device compatibility is interpreted by the runtime; the wrapper
+neither compares tensor devices with the context nor traverses nested arrays for
+device validation. It manages result slots and native references and synchronizes
+the context's default-stream work on success and failure. `None` is a nullable C
+argument/result, distinct from ScalarValue::None.
 Results are `KuArc<KuObject<'r>>` with the context's runtime lifetime; they need
 not borrow the local arguments, context variable, or callable:
 
@@ -643,7 +645,10 @@ cross-thread tensor and final KuInstance destruction, and mixed-device nested
 arrays. The mixed-device test requires two GPUs for its two-device assertions
 and returns early on one GPU. A fifth ignored test, compiled with CPU support,
 combines CPU and CUDA dependencies with numeric device ID 0 and verifies exact
-identity and cross-vendor rejection after parent arrays are released.
+identity and cross-vendor transfer rejection after parent arrays are released.
+A sixth ignored test requires CPU and CUDA support and verifies that builtin
+arguments from another device, including nested arrays, reach native argument
+validation instead of being rejected by the wrapper.
 
 On Linux with a compatible CUDA toolchain and hardware, run:
 
