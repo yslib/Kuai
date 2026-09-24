@@ -24,7 +24,7 @@ For example:
 
 ```bash
 KUAI_RUNTIME_BUILD_MODE=docker \
-KUAI_RUNTIME_DOCKER_IMAGE=ghcr.io/example/kuai-runtime-base:tag \
+KUAI_RUNTIME_DOCKER_IMAGE="$(cat .github/images/base.lock)" \
 KUAI_RUNTIME_PRESET=release-cpu \
 cargo test -p kurt-sys
 ```

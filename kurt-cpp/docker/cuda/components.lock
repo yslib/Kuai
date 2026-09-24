@@ -1,9 +1,0 @@
-# SHA-256                                                          CUDA 12.8 Update 1 redistributable path
-0740e9e01e4f15e17c5ab8d68bba4f8ec0eb6b84edccba4ac45112d2d2174e4b cuda_cccl/linux-x86_64/cuda_cccl-linux-x86_64-12.8.90-archive.tar.xz
-8d566b5fe745c46842dc16945cf36686227536decd2302c372be86da37faca68 cuda_cudart/linux-x86_64/cuda_cudart-linux-x86_64-12.8.90-archive.tar.xz
-9961b3484b6b71314063709a4f9529654f96782ad39e72bf1e00f070db8210d3 cuda_nvcc/linux-x86_64/cuda_nvcc-linux-x86_64-12.8.93-archive.tar.xz
-21718957c2cf000bacd69d36c95708a2319199e39e056f8b4f0f68e3b9f323bb libcublas/linux-x86_64/libcublas-linux-x86_64-12.8.4.1-archive.tar.xz
-32a5ec30be446c1b7228d1bc502b2f029cc8b59a5e362c70d960754fa646778b libcurand/linux-x86_64/libcurand-linux-x86_64-10.3.9.90-archive.tar.xz
-d40ac4040aa192183a072a52cedabd23449b7dd67adbe1e760ca08162f765504 libcusolver/linux-x86_64/libcusolver-linux-x86_64-11.7.3.90-archive.tar.xz
-aa535ceb56690518c89257d985b13d505f951e4bba7591dbfaa179fc2fff329e libcusparse/linux-x86_64/libcusparse-linux-x86_64-12.5.8.93-archive.tar.xz
-29220664ad272c513d3213133ace6d6590303e46b42a17b05bc2bee90e54a888 libnvjitlink/linux-x86_64/libnvjitlink-linux-x86_64-12.8.93-archive.tar.xz

@@ -25,9 +25,3 @@ cmake --build --preset release-cuda
 Use `cmake --list-presets` to list the remaining debug, native-CUDA, and
 combined presets. Build and install trees are written below `build/` and
 `install/`.
-
-## Formatting and CI images
-
-The C++ formatting rules live in `.clang-format`. The `docker/*.ci.lock` files
-pin the toolchain images consumed by the enclosing repository's CI checks;
-they are not required for a local CMake build.

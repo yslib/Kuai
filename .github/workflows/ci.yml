@@ -47,8 +47,8 @@ jobs:
       - name: Resolve CPU toolchain image
         shell: bash
         run: |
-          image="$(<kurt-cpp/docker/Docker_base.ci.lock)"
-          [[ "$image" =~ ^ghcr\.io/yslib/kuai-runtime-base:[0-9a-f]{40}$ ]]
+          image="$(<.github/images/base.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-base@sha256:[0-9a-f]{64}$ ]]
           echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
       - name: Build Rust workspace with CPU runtime
         env:
@@ -72,8 +72,8 @@ jobs:
       - name: Resolve CUDA toolchain image
         shell: bash
         run: |
-          image="$(<kurt-cpp/docker/Docker_cuda.ci.lock)"
-          [[ "$image" =~ ^ghcr\.io/yslib/kuai-runtime-cuda:[0-9a-f]{40}$ ]]
+          image="$(<.github/images/cuda.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-cuda@sha256:[0-9a-f]{64}$ ]]
           echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
       - name: Test Rust runtime interfaces with CUDA runtime
         env:

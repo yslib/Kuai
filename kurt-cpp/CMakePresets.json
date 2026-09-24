@@ -82,9 +82,9 @@
       "name": "toolchain-cuda-nvcc",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "/opt/rh/gcc-toolset-14/root/usr/bin/g++",
+        "CMAKE_CXX_COMPILER": "g++",
         "CMAKE_CUDA_COMPILER": "/usr/local/cuda/bin/nvcc",
-        "CMAKE_CUDA_HOST_COMPILER": "/opt/rh/gcc-toolset-14/root/usr/bin/g++",
+        "CMAKE_CUDA_HOST_COMPILER": "g++",
         "CUDAToolkit_ROOT": "/usr/local/cuda"
       }
     },
