@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![cfg_attr(doctest, doc = include_str!("../tests/doctests.md"))]
 #![deny(unsafe_op_in_unsafe_fn)]
 
 mod error;

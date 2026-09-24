@@ -6,20 +6,16 @@ file(GLOB_RECURSE KURT_CUDA_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
 
-add_library(kurt_cuda ${KURT_LIB_TYPE} ${KURT_CUDA_FILES})
+add_library(kurt_cuda MODULE ${KURT_CUDA_FILES})
 target_link_libraries(kurt_cuda
-    PUBLIC kuai::kurt
     PRIVATE
+        kuai::kurt
         kuai::kurt_cuda_private
         CUDA::curand
         CUDA::cublas
         CUDA::cusolver)
 
 target_include_directories(kurt_cuda PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private)
-
-if(KURT_ENABLE_TRACY)
-    target_link_libraries(kurt_cuda PRIVATE CUDA::cupti CUDA::cuda_driver)
-endif()
 
 target_compile_definitions(kurt_cuda
     PRIVATE

@@ -1,8 +1,8 @@
 {
   "version": 6,
   "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 25,
+    "major": 4,
+    "minor": 1,
     "patch": 0
   },
   "configurePresets": [
@@ -35,126 +35,25 @@
       }
     },
     {
-      "name": "feature-cpu",
-      "hidden": true,
-      "cacheVariables": {
-        "KURT_ENABLED_VENDORS": "cpu"
-      }
-    },
-    {
-      "name": "feature-cuda",
-      "hidden": true,
-      "cacheVariables": {
-        "KURT_ENABLED_VENDORS": "cuda"
-      }
-    },
-    {
-      "name": "cuda-arch-native",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CUDA_ARCHITECTURES": "native"
-      }
-    },
-    {
-      "name": "cuda-arch-ci",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CUDA_ARCHITECTURES": "80"
-      }
-    },
-    {
-      "name": "feature-all",
-      "hidden": true,
-      "cacheVariables": {
-        "KURT_ENABLED_VENDORS": "cpu;cuda"
-      }
-    },
-    {
-      "name": "toolchain-cuda-clang",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "/opt/llvm/bin/clang++",
-        "CMAKE_CUDA_COMPILER": "/opt/llvm/bin/clang++",
-        "CUDAToolkit_ROOT": "/usr/local/cuda"
-      }
-    },
-    {
-      "name": "toolchain-cuda-nvcc",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "g++",
-        "CMAKE_CUDA_COMPILER": "/usr/local/cuda/bin/nvcc",
-        "CMAKE_CUDA_HOST_COMPILER": "g++",
-        "CUDAToolkit_ROOT": "/usr/local/cuda"
-      }
-    },
-    {
       "name": "release",
-      "inherits": ["feature-cuda", "cuda-arch-native", "rel-base"]
+      "inherits": "rel-base"
     },
     {
       "name": "debug",
-      "inherits": ["feature-cuda", "cuda-arch-native", "dev-base"]
-    },
-    {
-      "name": "release-cpu",
-      "inherits": ["feature-cpu", "rel-base"]
-    },
-    {
-      "name": "debug-cpu",
-      "inherits": ["feature-cpu", "dev-base"]
-    },
-    {
-      "name": "release-cuda",
-      "inherits": ["feature-cuda", "cuda-arch-ci", "toolchain-cuda-clang", "rel-base"]
-    },
-    {
-      "name": "release-cuda-nvcc",
-      "inherits": ["feature-cuda", "cuda-arch-ci", "toolchain-cuda-nvcc", "rel-base"]
-    },
-    {
-      "name": "release-all",
-      "inherits": ["feature-all", "cuda-arch-ci", "rel-base"]
+      "inherits": "dev-base"
     }
   ],
   "buildPresets": [
     {
       "name": "release",
       "configurePreset": "release",
+      "targets": ["kurt"],
       "jobs": 64
     },
     {
       "name": "debug",
       "configurePreset": "debug",
-      "jobs": 64
-    },
-    {
-      "name": "release-cpu",
-      "configurePreset": "release-cpu",
-      "targets": ["kurt", "kurt_cpu"],
-      "jobs": 64
-    },
-    {
-      "name": "debug-cpu",
-      "configurePreset": "debug-cpu",
-      "targets": ["kurt", "kurt_cpu"],
-      "jobs": 64
-    },
-    {
-      "name": "release-cuda",
-      "configurePreset": "release-cuda",
-      "targets": ["kurt", "kurt_cuda"],
-      "jobs": 64
-    },
-    {
-      "name": "release-cuda-nvcc",
-      "configurePreset": "release-cuda-nvcc",
-      "targets": ["kurt", "kurt_cuda"],
-      "jobs": 64
-    },
-    {
-      "name": "release-all",
-      "configurePreset": "release-all",
+      "targets": ["kurt"],
       "jobs": 64
     }
   ],
@@ -171,41 +70,6 @@
       "steps": [
         {"type": "configure", "name": "debug"},
         {"type": "build", "name": "debug"}
-      ]
-    },
-    {
-      "name": "release-cpu",
-      "steps": [
-        {"type": "configure", "name": "release-cpu"},
-        {"type": "build", "name": "release-cpu"}
-      ]
-    },
-    {
-      "name": "debug-cpu",
-      "steps": [
-        {"type": "configure", "name": "debug-cpu"},
-        {"type": "build", "name": "debug-cpu"}
-      ]
-    },
-    {
-      "name": "release-cuda",
-      "steps": [
-        {"type": "configure", "name": "release-cuda"},
-        {"type": "build", "name": "release-cuda"}
-      ]
-    },
-    {
-      "name": "release-cuda-nvcc",
-      "steps": [
-        {"type": "configure", "name": "release-cuda-nvcc"},
-        {"type": "build", "name": "release-cuda-nvcc"}
-      ]
-    },
-    {
-      "name": "release-all",
-      "steps": [
-        {"type": "configure", "name": "release-all"},
-        {"type": "build", "name": "release-all"}
       ]
     }
   ]

@@ -1,0 +1,144 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 1,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/../build/${presetName}",
+      "installDir": "${sourceDir}/../install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INSTALL_LIBDIR": "lib",
+        "CMAKE_CXX_FLAGS": "-w"
+      }
+    },
+    {
+      "name": "release-cpu",
+      "inherits": "base",
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cpu",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_MODULE_LINKER_FLAGS_RELEASE": "-s"
+      }
+    },
+    {
+      "name": "debug-cpu",
+      "inherits": "base",
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cpu",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release-cpu-docker",
+      "inherits": "release-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake"
+    },
+    {
+      "name": "debug-cpu-docker",
+      "inherits": "debug-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake"
+    },
+    {
+      "name": "release-cuda",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda.cmake",
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cuda",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_MODULE_LINKER_FLAGS_RELEASE": "-s",
+        "CMAKE_CUDA_ARCHITECTURES": "80"
+      }
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "inherits": "release-cuda",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda-nvcc.cmake"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release-cpu",
+      "configurePreset": "release-cpu",
+      "targets": ["kurt_cpu"],
+      "jobs": 64
+    },
+    {
+      "name": "debug-cpu",
+      "configurePreset": "debug-cpu",
+      "targets": ["kurt_cpu"],
+      "jobs": 64
+    },
+    {
+      "name": "release-cpu-docker",
+      "inherits": "release-cpu",
+      "configurePreset": "release-cpu-docker"
+    },
+    {
+      "name": "debug-cpu-docker",
+      "inherits": "debug-cpu",
+      "configurePreset": "debug-cpu-docker"
+    },
+    {
+      "name": "release-cuda",
+      "configurePreset": "release-cuda",
+      "targets": ["kurt_cuda"],
+      "jobs": 64
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "configurePreset": "release-cuda-nvcc",
+      "targets": ["kurt_cuda"],
+      "jobs": 64
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "release-cpu",
+      "steps": [
+        {"type": "configure", "name": "release-cpu"},
+        {"type": "build", "name": "release-cpu"}
+      ]
+    },
+    {
+      "name": "debug-cpu",
+      "steps": [
+        {"type": "configure", "name": "debug-cpu"},
+        {"type": "build", "name": "debug-cpu"}
+      ]
+    },
+    {
+      "name": "release-cpu-docker",
+      "steps": [
+        {"type": "configure", "name": "release-cpu-docker"},
+        {"type": "build", "name": "release-cpu-docker"}
+      ]
+    },
+    {
+      "name": "debug-cpu-docker",
+      "steps": [
+        {"type": "configure", "name": "debug-cpu-docker"},
+        {"type": "build", "name": "debug-cpu-docker"}
+      ]
+    },
+    {
+      "name": "release-cuda",
+      "steps": [
+        {"type": "configure", "name": "release-cuda"},
+        {"type": "build", "name": "release-cuda"}
+      ]
+    },
+    {
+      "name": "release-cuda-nvcc",
+      "steps": [
+        {"type": "configure", "name": "release-cuda-nvcc"},
+        {"type": "build", "name": "release-cuda-nvcc"}
+      ]
+    }
+  ]
+}

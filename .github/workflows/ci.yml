@@ -36,47 +36,141 @@ jobs:
       - name: Test formatting tasks
         run: cargo test -p xtask --locked
 
-  cargo-cpu:
+  host:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Resolve CPU toolchain image
+      - name: Build and install release host
         shell: bash
         run: |
           image="$(<.github/images/base.lock)"
           [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-base@sha256:[0-9a-f]{64}$ ]]
-          echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
-      - name: Build Rust workspace with CPU runtime
-        env:
-          KUAI_RUNTIME_BUILD_MODE: docker
-          KUAI_RUNTIME_PRESET: release-cpu
-        run: cargo build --workspace --locked
-      - name: Test runtime bindings and safe Rust interface
-        env:
-          KUAI_RUNTIME_BUILD_MODE: docker
-          KUAI_RUNTIME_PRESET: release-cpu
-        run: cargo test -p kurt-sys -p kurt --locked
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$RUNNER_TEMP:/runner-temp" \
+            -w /work/kurt-cpp "$image" bash -euo pipefail -c '
+              cmake --preset release -G Ninja \
+                --toolchain cmake/toolchains/docker-base.cmake \
+                -DCMAKE_INSTALL_PREFIX=/runner-temp/kurt-host
+              cmake --build --preset release --parallel 4
+              cmake --install build/release
+            '
+          tar -C "$RUNNER_TEMP/kurt-host" -czf "$RUNNER_TEMP/kurt-host.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}/kurt-host.tar.gz
+          if-no-files-found: error
 
-  cargo-cuda:
+  cargo-host:
+    needs: host
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
-      - name: Resolve CUDA toolchain image
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}
+      - name: Set installed host paths
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-host" >>"$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/kurt-host/lib" >>"$GITHUB_ENV"
+      - name: Extract installed host
+        run: |
+          mkdir -p "$CMAKE_INSTALL_PREFIX"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$CMAKE_INSTALL_PREFIX"
+      - name: Build Rust workspace against installed host
+        run: cargo build --workspace --locked
+      - name: Test host runtime bindings and safe Rust interface
+        run: cargo test -p kurt-sys -p kurt --locked
+      - name: Test host-only behavior
+        run: cargo test -p kurt-sys --test host_only --locked -- --ignored
+
+  vendor:
+    needs: host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        include:
+          - vendor: cpu
+            image: base
+            preset: release-cpu-docker
+          - vendor: cuda
+            image: cuda
+            preset: release-cuda
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}
+      - name: Build and install release vendor
         shell: bash
         run: |
-          image="$(<.github/images/cuda.lock)"
-          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-cuda@sha256:[0-9a-f]{64}$ ]]
-          echo "KUAI_RUNTIME_DOCKER_IMAGE=$image" >>"$GITHUB_ENV"
-      - name: Test Rust runtime interfaces with CUDA runtime
-        env:
-          KUAI_RUNTIME_BUILD_MODE: docker
-          KUAI_RUNTIME_PRESET: release-cuda
+          image="$(<.github/images/${{ matrix.image }}.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-${{ matrix.image }}@sha256:[0-9a-f]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/kurt-host" "$RUNNER_TEMP/kurt-vendor-${{ matrix.vendor }}"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$RUNNER_TEMP:/runner-temp" \
+            -w /work/kurt-cpp/vendor "$image" bash -euo pipefail -c '
+              cmake --preset ${{ matrix.preset }} -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-host \
+                -DCMAKE_INSTALL_PREFIX=/runner-temp/kurt-vendor-${{ matrix.vendor }}
+              cmake --build --preset ${{ matrix.preset }} --parallel 2
+              cmake --install /work/kurt-cpp/build/${{ matrix.preset }}
+              mkdir -p /runner-temp/vendor-query-${{ matrix.vendor }}
+              printf "cmake_minimum_required(VERSION 4.1)\nproject(vendor_query LANGUAGES NONE)\nfind_package(kuai_vendor_${{ matrix.vendor }} 0.1.0 EXACT CONFIG REQUIRED)\n" \
+                > /runner-temp/vendor-query-${{ matrix.vendor }}/CMakeLists.txt
+              cmake -S /runner-temp/vendor-query-${{ matrix.vendor }} \
+                -B /runner-temp/vendor-query-${{ matrix.vendor }}/build -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-vendor-${{ matrix.vendor }}
+            '
+          tar -C "$RUNNER_TEMP/kurt-vendor-${{ matrix.vendor }}" \
+            -czf "$RUNNER_TEMP/kurt-vendor-${{ matrix.vendor }}.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-vendor-${{ matrix.vendor }}-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}/kurt-vendor-${{ matrix.vendor }}.tar.gz
+          if-no-files-found: error
+
+  cargo-cpu:
+    needs: [host, vendor]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release-cpu
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-vendor-cpu-x86_64-unknown-linux-gnu-release
+          path: ${{ runner.temp }}
+      - name: Extract host and CPU vendor
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-runtime" >>"$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/kurt-runtime/lib" >>"$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-vendor-cpu.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+      - name: Test runtime bindings and safe Rust interface with CPU vendor
         run: cargo test -p kurt-sys -p kurt --locked
