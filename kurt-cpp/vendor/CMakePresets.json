@@ -35,19 +35,54 @@
       }
     },
     {
-      "name": "release-cpu-docker",
+      "name": "release-cpu-macos-clang",
       "inherits": "release-cpu",
-      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake"
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/macos-clang.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
     },
     {
-      "name": "debug-cpu-docker",
+      "name": "debug-cpu-macos-clang",
       "inherits": "debug-cpu",
-      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake"
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/macos-clang.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
     },
     {
-      "name": "release-cuda",
+      "name": "release-cpu-linux-clang",
+      "inherits": "release-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "debug-cpu-linux-clang",
+      "inherits": "debug-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-base.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "release-cuda-linux-clang",
       "inherits": "base",
       "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "cacheVariables": {
         "KURT_ENABLED_VENDORS": "cuda",
         "CMAKE_BUILD_TYPE": "Release",
@@ -57,7 +92,7 @@
     },
     {
       "name": "release-cuda-nvcc",
-      "inherits": "release-cuda",
+      "inherits": "release-cuda-linux-clang",
       "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda-nvcc.cmake"
     }
   ],
@@ -75,18 +110,28 @@
       "jobs": 64
     },
     {
-      "name": "release-cpu-docker",
+      "name": "release-cpu-macos-clang",
       "inherits": "release-cpu",
-      "configurePreset": "release-cpu-docker"
+      "configurePreset": "release-cpu-macos-clang"
     },
     {
-      "name": "debug-cpu-docker",
+      "name": "debug-cpu-macos-clang",
       "inherits": "debug-cpu",
-      "configurePreset": "debug-cpu-docker"
+      "configurePreset": "debug-cpu-macos-clang"
     },
     {
-      "name": "release-cuda",
-      "configurePreset": "release-cuda",
+      "name": "release-cpu-linux-clang",
+      "inherits": "release-cpu",
+      "configurePreset": "release-cpu-linux-clang"
+    },
+    {
+      "name": "debug-cpu-linux-clang",
+      "inherits": "debug-cpu",
+      "configurePreset": "debug-cpu-linux-clang"
+    },
+    {
+      "name": "release-cuda-linux-clang",
+      "configurePreset": "release-cuda-linux-clang",
       "targets": ["kurt_cuda"],
       "jobs": 64
     },
@@ -113,24 +158,38 @@
       ]
     },
     {
-      "name": "release-cpu-docker",
+      "name": "release-cpu-macos-clang",
       "steps": [
-        {"type": "configure", "name": "release-cpu-docker"},
-        {"type": "build", "name": "release-cpu-docker"}
+        {"type": "configure", "name": "release-cpu-macos-clang"},
+        {"type": "build", "name": "release-cpu-macos-clang"}
       ]
     },
     {
-      "name": "debug-cpu-docker",
+      "name": "debug-cpu-macos-clang",
       "steps": [
-        {"type": "configure", "name": "debug-cpu-docker"},
-        {"type": "build", "name": "debug-cpu-docker"}
+        {"type": "configure", "name": "debug-cpu-macos-clang"},
+        {"type": "build", "name": "debug-cpu-macos-clang"}
       ]
     },
     {
-      "name": "release-cuda",
+      "name": "release-cpu-linux-clang",
       "steps": [
-        {"type": "configure", "name": "release-cuda"},
-        {"type": "build", "name": "release-cuda"}
+        {"type": "configure", "name": "release-cpu-linux-clang"},
+        {"type": "build", "name": "release-cpu-linux-clang"}
+      ]
+    },
+    {
+      "name": "debug-cpu-linux-clang",
+      "steps": [
+        {"type": "configure", "name": "debug-cpu-linux-clang"},
+        {"type": "build", "name": "debug-cpu-linux-clang"}
+      ]
+    },
+    {
+      "name": "release-cuda-linux-clang",
+      "steps": [
+        {"type": "configure", "name": "release-cuda-linux-clang"},
+        {"type": "build", "name": "release-cuda-linux-clang"}
       ]
     },
     {

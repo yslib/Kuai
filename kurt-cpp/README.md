@@ -17,7 +17,7 @@ For Debug, replace `release` with `debug`. Build and install directories are
 
 ## Build a CPU plugin
 
-Build and install the host first, then run:
+Supported on Linux and macOS. Build and install the host first, then run:
 
 ```bash
 cmake -S vendor --preset release-cpu \
@@ -30,28 +30,34 @@ For Debug, use `debug-cpu` with `install/debug`.
 
 ## Build a CUDA plugin
 
-Run in the [kurt-build CUDA image](https://github.com/yslib/kurt-build), after
-building and installing the host there:
+CUDA plugins target Linux. Run in the
+[kurt-build CUDA image](https://github.com/yslib/kurt-build), after building and
+installing the host there:
 
 ```bash
-cmake -S vendor --preset release-cuda \
+cmake -S vendor --preset release-cuda-linux-clang \
   -DCMAKE_PREFIX_PATH="$PWD/install/release" \
   -DCMAKE_CUDA_ARCHITECTURES=80
-cmake --build build/release-cuda
-cmake --install build/release-cuda
+cmake --build build/release-cuda-linux-clang
+cmake --install build/release-cuda-linux-clang
 ```
 
 Set `CMAKE_CUDA_ARCHITECTURES` for the deployment GPU. Use the Clang preset
 above; `release-cuda-nvcc` is experimental and currently does not build.
 Running the CUDA plugin requires an NVIDIA GPU, driver, and CUDA runtime libraries.
 
-## Docker and presets
+## Toolchains and presets
 
-For a host build in a kurt-build image, add
-`--toolchain cmake/toolchains/docker-base.cmake` to the configure command.
-For CPU plugins, use `release-cpu-docker` or `debug-cpu-docker`, including that
-preset name in the build and install paths. Edit `cmake/toolchains/` when
-compiler or SDK paths change.
+Select matching host and CPU toolchains for your environment:
+
+| Environment | Host configure option | CPU preset |
+| --- | --- | --- |
+| macOS arm64, Homebrew LLVM 22 | `--toolchain cmake/toolchains/macos-clang.cmake` | `release-cpu-macos-clang` |
+| kurt-build Linux image | `--toolchain cmake/toolchains/docker-base.cmake` | `release-cpu-linux-clang` |
+
+Use the selected CPU preset name in the build and install paths. For Debug,
+replace `release` with `debug`. Edit `cmake/toolchains/` when compiler or SDK
+paths change.
 
 List presets with `cmake --list-presets=all`, or
 `cmake -S vendor --list-presets=all` for plugins. After configuring,
@@ -84,7 +90,7 @@ From `kurt-cpp/`, install the host and desired plugins into one directory:
 cmake --install build/release --prefix "$PWD/install/runtime"
 cmake --install build/release-cpu --prefix "$PWD/install/runtime"
 # If built:
-cmake --install build/release-cuda --prefix "$PWD/install/runtime"
+cmake --install build/release-cuda-linux-clang --prefix "$PWD/install/runtime"
 ```
 
 Keep Debug and Release installations separate. For Rust usage and library

@@ -9,13 +9,23 @@ list(APPEND CMAKE_MODULE_PATH
 include(KurtBuildOptions)
 
 set(KURT_ENABLED_VENDORS cpu CACHE STRING "Vendors to build (semicolon-separated)")
-set(KURT_SUPPORTED_VENDORS cpu cuda)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(KURT_SUPPORTED_VENDORS cpu)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(KURT_SUPPORTED_VENDORS cpu cuda)
+else()
+    message(FATAL_ERROR "Kurt vendors are not supported on target platform '${CMAKE_SYSTEM_NAME}'")
+endif()
 if("${KURT_ENABLED_VENDORS}" STREQUAL "")
-    message(FATAL_ERROR "KURT_ENABLED_VENDORS must select at least one vendor: cpu, cuda")
+    message(FATAL_ERROR
+        "KURT_ENABLED_VENDORS must select at least one vendor. "
+        "Supported on ${CMAKE_SYSTEM_NAME}: ${KURT_SUPPORTED_VENDORS}")
 endif()
 foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
     if(NOT vendor IN_LIST KURT_SUPPORTED_VENDORS)
-        message(FATAL_ERROR "Vendor '${vendor}' is not supported by kurt. Supported names: cpu, cuda")
+        message(FATAL_ERROR
+            "Vendor '${vendor}' is not supported on ${CMAKE_SYSTEM_NAME}. "
+            "Supported vendors: ${KURT_SUPPORTED_VENDORS}")
     endif()
 endforeach()
 list(REMOVE_DUPLICATES KURT_ENABLED_VENDORS)
