@@ -4,8 +4,7 @@
 #include <type_traits>
 
 #include <kuai/core/KuRefCounted.h>
-
-#include "kuai_c/KuCHandle.h"
+#include <kuai/kuai_c/KuCHandle.h>
 
 #define KU_C_REF_COUNTED_LIFETIME_IMPL(RETAIN_FUNCTION, RELEASE_FUNCTION, C_HANDLE)              \
     static_assert(std::derived_from<std::remove_cv_t<::kuai::capi::ku_c_handle_cpp_t<C_HANDLE>>, \

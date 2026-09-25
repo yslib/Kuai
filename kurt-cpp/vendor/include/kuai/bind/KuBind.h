@@ -19,9 +19,8 @@
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuObject.h>
 #include <kuai/core/KuSmallBuffer.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_builtin.h>
-
-#include "kuai_c/KuCHandle.h"
 
 namespace kuai::bind {
 

@@ -2,10 +2,10 @@
 
 #include <kuai/core/KuDevice.h>
 #include <kuai/core/KuFrameContext.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_context.h>
 
 #include "kuai_c/KuCApiMethod.h"
-#include "kuai_c/KuCHandle.h"
 
 extern "C" ku_status_t ku_frame_ctx_create(ku_device_t device, ku_frame_ctx_t *out_ctx) {
     KU_ASSERT(device != nullptr, "ku_frame_ctx_create requires a non-null device");

@@ -1,8 +1,8 @@
 #include <kuai/core/KuArray.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_array.h>
 
 #include "kuai_c/KuCApiMethod.h"
-#include "kuai_c/KuCHandle.h"
 
 extern "C" ku_status_t
 ku_array_create(const ku_object_t *items, ku_size_t count, ku_object_t *out) {

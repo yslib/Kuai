@@ -8,10 +8,9 @@
 #include <utility>
 
 #include <kuai/core/KuContext.h>
+#include <kuai/core/KuDeviceBuffer.h>
+#include <kuai/core/KuDeviceGuard.h>
 #include <kuai/core/KuTensor.h>
-
-#include "core/KuDeviceBuffer.h"
-#include "core/KuDeviceGuard.h"
 
 namespace kuai {
 

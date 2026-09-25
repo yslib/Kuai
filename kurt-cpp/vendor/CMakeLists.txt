@@ -21,8 +21,6 @@ endforeach()
 list(REMOVE_DUPLICATES KURT_ENABLED_VENDORS)
 
 find_package(kuai 0.1.0 EXACT CONFIG REQUIRED)
-set(KURT_HOST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.."
-    CACHE PATH "kurt-cpp source root for private host headers")
 include(KurtVendorPackage)
 
 foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
@@ -34,9 +32,7 @@ foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
     add_library(kuai::kurt_${vendor}_private ALIAS kurt_${vendor}_interface)
     target_include_directories(kurt_${vendor}_interface INTERFACE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/${vendor_directory}/include"
-        "${KURT_HOST_SOURCE_DIR}/src/core/private"
-        "${KURT_HOST_SOURCE_DIR}/src/kuai_c/private")
+        "${CMAKE_CURRENT_SOURCE_DIR}/${vendor_directory}/include")
     message(STATUS "Building kurt vendor: ${vendor}")
     add_subdirectory(${vendor_directory})
 

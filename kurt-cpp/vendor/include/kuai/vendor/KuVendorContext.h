@@ -7,13 +7,12 @@
 
 #include <kuai/core/KuContext.h>
 #include <kuai/core/KuCore.h>
+#include <kuai/core/KuDeviceBuffer.h>
 #include <kuai/core/KuMemoryResource.h>
+#include <kuai/core/KuTensorBuilder.h>
 #include <kuai/ktl/KuDeviceMarker.h>
 #include <kuai/ktl/KuResult.h>
 #include <kuai/vendor/KuTensorDesc.h>
-
-#include "core/KuDeviceBuffer.h"
-#include "core/KuTensorBuilder.h"
 
 namespace kuai {
 

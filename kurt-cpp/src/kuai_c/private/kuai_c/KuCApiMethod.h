@@ -10,8 +10,7 @@
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuPointer.h>
 #include <kuai/core/KuRefCounted.h>
-
-#include "kuai_c/KuCHandle.h"
+#include <kuai/kuai_c/KuCHandle.h>
 
 namespace kuai::capi {
 

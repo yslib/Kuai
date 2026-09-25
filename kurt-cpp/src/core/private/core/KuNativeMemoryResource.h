@@ -5,9 +5,8 @@
 #include <new>
 
 #include <kuai/core/KuDevice.h>
+#include <kuai/core/KuDeviceGuard.h>
 #include <kuai/core/KuMemoryResource.h>
-
-#include "core/KuDeviceGuard.h"
 
 namespace kuai {
 

@@ -2,14 +2,14 @@
 #include <utility>
 
 #include <kuai/core/KuDevice.h>
+#include <kuai/core/KuDeviceGuard.h>
 #include <kuai/core/KuHostTransfer.h>
 #include <kuai/core/KuMemoryResource.h>
+#include <kuai/core/KuTensorBuilder.h>
 
 #include "core/KuDeviceAccess.h"
-#include "core/KuDeviceGuard.h"
 #include "core/KuMemoryResourceAccess.h"
 #include "core/KuNativeMemoryResource.h"
-#include "core/KuTensorBuilder.h"
 
 namespace kuai {
 

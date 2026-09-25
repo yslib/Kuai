@@ -10,8 +10,7 @@
 #include <kuai/core/KuObject.h>
 #include <kuai/core/KuPointer.h>
 #include <kuai/core/KuScalar.h>
-
-#include "kuai_c/KuCHandle.h"
+#include <kuai/kuai_c/KuCHandle.h>
 
 namespace kuai::bind {
 

@@ -9,10 +9,9 @@
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuDevice.h>
 #include <kuai/core/KuTensor.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_tensor.h>
 #include <kuai/runtime/KuCompletion.h>
-
-#include "kuai_c/KuCHandle.h"
 
 namespace kuai {
 namespace {

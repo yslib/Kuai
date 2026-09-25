@@ -3,9 +3,8 @@
 #include <cstddef>
 #include <utility>
 
+#include <kuai/core/KuDeviceBuffer.h>
 #include <kuai/vendor/KuVendorContext.h>
-
-#include "core/KuDeviceBuffer.h"
 
 namespace kuai::vendor::cuda::detail {
 

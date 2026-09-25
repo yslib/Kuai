@@ -1,8 +1,8 @@
 #include <kuai/core/KuSlice.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_slice.h>
 
 #include "kuai_c/KuCApiMethod.h"
-#include "kuai_c/KuCHandle.h"
 
 namespace kuai {
 namespace {

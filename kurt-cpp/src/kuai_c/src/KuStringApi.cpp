@@ -1,10 +1,10 @@
 #include <string_view>
 
 #include <kuai/core/KuString.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_string.h>
 
 #include "kuai_c/KuCApiMethod.h"
-#include "kuai_c/KuCHandle.h"
 
 extern "C" ku_status_t ku_string_create(ku_string_view_t value, ku_object_t *out) {
     KU_ASSERT(value.data != nullptr, "ku_string_create requires non-null input storage");

@@ -9,10 +9,10 @@
 
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuDevice.h>
+#include <kuai/core/KuDeviceGuard.h>
 #include <kuai/core/KuHostTransfer.h>
 #include <kuai/runtime/KuCompletion.h>
 
-#include "core/KuDeviceGuard.h"
 #include "runtime/KuHostTransferFactory.h"
 
 namespace kuai {

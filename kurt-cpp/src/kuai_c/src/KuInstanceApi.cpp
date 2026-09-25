@@ -1,10 +1,10 @@
 #include <kuai/core/KuCore.h>
+#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_builtin.h>
 #include <kuai/kuai_c/ku_runtime.h>
 #include <kuai/runtime/KuInstance.h>
 
 #include "kuai_c/KuCApiMethod.h"
-#include "kuai_c/KuCHandle.h"
 #include "runtime/KuInstanceRegistry.h"
 
 extern "C" ku_status_t ku_instance_init(const ku_instance_init_info_t *info, ku_instance_t *out) {
