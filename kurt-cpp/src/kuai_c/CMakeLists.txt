@@ -2,16 +2,16 @@ include(KurtUtils)
 
 kurt_add_module(kuai_c
     TARGET_NAME kurt
-    SHARED
+    ${KURT_LIB_TYPE}
     PRIVATE_INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/src/core/private
         ${PROJECT_SOURCE_DIR}/src/runtime/private
     COMPILE_OPTIONS
         ${KURT_WERROR_FLAG}
     PRIVATE_LINK_LIBRARIES
-        kuai::core
-        kuai::runtime
-        kuai::profiler
+        $<BUILD_INTERFACE:kuai::core>
+        $<BUILD_INTERFACE:kuai::runtime>
+        $<BUILD_INTERFACE:kuai::profiler>
         Threads::Threads
         ${CMAKE_DL_LIBS}
     CXX_STANDARD 26

@@ -6,8 +6,8 @@ Raw Rust bindings to the Kurt C API. For a safe Rust interface, use
 ## Build and run
 
 Build the host and optional CPU/CUDA plugins using the
-[kurt-cpp instructions](../../kurt-cpp/README.md). From the repository root,
-assemble a runtime installation:
+[kurt-cpp instructions](../../kurt-cpp/README.md). Use the default static host
+build. From the repository root, assemble an installation:
 
 ```bash
 export CMAKE_INSTALL_PREFIX="$PWD/kurt-cpp/install/runtime"
@@ -16,7 +16,7 @@ cmake --install kurt-cpp/build/release --prefix "$CMAKE_INSTALL_PREFIX"
 cmake --install kurt-cpp/build/release-cpu --prefix "$CMAKE_INSTALL_PREFIX"
 ```
 
-Set the runtime library path for your platform:
+For plugins, set the runtime library path for your platform:
 
 ```bash
 # Linux
@@ -32,8 +32,9 @@ cargo build -p kurt-sys --locked
 KUAI_RUNTIME_PRESET=release-cpu cargo test -p kurt-sys --locked
 ```
 
-For host-only tests, point `CMAKE_INSTALL_PREFIX` and the library path to
-`kurt-cpp/install/release`, and use `KUAI_RUNTIME_PRESET=release`.
+For host-only tests, point `CMAKE_INSTALL_PREFIX` to `kurt-cpp/install/release`
+and use `KUAI_RUNTIME_PRESET=release`. The statically linked host needs no
+runtime library path.
 
 ## Call the C API
 

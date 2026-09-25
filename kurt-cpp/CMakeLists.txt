@@ -14,7 +14,12 @@ include(GNUInstallDirs)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(KurtBuildOptions)
-set(KURT_LIB_TYPE SHARED)
+option(BUILD_SHARED_LIBS "Build the host as a shared library" OFF)
+if(BUILD_SHARED_LIBS)
+    set(KURT_LIB_TYPE SHARED)
+else()
+    set(KURT_LIB_TYPE STATIC)
+endif()
 
 option(KURT_ENABLE_BENCHMARK "enable benchmark" OFF)
 

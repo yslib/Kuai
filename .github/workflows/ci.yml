@@ -126,13 +126,9 @@ jobs:
           tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
       - name: Build Rust workspace against installed host
         if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          cargo build --workspace --locked
+        run: cargo build --workspace --locked
       - name: Test host runtime and host-only behavior
         run: |
-          export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          export DYLD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
           cargo test -p kurt-sys -p kurt --locked
           cargo test -p kurt-sys --test host_only --locked -- --ignored
 

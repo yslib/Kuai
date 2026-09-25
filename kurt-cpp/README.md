@@ -15,6 +15,10 @@ cmake --install build/release
 For Debug, replace `release` with `debug`. Build and install directories are
 `build/<preset>` and `install/<preset>`.
 
+The host defaults to a static library. For CMake consumers that need a shared
+host, configure a separate build with `-DBUILD_SHARED_LIBS=ON`. Rust consumes
+the default static installation.
+
 ## Build a CPU plugin
 
 Supported on Linux and macOS. Build and install the host first, then run:
@@ -95,6 +99,14 @@ cmake --install build/release-cuda-linux-clang --prefix "$PWD/install/runtime"
 
 Keep Debug and Release installations separate. For Rust usage and library
 search paths, see [kurt-sys](../crates/kurt-sys/README.md).
+
+At runtime, set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) to the
+plugin installation's `lib/` directory. A statically linked host needs no
+host shared library at runtime.
+
+TODO: Fully decouple plugins from the host implementation. Plugins currently
+include referenced host archive objects; future host global state could be
+duplicated. Build host and plugins from matching sources and C++ toolchains.
 
 To locate an installed plugin from a deployment project's `CMakeLists.txt`:
 

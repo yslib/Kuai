@@ -46,7 +46,16 @@ fn main() {
     let library_dir = prefix.join("lib");
     println!("cargo:rerun-if-changed={}", library_dir.display());
     println!("cargo:rustc-link-search=native={}", library_dir.display());
-    println!("cargo:rustc-link-lib=dylib=kurt");
+    println!("cargo:rustc-link-lib=static=kurt");
+    match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
+        "macos" => println!("cargo:rustc-link-lib=c++"),
+        "linux" => {
+            println!("cargo:rustc-link-lib=stdc++");
+            println!("cargo:rustc-link-lib=dl");
+            println!("cargo:rustc-link-lib=pthread");
+        }
+        _ => {}
+    }
     println!(
         "cargo:rustc-env=KUAI_RUNTIME_INSTALL_DIR={}",
         prefix.display()

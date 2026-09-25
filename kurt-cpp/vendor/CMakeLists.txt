@@ -33,6 +33,9 @@ list(REMOVE_DUPLICATES KURT_ENABLED_VENDORS)
 find_package(kuai 0.1.0 EXACT CONFIG REQUIRED)
 include(KurtVendorPackage)
 
+# TODO: Fully decouple vendors through an explicit host interface. Linking the
+# static host embeds some implementations in each plugin; future host global
+# state could be duplicated. Keep those symbols private during this transition.
 foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
     set(vendor_directory "${vendor}")
     if(vendor STREQUAL "cuda")
