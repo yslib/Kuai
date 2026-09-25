@@ -73,8 +73,9 @@ template <typename Fn>
 using ku_handler_overload_t = decltype(ku_handler_overload<Fn>(
     std::make_index_sequence<ku_function_arity_v<std::remove_cvref_t<Fn>>>()));
 
+// Writable storage keeps different signature tokens distinct under constant folding.
 template <typename Key>
-inline constexpr unsigned char ku_overload_key_token = 0;
+inline unsigned char ku_overload_key_token = 0;
 
 template <typename Key>
 constexpr const void *ku_overload_key_id() noexcept {
@@ -202,21 +203,19 @@ inline constexpr size_t ku_injected_parameter_count_v = ku_injected_parameter_co
     std::make_index_sequence<ku_function_arity_v<std::remove_cvref_t<Fn>>>());
 
 template <typename Fn, typename... Extra>
-ku_builtin_match_rank_t ku_match_handler(void *, const ku_frame_t *frame) noexcept {
+int ku_match_handler(void *, const ku_frame_t *frame) noexcept {
     if (frame == nullptr || !ku_match_handler_injected_parameters<Fn>(frame)) {
-        return KU_BUILTIN_NO_MATCH;
+        return -1;
     }
 
     const auto shape = ku_match_handler_argument_shape<Fn, Extra...>(frame);
     if (shape == KuArgumentShapeMatch::none) {
-        return KU_BUILTIN_NO_MATCH;
+        return -1;
     }
 
-    constexpr auto ShapeRankCount =
-        static_cast<ku_builtin_match_rank_t>(KuArgumentShapeMatch::exact) + 1;
-    constexpr auto InjectedRank =
-        static_cast<ku_builtin_match_rank_t>(ku_injected_parameter_count_v<Fn>);
-    return InjectedRank * ShapeRankCount + static_cast<ku_builtin_match_rank_t>(shape);
+    constexpr auto ShapeRankCount = static_cast<int>(KuArgumentShapeMatch::exact) + 1;
+    constexpr auto InjectedRank = static_cast<int>(ku_injected_parameter_count_v<Fn>);
+    return InjectedRank * ShapeRankCount + static_cast<int>(shape);
 }
 
 } // namespace detail

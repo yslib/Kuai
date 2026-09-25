@@ -1,6 +1,6 @@
-use std::ffi::{c_char, c_int, c_void};
+use std::ffi::{c_int, c_void};
 
-use crate::builtin::ku_builtin_builder_t;
+use crate::builtin::{ku_builtin_info_t, ku_call_t};
 use crate::types::*;
 
 pub type ku_device_id_t = i32;
@@ -95,24 +95,20 @@ pub struct ku_vendor_api_t {
     ) -> ku_status_t,
 }
 
-pub type ku_vendor_builtin_loader_t =
-    unsafe extern "C" fn(builder: *const ku_builtin_builder_t) -> ku_status_t;
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct ku_vendor_builtin_record_t {
-    pub name: *const c_char,
-    pub loader: ku_vendor_builtin_loader_t,
-}
-
 /// Borrowed module descriptor; every reachable pointer has module lifetime.
+/// Builtin captures persist across host instance recreation.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct ku_vendor_module_t {
     pub device_type: ku_device_type_t,
     pub vendor_api: ku_vendor_api_t,
-    pub records_begin: *const ku_vendor_builtin_record_t,
-    pub records_end: *const ku_vendor_builtin_record_t,
+    pub get_builtin_info: unsafe extern "C" fn(
+        out: *mut ku_builtin_info_t,
+        capacity: ku_size_t,
+        out_count: *mut ku_size_t,
+    ) -> ku_status_t,
+    pub get_proc_address:
+        unsafe extern "C" fn(name: ku_string_view_t, out: *mut ku_call_t) -> ku_status_t,
 }
 
 pub type ku_task_fn_t = unsafe extern "C" fn(task_ctx: *mut c_void);

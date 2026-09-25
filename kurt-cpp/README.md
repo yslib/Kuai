@@ -138,3 +138,16 @@ file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/plugin.txt"
 Configure it with `CMAKE_PREFIX_PATH=/path/to/kurt-cpp/install/release-cpu`.
 For CUDA, use `kuai_vendor_cuda` and `kuai::kurt_cuda`. Use these targets to
 locate plugins, not as application link targets.
+
+## Register vendor builtins
+
+Use `KU_FUNC` in a vendor source file:
+
+```cpp
+KU_FUNC(module) {
+    module.def<&handler>("name");
+}
+```
+
+Registration runs once per loaded vendor module. Captured callable state lives
+with that module and is not reset when a host instance is recreated.

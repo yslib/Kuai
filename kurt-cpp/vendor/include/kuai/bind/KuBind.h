@@ -504,9 +504,17 @@ void destroyCapturedFunctionState(void *state) noexcept {
     delete static_cast<State *>(state);
 }
 
+struct KuFunctionRecord {
+    const void *overloadKey{};
+    ku_call_t   target{};
+    void       *state{};
+    int (*match)(void *, const ku_frame_t *) noexcept {};
+    void (*destroy)(void *) noexcept {};
+};
+
 class KuFunctionRegistration final {
 public:
-    explicit KuFunctionRegistration(ku_builtin_registration_t registration) noexcept
+    explicit KuFunctionRegistration(KuFunctionRecord registration) noexcept
         : m_registration(registration) {
     }
 
@@ -524,28 +532,21 @@ public:
         }
     }
 
-    [[nodiscard]] const ku_builtin_registration_t &get() const noexcept {
+    [[nodiscard]] const KuFunctionRecord &get() const noexcept {
         return m_registration;
     }
 
-    void releaseState() noexcept {
-        m_ownsState = false;
-    }
-
 private:
-    ku_builtin_registration_t m_registration{};
-    bool                      m_ownsState{m_registration.state != nullptr};
+    KuFunctionRecord m_registration{};
+    bool             m_ownsState{m_registration.state != nullptr};
 };
 
 template <typename Fn, typename... Extra>
-KuFunctionRegistration makeKuFunctionRegistration(const char *name, Fn &&fn, Extra &&...extra) {
+KuFunctionRegistration makeKuFunctionRegistration(Fn &&fn, Extra &&...extra) {
     using FnType = std::decay_t<Fn>;
     using BoundType = KuBoundFunction<FnType, std::decay_t<Extra>...>;
-    const std::string_view nameView(name);
-
-    ku_builtin_registration_t registration{};
-    registration.name = ku_string_view_t{.data = nameView.data(), .size = nameView.size()};
-    registration.overload_key = ku_handler_overload_id<FnType>();
+    KuFunctionRecord registration{};
+    registration.overloadKey = ku_handler_overload_id<FnType>();
     registration.match = &ku_match_handler<FnType, std::decay_t<Extra>...>;
 
     if constexpr (ku_uses_direct_ffi_v<FnType, Extra...>) {

@@ -101,31 +101,25 @@ typedef struct ku_vendor_api_t {
  */
 ku_status_t ku_device_get_vendor_api(ku_device_t device, const ku_vendor_api_t **out);
 
-typedef struct ku_builtin_builder_t ku_builtin_builder_t;
+struct ku_builtin_info_t;
+struct ku_call_t;
 
-/*
- * A vendor builtin loader receives a borrowed builder callback view. Neither
- * the view nor anything reachable through its context may be retained after
- * the loader returns.
- */
-typedef ku_status_t (*ku_vendor_builtin_loader_t)(const ku_builtin_builder_t *builder);
-
-typedef struct ku_vendor_builtin_record_t {
-    const char                *name;
-    ku_vendor_builtin_loader_t loader;
-} ku_vendor_builtin_record_t;
-
-/* Borrowed descriptor exported by each libkurt_<vendor> module. */
+/* Borrowed descriptor exported by each libkurt_<vendor> module.
+ * Builtin registration and captured state have module lifetime; recreating a host instance
+ * does not reset them. Query callbacks follow the corresponding ku_instance_* contracts. */
 typedef struct ku_vendor_module_t {
-    ku_device_type_t                  device_type;
-    ku_vendor_api_t                   vendor_api;
-    const ku_vendor_builtin_record_t *records_begin;
-    const ku_vendor_builtin_record_t *records_end;
+    ku_device_type_t device_type;
+    ku_vendor_api_t  vendor_api;
+    ku_status_t (*get_builtin_info)(struct ku_builtin_info_t *out,
+                                    ku_size_t                 capacity,
+                                    ku_size_t                *out_count);
+    ku_status_t (*get_proc_address)(ku_string_view_t name, struct ku_call_t *out);
 } ku_vendor_module_t;
 
 /*
  * The host handle is borrowed, non-NULL, and has process lifetime. The returned
- * descriptor and every pointer reachable from it have module lifetime.
+ * descriptor and every pointer reachable from it have module lifetime. Returns NULL if module
+ * initialization fails.
  */
 const ku_vendor_module_t *kuVendorModule(ku_host_t host);
 

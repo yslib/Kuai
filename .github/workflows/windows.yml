@@ -3,7 +3,7 @@ name: Windows / MSVC
 on:
   workflow_dispatch:
   push:
-    branches: [feat/kurt-windows-msvc]
+    branches: [feat/kurt-windows-msvc, feat/kurt-builtin-registry]
 
 permissions:
   contents: read

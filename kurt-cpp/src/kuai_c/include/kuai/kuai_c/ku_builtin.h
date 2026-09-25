@@ -70,44 +70,11 @@ typedef struct ku_call_t {
 } ku_call_t;
 
 /*
- * Writes a borrowed invocable target only on success. A resolved target invokes the registered
- * matcher before entering a typed handler, so registered argument-shape validation applies even
- * when a name has only one registration.
+ * Writes a borrowed invocable target only on success. The vendor validates arguments and
+ * resolves overloads inside this callable. Keep the instance alive while using the target.
  */
 ku_status_t
 ku_instance_get_proc_address(ku_instance_t instance, ku_string_view_t name, ku_call_t *out);
-
-typedef int32_t ku_builtin_match_rank_t;
-
-enum {
-    KU_BUILTIN_NO_MATCH = -1,
-};
-
-typedef ku_builtin_match_rank_t (*ku_builtin_match_t)(void *state, const ku_frame_t *frame);
-typedef void (*ku_builtin_destroy_t)(void *state);
-
-/*
- * A successful builder add transfers state ownership to the receiver. On an
- * error, state remains owned by the producer. A non-NULL state must have a
- * non-NULL destroy callback.
- */
-typedef struct ku_builtin_registration_t {
-    ku_string_view_t     name;
-    const void          *overload_key;
-    ku_call_t            target;
-    void                *state;
-    ku_builtin_match_t   match;
-    ku_builtin_destroy_t destroy;
-} ku_builtin_registration_t;
-
-typedef ku_status_t (*ku_builtin_add_t)(void                            *context,
-                                        const ku_builtin_registration_t *registration);
-
-/* Borrowed registration callback view, valid only during one vendor builtin loader call. */
-struct ku_builtin_builder_t {
-    void            *context;
-    ku_builtin_add_t add;
-};
 
 #ifdef __cplusplus
 }

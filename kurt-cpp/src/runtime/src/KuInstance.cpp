@@ -9,7 +9,6 @@
 #include <kuai/runtime/KuInstance.h>
 
 #include "core/KuDeviceAccess.h"
-#include "runtime/KuBuiltinRegistry.h"
 #include "runtime/KuHostTransferFactory.h"
 #include "runtime/KuScheduler.h"
 
@@ -43,20 +42,8 @@ public:
         KU_ASSERT(vendor.free_host);
         KU_ASSERT(vendor.memcpy);
         KU_ASSERT(vendor.memcpy_async);
-        KU_ASSERT(m_vendorModule.records_begin != nullptr);
-        KU_ASSERT(m_vendorModule.records_end != nullptr);
-        KU_ASSERT(m_vendorModule.records_begin <= m_vendorModule.records_end);
-
-        const auto builder = m_builtinRegistry.builder();
-        for (const auto *record = m_vendorModule.records_begin;
-             record != m_vendorModule.records_end; ++record) {
-            KU_ASSERT(record->name != nullptr);
-            KU_ASSERT(record->loader != nullptr);
-            const auto loadStatus = record->loader(&builder);
-            if (loadStatus != KU_STATUS_SUCCESS) {
-                throw detail::KuStatusError(loadStatus);
-            }
-        }
+        KU_ASSERT(m_vendorModule.get_builtin_info);
+        KU_ASSERT(m_vendorModule.get_proc_address);
     }
 
     ku_status_t initializeDevices(ku_device_id_t defaultDeviceId) noexcept {
@@ -150,7 +137,6 @@ public:
     }
 
     std::unique_ptr<KuInstanceCapabilityState>                    m_capabilityState;
-    KuBuiltinRegistry                                             m_builtinRegistry;
     KuDevice                                                     *m_defaultDevice = nullptr;
     ku_vendor_module_t                                            m_vendorModule;
     std::unordered_map<ku_device_id_t, std::unique_ptr<KuDevice>> m_devices;
@@ -210,41 +196,11 @@ ku_status_t KuInstance::getDevice(ku_device_id_t deviceId, KuDevice **out) noexc
 ku_status_t KuInstance::getBuiltinInfo(ku_builtin_info_t *out,
                                        ku_size_t          capacity,
                                        ku_size_t         *outCount) noexcept {
-    KU_ASSERT(outCount != nullptr, "getBuiltinInfo requires a non-null count output");
-    KU_ASSERT(capacity == 0 || out != nullptr,
-              "getBuiltinInfo requires storage when capacity is nonzero");
-
-    *outCount = 0;
-    try {
-        const auto names = d_ptr->m_builtinRegistry.functionNames();
-        *outCount = names.size();
-        if (capacity == 0) {
-            return KU_STATUS_SUCCESS;
-        }
-        if (capacity < names.size()) {
-            return KU_STATUS_BUFFER_TOO_SMALL;
-        }
-        for (std::size_t i = 0; i < names.size(); ++i) {
-            out[i].name.data = names[i].data();
-            out[i].name.size = names[i].size();
-        }
-        return KU_STATUS_SUCCESS;
-    } catch (const std::bad_alloc &) {
-        return KU_STATUS_OUT_OF_HOST_MEMORY;
-    } catch (...) {
-        return KU_STATUS_INTERNAL_ERROR;
-    }
+    return d_ptr->m_vendorModule.get_builtin_info(out, capacity, outCount);
 }
 
 ku_status_t KuInstance::getKuProcAddress(ku_string_view_t name, ku_call_t *out) noexcept {
-    KU_ASSERT(out != nullptr, "getKuProcAddress requires a non-null output slot");
-    const auto target =
-        d_ptr->m_builtinRegistry.getCallTarget(std::string_view(name.data, name.size));
-    if (!target.has_value()) {
-        return KU_STATUS_NOT_FOUND;
-    }
-    *out = *target;
-    return KU_STATUS_SUCCESS;
+    return d_ptr->m_vendorModule.get_proc_address(name, out);
 }
 
 ku_status_t KuInstance::getCapabilities(ku_instance_capabilities_t *out) noexcept {

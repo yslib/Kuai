@@ -62,45 +62,6 @@ pub struct ku_call_t {
     pub value: ku_call_value_t,
 }
 
-c_enum! {
-    ku_builtin_match_rank_t: i32 {
-        KU_BUILTIN_NO_MATCH = -1,
-    }
-}
-
-pub type ku_builtin_match_t =
-    unsafe extern "C" fn(state: *mut c_void, frame: *const ku_frame_t) -> ku_builtin_match_rank_t;
-/// Nullable code pointer; null accompanies a registration with no owned state.
-pub type ku_builtin_destroy_t = *const c_void;
-/// Signature of a non-null `ku_builtin_destroy_t` callback.
-pub type ku_builtin_destroy_fn_t = unsafe extern "C" fn(state: *mut c_void);
-
-/// A successful builder add transfers state ownership; failure leaves it with
-/// the producer. A non-null state requires a non-null destroy callback.
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct ku_builtin_registration_t {
-    pub name: ku_string_view_t,
-    pub overload_key: *const c_void,
-    pub target: ku_call_t,
-    pub state: *mut c_void,
-    pub r#match: ku_builtin_match_t,
-    pub destroy: ku_builtin_destroy_t,
-}
-
-pub type ku_builtin_add_t = unsafe extern "C" fn(
-    context: *mut c_void,
-    registration: *const ku_builtin_registration_t,
-) -> ku_status_t;
-
-/// Borrowed callback view valid only during a vendor builtin loader invocation.
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct ku_builtin_builder_t {
-    pub context: *mut c_void,
-    pub add: ku_builtin_add_t,
-}
-
 unsafe extern "C" {
     /// Enumerates borrowed builtin names. `out` may be null only at zero capacity.
     /// On `KU_STATUS_BUFFER_TOO_SMALL`, writes the required count and leaves `out` untouched.

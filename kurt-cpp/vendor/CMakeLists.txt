@@ -56,8 +56,7 @@ foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN YES)
     if(MSVC)
-        # Builtin records are discovered through section boundaries, not direct references.
-        target_link_options(kurt_${vendor} PRIVATE /EXPORT:kuVendorModule /OPT:NOREF /OPT:NOICF)
+        target_link_options(kurt_${vendor} PRIVATE /EXPORT:kuVendorModule)
     elseif(APPLE)
         target_link_options(kurt_${vendor} PRIVATE
             "LINKER:-exported_symbol,_kuVendorModule")
