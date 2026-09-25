@@ -3,6 +3,8 @@ name: CI
 on:
   workflow_dispatch:
   push:
+    # Temporary: the Windows bootstrap branch runs windows.yml only.
+    branches-ignore: [feat/kurt-windows-msvc]
   pull_request:
 
 permissions:

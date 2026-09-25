@@ -1,5 +1,12 @@
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# CMake maps MSVC's C++23 mode to /std:c++latest; cxx_std_26 is not available.
+if(MSVC)
+    set(CMAKE_CXX_STANDARD 23)
+else()
+    set(CMAKE_CXX_STANDARD 26)
+endif()
+
 set(KURT_WERROR_LIST
     return-type
     maybe-uninitialized

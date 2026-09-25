@@ -13,8 +13,7 @@
       "installDir": "${sourceDir}/install/${presetName}",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_INSTALL_LIBDIR": "lib",
-        "CMAKE_CXX_FLAGS": "-w"
+        "CMAKE_INSTALL_LIBDIR": "lib"
       }
     },
     {
@@ -30,8 +29,7 @@
       "hidden": true,
       "inherits": "base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "-s"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {

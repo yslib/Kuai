@@ -36,6 +36,18 @@ For host-only tests, point `CMAKE_INSTALL_PREFIX` to `kurt-cpp/install/release`
 and use `KUAI_RUNTIME_PRESET=release`. The statically linked host needs no
 runtime library path.
 
+On Windows, use the default `x86_64-pc-windows-msvc` Rust toolchain. After the
+MSVC builds above, run from the repository root in PowerShell:
+
+```powershell
+$env:CMAKE_INSTALL_PREFIX = "$PWD/kurt-cpp/install/runtime"
+cmake --install kurt-cpp/build/release --prefix $env:CMAKE_INSTALL_PREFIX
+cmake --install kurt-cpp/build/release-cpu-windows-msvc --prefix $env:CMAKE_INSTALL_PREFIX
+$env:PATH = "$env:CMAKE_INSTALL_PREFIX/bin;$env:PATH"
+$env:KUAI_RUNTIME_PRESET = "release-cpu"
+cargo test -p kurt-sys -p kurt --locked
+```
+
 ## Call the C API
 
 Import the C names from `kurt_sys`. Check each status before reading outputs,

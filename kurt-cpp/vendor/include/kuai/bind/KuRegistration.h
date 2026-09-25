@@ -7,6 +7,19 @@
 #include <kuai/core/KuCore.h>
 #include <kuai/ktl/KuDeviceMarker.h>
 
+#if defined(_MSC_VER)
+// COFF merges these subsections in suffix order. Sentinels are excluded from
+// the range returned to the host; each record has the same size and alignment.
+#pragma section("ku$a", read)
+#pragma section("ku$m", read)
+#pragma section("ku$z", read)
+
+__declspec(allocate("ku$a")) inline const ku_vendor_builtin_record_t ku_vendor_builtins_start{};
+__declspec(allocate("ku$z")) inline const ku_vendor_builtin_record_t ku_vendor_builtins_stop{};
+
+#define KU_VENDOR_BUILTINS_RECORD_START (&ku_vendor_builtins_start + 1)
+#define KU_VENDOR_BUILTINS_RECORD_STOP  (&ku_vendor_builtins_stop)
+#else
 #define KU_VENDOR_BUILTINS_RECORD_START __start_ku_vendor_builtins_record
 #define KU_VENDOR_BUILTINS_RECORD_STOP  __stop_ku_vendor_builtins_record
 
@@ -28,6 +41,7 @@ extern "C" {
 extern const ku_vendor_builtin_record_t KU_VENDOR_BUILTINS_RECORD_START[];
 extern const ku_vendor_builtin_record_t KU_VENDOR_BUILTINS_RECORD_STOP[];
 }
+#endif
 #endif
 
 namespace kuai::vendor {
@@ -66,6 +80,16 @@ __ku_vendor_make_builtin_record(const char *name, ku_vendor_builtin_loader_t loa
 // place a host loader function pointer in device constant memory.
 #if KU_DEVICE_COMPILE_PASS
 #define KU_VENDOR_REGISTER_BUILTIN_RECORD(name, func)
+#elif defined(_MSC_VER)
+// A volatile pointer keeps MSVC from discarding the otherwise unreferenced
+// record before the linker sees it. The record itself remains non-volatile.
+#define KU_VENDOR_REGISTER_BUILTIN_RECORD_MSVC(name, func, ident)                \
+    __declspec(allocate("ku$m")) static const ku_vendor_builtin_record_t ident = \
+        ::kuai::vendor::__ku_vendor_make_builtin_record(                         \
+            #name, &::kuai::vendor::__ku_vendor_builtin_loader<func>);           \
+    static const ku_vendor_builtin_record_t *volatile KU_CONCAT(ident, _keep) = &ident;
+#define KU_VENDOR_REGISTER_BUILTIN_RECORD(name, func) \
+    KU_VENDOR_REGISTER_BUILTIN_RECORD_MSVC(name, func, KU_UNIQUE_NAME(_kuai_vendor_builtin_record_))
 #else
 #define KU_VENDOR_REGISTER_BUILTIN_RECORD(name, func)                       \
     [[gnu::used, gnu::section(KU_VENDOR_BUILTINS_RECORD_NAME),              \

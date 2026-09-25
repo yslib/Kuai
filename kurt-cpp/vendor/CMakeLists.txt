@@ -9,7 +9,7 @@ list(APPEND CMAKE_MODULE_PATH
 include(KurtBuildOptions)
 
 set(KURT_ENABLED_VENDORS cpu CACHE STRING "Vendors to build (semicolon-separated)")
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KURT_SUPPORTED_VENDORS cpu)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(KURT_SUPPORTED_VENDORS cpu cuda)
@@ -55,7 +55,10 @@ foreach(vendor IN LISTS KURT_ENABLED_VENDORS)
         PROPERTIES
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN YES)
-    if(APPLE)
+    if(MSVC)
+        # Builtin records are discovered through section boundaries, not direct references.
+        target_link_options(kurt_${vendor} PRIVATE /EXPORT:kuVendorModule /OPT:NOREF /OPT:NOICF)
+    elseif(APPLE)
         target_link_options(kurt_${vendor} PRIVATE
             "LINKER:-exported_symbol,_kuVendorModule")
     elseif(UNIX)

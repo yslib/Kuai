@@ -80,7 +80,7 @@ public:
     }
 
     [[nodiscard]] ku_scheduler_t descriptor() noexcept {
-        return ku_scheduler_t{.ctx = this, .submit = &submit};
+        return ku_scheduler_t{.ctx = this, .submit = &KuDefaultScheduler::submit};
     }
 
 private:

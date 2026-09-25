@@ -1,7 +1,7 @@
 include(KurtUtils)
 kurt_add_module(core
     OBJECT
-    CXX_STANDARD 26
+    CXX_STANDARD ${CMAKE_CXX_STANDARD}
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON)
 

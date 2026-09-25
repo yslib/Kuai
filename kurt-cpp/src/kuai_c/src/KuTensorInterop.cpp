@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <limits>
 #include <new>
-#include <stdckdint.h>
 
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuDevice.h>
@@ -17,13 +16,11 @@ namespace kuai {
 namespace {
 
 bool multiplyOverflows(ku_size_t &result, ku_size_t lhs, ku_size_t rhs) noexcept {
-#if defined(_STDCKDINT_H) && defined(ckd_mul)
-    // Older GCC C headers expand ckd_mul using the C-only _Bool type, including
-    // when reached through Clang's include_next. Use the same builtin in C++.
-    return __builtin_mul_overflow(lhs, rhs, &result);
-#else
-    return ckd_mul(&result, lhs, rhs);
-#endif
+    if (rhs != 0 && lhs > std::numeric_limits<ku_size_t>::max() / rhs) {
+        return true;
+    }
+    result = lhs * rhs;
+    return false;
 }
 
 bool isValidPrimitiveType(ku_primitive_type_t type) noexcept {

@@ -1,7 +1,8 @@
 # kurt-cpp
 
 C++ host runtime and CPU/CUDA plugins. Requires CMake 4.1+ and a C++26
-compiler and standard library. Run these commands from `kurt-cpp/`.
+compiler and standard library, or MSVC with `/std:c++latest`.
+Run these commands from `kurt-cpp/`.
 Set `CXX=/path/to/clang++` before configuring if needed.
 
 ## Build the host
@@ -21,7 +22,8 @@ the default static installation.
 
 ## Build a CPU plugin
 
-Supported on Linux and macOS. Build and install the host first, then run:
+Supported on Linux and macOS; Windows/MSVC support is experimental.
+Build and install the host first, then run:
 
 ```bash
 cmake -S vendor --preset release-cpu \
@@ -58,6 +60,7 @@ Select matching host and CPU toolchains for your environment:
 | --- | --- | --- |
 | macOS arm64, Homebrew LLVM 22 | `--toolchain cmake/toolchains/macos-clang.cmake` | `release-cpu-macos-clang` |
 | kurt-build Linux image | `--toolchain cmake/toolchains/docker-base.cmake` | `release-cpu-linux-clang` |
+| Windows x64, Visual Studio 2022 | `--toolchain cmake/toolchains/windows-msvc.cmake` | `release-cpu-windows-msvc` |
 
 Use the selected CPU preset name in the build and install paths. For Debug,
 replace `release` with `debug`. Edit `cmake/toolchains/` when compiler or SDK
@@ -66,6 +69,19 @@ paths change.
 List presets with `cmake --list-presets=all`, or
 `cmake -S vendor --list-presets=all` for plugins. After configuring,
 `cmake --workflow --preset release` repeats the host configure/build steps.
+
+On Windows, use an x64 Developer PowerShell with CMake 4.1+ and Ninja:
+
+```powershell
+cmake --preset release -G Ninja --toolchain cmake/toolchains/windows-msvc.cmake
+cmake --build --preset release --parallel 4
+cmake --install build/release
+cmake -S vendor --preset release-cpu-windows-msvc -G Ninja "-DCMAKE_PREFIX_PATH=$PWD/install/release"
+cmake --build build/release-cpu-windows-msvc --parallel 2
+cmake --install build/release-cpu-windows-msvc
+```
+
+Windows CUDA is not supported yet.
 
 ## Use the host from CMake
 
@@ -101,8 +117,9 @@ Keep Debug and Release installations separate. For Rust usage and library
 search paths, see [kurt-sys](../crates/kurt-sys/README.md).
 
 At runtime, set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) to the
-plugin installation's `lib/` directory. A statically linked host needs no
-host shared library at runtime.
+plugin installation's `lib/` directory. On Windows, add the plugin installation's
+`bin/` directory to `PATH`. A statically linked host needs no host shared library
+at runtime.
 
 TODO: Fully decouple plugins from the host implementation. Plugins currently
 include referenced host archive objects; future host global state could be

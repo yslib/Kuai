@@ -62,7 +62,7 @@ void *KuLibrary::symbol(const char *name) const {
     }
 
 #ifdef _WIN32
-    return GetProcAddress((HMODULE)m_lib, name);
+    return reinterpret_cast<void *>(GetProcAddress(static_cast<HMODULE>(d_ptr->m_lib), name));
 #else
     return dlsym(d_ptr->m_lib, name);
 #endif
@@ -74,17 +74,18 @@ KuLibrary::KuLibrary() : d_ptr(new Impl(this)) {
 KuLibrary::KuLibrary(const std::string &path) : d_ptr(new Impl(this)) {
     std::string errorMsg;
 #ifdef _WIN32
-    m_lib = LoadLibrary(path.c_str());
-    if (!m_lib) {
-        DWORD  err = GetLastError();
-        LPTSTR lpMsgBuf;
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-                          | FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0,
-                      NULL);
-
-        errorMsg = lpMsgBuf;
-        LocalFree(lpMsgBuf);
+    d_ptr->m_lib = LoadLibraryA(path.c_str());
+    if (!d_ptr->m_lib) {
+        const auto error = GetLastError();
+        char      *message = nullptr;
+        if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
+                               | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           nullptr, error, 0, reinterpret_cast<char *>(&message), 0, nullptr)) {
+            errorMsg = message;
+            LocalFree(message);
+        } else {
+            errorMsg = "LoadLibrary failed: " + std::to_string(error);
+        }
     }
 
 #elif defined(__MACOSX__) || defined(__APPLE__)

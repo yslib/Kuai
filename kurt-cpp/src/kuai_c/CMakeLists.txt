@@ -14,7 +14,7 @@ kurt_add_module(kuai_c
         $<BUILD_INTERFACE:kuai::profiler>
         Threads::Threads
         ${CMAKE_DL_LIBS}
-    CXX_STANDARD 26
+    CXX_STANDARD ${CMAKE_CXX_STANDARD}
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON)
 
@@ -25,7 +25,7 @@ target_include_directories(kurt PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/runtime/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/profiler/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_compile_features(kurt INTERFACE $<INSTALL_INTERFACE:cxx_std_26>)
+target_compile_features(kurt INTERFACE $<INSTALL_INTERFACE:cxx_std_${CMAKE_CXX_STANDARD}>)
 
 set_target_properties(kurt PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

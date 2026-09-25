@@ -13,8 +13,7 @@
       "installDir": "${sourceDir}/../install/${presetName}",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_INSTALL_LIBDIR": "lib",
-        "CMAKE_CXX_FLAGS": "-w"
+        "CMAKE_INSTALL_LIBDIR": "lib"
       }
     },
     {
@@ -22,8 +21,7 @@
       "inherits": "base",
       "cacheVariables": {
         "KURT_ENABLED_VENDORS": "cpu",
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_MODULE_LINKER_FLAGS_RELEASE": "-s"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -86,7 +84,6 @@
       "cacheVariables": {
         "KURT_ENABLED_VENDORS": "cuda",
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_MODULE_LINKER_FLAGS_RELEASE": "-s",
         "CMAKE_CUDA_ARCHITECTURES": "80"
       }
     },
@@ -94,6 +91,26 @@
       "name": "release-cuda-nvcc",
       "inherits": "release-cuda-linux-clang",
       "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda-nvcc.cmake"
+    },
+    {
+      "name": "release-cpu-windows-msvc",
+      "inherits": "release-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/windows-msvc.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "debug-cpu-windows-msvc",
+      "inherits": "debug-cpu",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/windows-msvc.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
     }
   ],
   "buildPresets": [
@@ -140,6 +157,16 @@
       "configurePreset": "release-cuda-nvcc",
       "targets": ["kurt_cuda"],
       "jobs": 64
+    },
+    {
+      "name": "release-cpu-windows-msvc",
+      "inherits": "release-cpu",
+      "configurePreset": "release-cpu-windows-msvc"
+    },
+    {
+      "name": "debug-cpu-windows-msvc",
+      "inherits": "debug-cpu",
+      "configurePreset": "debug-cpu-windows-msvc"
     }
   ],
   "workflowPresets": [
@@ -197,6 +224,20 @@
       "steps": [
         {"type": "configure", "name": "release-cuda-nvcc"},
         {"type": "build", "name": "release-cuda-nvcc"}
+      ]
+    },
+    {
+      "name": "release-cpu-windows-msvc",
+      "steps": [
+        {"type": "configure", "name": "release-cpu-windows-msvc"},
+        {"type": "build", "name": "release-cpu-windows-msvc"}
+      ]
+    },
+    {
+      "name": "debug-cpu-windows-msvc",
+      "steps": [
+        {"type": "configure", "name": "debug-cpu-windows-msvc"},
+        {"type": "build", "name": "debug-cpu-windows-msvc"}
       ]
     }
   ]

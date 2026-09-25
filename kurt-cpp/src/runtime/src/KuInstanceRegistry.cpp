@@ -45,7 +45,9 @@ bool isValidVendorTag(std::string_view vendor) noexcept {
 
 const ku_vendor_module_t *loadVendorModule(std::string_view vendor) {
     try {
-#if defined(__APPLE__)
+#if defined(_WIN32)
+        const auto libraryName = "kurt_" + std::string(vendor) + ".dll";
+#elif defined(__APPLE__)
         const auto libraryName = "libkurt_" + std::string(vendor) + ".dylib";
 #else
         const auto libraryName = "libkurt_" + std::string(vendor) + ".so";

@@ -10,9 +10,9 @@
 #define KU_STRINGIFY(x) #x
 #define KU_TOSTRING(x)  KU_STRINGIFY(x)
 
-// Marks a definition exported by the shared library that owns it.
+// Vendor entry visibility. Windows exports are specified by the linker.
 #if defined(_WIN32)
-#define KU_EXPORT __declspec(dllexport)
+#define KU_EXPORT
 #elif defined(__GNUC__) || defined(__clang__)
 #define KU_EXPORT __attribute__((visibility("default")))
 #else

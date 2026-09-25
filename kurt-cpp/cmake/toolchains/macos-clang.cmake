@@ -1,2 +1,6 @@
 set(CMAKE_CXX_COMPILER /opt/homebrew/opt/llvm@22/bin/clang++)
 set(CMAKE_OSX_SYSROOT macosx)
+
+set(CMAKE_CXX_FLAGS_INIT "-w")
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE_INIT "-s")
+set(CMAKE_MODULE_LINKER_FLAGS_RELEASE_INIT "-s")

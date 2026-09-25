@@ -10,7 +10,7 @@ set_target_properties(
     kurt_cpu
     PROPERTIES
         POSITION_INDEPENDENT_CODE ON
-        CXX_STANDARD 26
+        CXX_STANDARD ${CMAKE_CXX_STANDARD}
         CXX_STANDARD_REQUIRED ON
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" # Output the
         OUTPUT_NAME kurt_cpu)
