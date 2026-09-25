@@ -1,9 +1,9 @@
-name: Windows / MSVC
+name: Windows x64
 
 on:
   workflow_dispatch:
   push:
-    branches: [feat/kurt-windows-msvc, feat/kurt-builtin-registry]
+  pull_request:
 
 permissions:
   contents: read

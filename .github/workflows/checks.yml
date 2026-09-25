@@ -1,0 +1,36 @@
+name: Checks
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.7"
+          enable-cache: true
+          cache-dependency-glob: kurt-cpp/.clang-format-version
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check C++ formatting
+        run: cargo xtask cpp fmt --check
+      - name: Check Rust formatting
+        run: cargo fmt --all --check
+      - name: Test formatting tasks
+        run: cargo test -p xtask --locked

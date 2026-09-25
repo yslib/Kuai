@@ -1,0 +1,140 @@
+name: macOS arm64
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    name: host / aarch64-apple-darwin / llvm22
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install macOS build tools
+        run: brew install --force-bottle llvm@22 cmake ninja
+      - name: Build and install macOS host
+        working-directory: kurt-cpp
+        run: |
+          cmake --preset release -G Ninja \
+            --toolchain cmake/toolchains/macos-clang.cmake \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/kurt-host"
+          cmake --build --preset release --parallel 4
+          cmake --install build/release
+      - name: Archive installed host
+        run: tar -C "$RUNNER_TEMP/kurt-host" -czf "$RUNNER_TEMP/kurt-host.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-host-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}/kurt-host.tar.gz
+          if-no-files-found: error
+
+  cargo-host:
+    name: cargo host / aarch64-apple-darwin / llvm22
+    needs: host
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract installed host
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-host" >>"$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+      - name: Test host runtime and host-only behavior
+        run: |
+          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys --test host_only --locked -- --ignored
+
+  vendor-cpu:
+    name: cpu / aarch64-apple-darwin / llvm22
+    needs: host
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract installed host
+        run: |
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+      - name: Install macOS build tools
+        run: brew install --force-bottle llvm@22 cmake ninja
+      - name: Build and install macOS vendor
+        working-directory: kurt-cpp/vendor
+        run: |
+          cmake --preset release-cpu-macos-clang -G Ninja \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/kurt-host" \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/kurt-vendor-cpu"
+          cmake --build --preset release-cpu-macos-clang --parallel 2
+          cmake --install ../build/release-cpu-macos-clang
+          mkdir -p "$RUNNER_TEMP/vendor-query-cpu"
+          printf 'cmake_minimum_required(VERSION 4.1)\nproject(vendor_query LANGUAGES NONE)\nfind_package(kuai_vendor_cpu 0.1.0 EXACT CONFIG REQUIRED)\n' \
+            > "$RUNNER_TEMP/vendor-query-cpu/CMakeLists.txt"
+          cmake -S "$RUNNER_TEMP/vendor-query-cpu" \
+            -B "$RUNNER_TEMP/vendor-query-cpu/build" -G Ninja \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/kurt-vendor-cpu"
+      - name: Archive installed vendor
+        run: |
+          tar -C "$RUNNER_TEMP/kurt-vendor-cpu" \
+            -czf "$RUNNER_TEMP/kurt-vendor-cpu.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-vendor-cpu-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}/kurt-vendor-cpu.tar.gz
+          if-no-files-found: error
+
+  cargo-cpu:
+    name: cargo cpu / aarch64-apple-darwin / llvm22
+    needs: [host, vendor-cpu]
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release-cpu
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-vendor-cpu-aarch64-apple-darwin-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract host and CPU vendor
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-runtime" >>"$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-vendor-cpu.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+      - name: Test runtime bindings and safe Rust interface with CPU vendor
+        run: |
+          export DYLD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
+          cargo test -p kurt-sys -p kurt --locked

@@ -3,8 +3,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/yslib/kuai/actions/workflows/ci.yml">
-    <img src="https://github.com/yslib/kuai/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <a href="https://github.com/yslib/kuai/actions/workflows/linux.yml?query=branch%3Amain+event%3Apush">
+    <img src="https://github.com/yslib/kuai/actions/workflows/linux.yml/badge.svg?branch=main&amp;event=push" alt="Linux x64">
+  </a>
+  <a href="https://github.com/yslib/kuai/actions/workflows/macos.yml?query=branch%3Amain+event%3Apush">
+    <img src="https://github.com/yslib/kuai/actions/workflows/macos.yml/badge.svg?branch=main&amp;event=push" alt="macOS arm64">
+  </a>
+  <a href="https://github.com/yslib/kuai/actions/workflows/windows.yml?query=branch%3Amain+event%3Apush">
+    <img src="https://github.com/yslib/kuai/actions/workflows/windows.yml/badge.svg?branch=main&amp;event=push" alt="Windows x64">
   </a>
 </p>
 

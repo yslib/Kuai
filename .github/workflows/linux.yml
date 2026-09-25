@@ -1,0 +1,200 @@
+name: Linux x64
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    name: host / x86_64-unknown-linux-gnu / llvm22
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build and install Linux host
+        shell: bash
+        run: |
+          image="$(<.github/images/base.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-base@sha256:[0-9a-f]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$RUNNER_TEMP:/runner-temp" \
+            -w /work/kurt-cpp "$image" bash -euo pipefail -c '
+              cmake --preset release -G Ninja \
+                --toolchain cmake/toolchains/docker-base.cmake \
+                -DCMAKE_INSTALL_PREFIX=/runner-temp/kurt-host
+              cmake --build --preset release --parallel 4
+              cmake --install build/release
+            '
+      - name: Archive installed host
+        run: tar -C "$RUNNER_TEMP/kurt-host" -czf "$RUNNER_TEMP/kurt-host.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}/kurt-host.tar.gz
+          if-no-files-found: error
+
+  cargo-host:
+    name: cargo host / x86_64-unknown-linux-gnu / llvm22
+    needs: host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract installed host
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-host" >>"$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+      - name: Build Rust workspace against installed host
+        run: cargo build --workspace --locked
+      - name: Test host runtime and host-only behavior
+        run: |
+          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys --test host_only --locked -- --ignored
+
+  vendor-cpu:
+    name: cpu / x86_64-unknown-linux-gnu / llvm22
+    needs: host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract installed host
+        run: |
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+      - name: Build and install Linux vendor
+        shell: bash
+        run: |
+          image="$(<.github/images/base.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-base@sha256:[0-9a-f]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/kurt-vendor-cpu"
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$RUNNER_TEMP:/runner-temp" \
+            -w /work/kurt-cpp/vendor "$image" bash -euo pipefail -c '
+              cmake --preset release-cpu-linux-clang -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-host \
+                -DCMAKE_INSTALL_PREFIX=/runner-temp/kurt-vendor-cpu
+              cmake --build --preset release-cpu-linux-clang --parallel 2
+              cmake --install /work/kurt-cpp/build/release-cpu-linux-clang
+              mkdir -p /runner-temp/vendor-query-cpu
+              printf "cmake_minimum_required(VERSION 4.1)\nproject(vendor_query LANGUAGES NONE)\nfind_package(kuai_vendor_cpu 0.1.0 EXACT CONFIG REQUIRED)\n" \
+                > /runner-temp/vendor-query-cpu/CMakeLists.txt
+              cmake -S /runner-temp/vendor-query-cpu \
+                -B /runner-temp/vendor-query-cpu/build -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-vendor-cpu
+            '
+      - name: Archive installed vendor
+        run: |
+          tar -C "$RUNNER_TEMP/kurt-vendor-cpu" \
+            -czf "$RUNNER_TEMP/kurt-vendor-cpu.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-vendor-cpu-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}/kurt-vendor-cpu.tar.gz
+          if-no-files-found: error
+
+  vendor-cuda:
+    name: cuda / x86_64-unknown-linux-gnu / llvm22-clang
+    needs: host
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract installed host
+        run: |
+          mkdir -p "$RUNNER_TEMP/kurt-host"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
+      - name: Build and install Linux vendor
+        shell: bash
+        run: |
+          image="$(<.github/images/cuda.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-cuda@sha256:[0-9a-f]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/kurt-vendor-cuda"
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$RUNNER_TEMP:/runner-temp" \
+            -w /work/kurt-cpp/vendor "$image" bash -euo pipefail -c '
+              cmake --preset release-cuda-linux-clang -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-host \
+                -DCMAKE_INSTALL_PREFIX=/runner-temp/kurt-vendor-cuda
+              cmake --build --preset release-cuda-linux-clang --parallel 2
+              cmake --install /work/kurt-cpp/build/release-cuda-linux-clang
+              mkdir -p /runner-temp/vendor-query-cuda
+              printf "cmake_minimum_required(VERSION 4.1)\nproject(vendor_query LANGUAGES NONE)\nfind_package(kuai_vendor_cuda 0.1.0 EXACT CONFIG REQUIRED)\n" \
+                > /runner-temp/vendor-query-cuda/CMakeLists.txt
+              cmake -S /runner-temp/vendor-query-cuda \
+                -B /runner-temp/vendor-query-cuda/build -G Ninja \
+                -DCMAKE_PREFIX_PATH=/runner-temp/kurt-vendor-cuda
+            '
+      - name: Archive installed vendor
+        run: |
+          tar -C "$RUNNER_TEMP/kurt-vendor-cuda" \
+            -czf "$RUNNER_TEMP/kurt-vendor-cuda.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kurt-vendor-cuda-x86_64-unknown-linux-gnu-llvm22-clang-release
+          path: ${{ runner.temp }}/kurt-vendor-cuda.tar.gz
+          if-no-files-found: error
+
+  cargo-cpu:
+    name: cargo cpu / x86_64-unknown-linux-gnu / llvm22
+    needs: [host, vendor-cpu]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      KUAI_RUNTIME_PRESET: release-cpu
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-host-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: kurt-vendor-cpu-x86_64-unknown-linux-gnu-llvm22-release
+          path: ${{ runner.temp }}
+      - name: Extract host and CPU vendor
+        run: |
+          echo "CMAKE_INSTALL_PREFIX=$RUNNER_TEMP/kurt-runtime" >>"$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+          tar -xzf "$RUNNER_TEMP/kurt-vendor-cpu.tar.gz" -C "$RUNNER_TEMP/kurt-runtime"
+      - name: Test runtime bindings and safe Rust interface with CPU vendor
+        run: |
+          export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
+          cargo test -p kurt-sys -p kurt --locked
