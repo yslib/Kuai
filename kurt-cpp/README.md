@@ -116,10 +116,11 @@ cmake --install build/release-cuda-linux-clang --prefix "$PWD/install/runtime"
 Keep Debug and Release installations separate. For Rust usage and library
 search paths, see [kurt-sys](../crates/kurt-sys/README.md).
 
-At runtime, set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) to the
-plugin installation's `lib/` directory. On Windows, add the plugin installation's
-`bin/` directory to `PATH`. A statically linked host needs no host shared library
-at runtime.
+Place plugins beside the executable when using the static host. Alternatively,
+set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) to the plugin
+installation's `lib/` directory; on Windows, add its `bin/` directory to `PATH`.
+A statically linked host needs no host shared library at runtime. Cargo builds
+and places the CPU plugin automatically.
 
 TODO: Fully decouple plugins from the host implementation. Plugins currently
 include referenced host archive objects; future host global state could be

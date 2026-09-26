@@ -13,6 +13,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cargo-build:
+    name: cargo build / x86_64-unknown-linux-gnu / llvm22
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and test directly with Cargo
+        shell: bash
+        run: |
+          image="$(<.github/images/base.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-base@sha256:[0-9a-f]{64}$ ]]
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$HOME/.cargo:/cargo" -v "$HOME/.rustup:/rustup:ro" \
+            -e CARGO_HOME=/cargo -e RUSTUP_HOME=/rustup \
+            -w /work "$image" bash -euo pipefail -c '
+              export PATH="/cargo/bin:$PATH"
+              cargo build --locked
+              cargo build --release --locked
+              cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+              cargo run -p kurt --example cpu --locked
+              cargo build -p kurt --example cpu --release --locked
+              mkdir -p /tmp/cargo-runtime
+              cp target/release/examples/cpu target/release/libkurt_cpu.so /tmp/cargo-runtime/
+              cd /tmp
+              ./cargo-runtime/cpu
+            '
+
   host:
     name: host / x86_64-unknown-linux-gnu / llvm22
     runs-on: ubuntu-24.04
@@ -49,8 +79,6 @@ jobs:
     needs: host
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    env:
-      KUAI_RUNTIME_PRESET: release
     steps:
       - uses: actions/checkout@v7
         with:
@@ -173,8 +201,6 @@ jobs:
     needs: [host, vendor-cpu]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    env:
-      KUAI_RUNTIME_PRESET: release-cpu
     steps:
       - uses: actions/checkout@v7
         with:
@@ -197,4 +223,4 @@ jobs:
       - name: Test runtime bindings and safe Rust interface with CPU vendor
         run: |
           export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys -p kurt --features cpu-tests --locked

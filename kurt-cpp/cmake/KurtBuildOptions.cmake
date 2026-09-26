@@ -3,6 +3,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # CMake maps MSVC's C++23 mode to /std:c++latest; cxx_std_26 is not available.
 if(MSVC)
     set(CMAKE_CXX_STANDARD 23)
+    # The C API wrappers use __VA_OPT__, including when no toolchain file is set.
+    add_compile_options(/Zc:preprocessor)
 else()
     set(CMAKE_CXX_STANDARD 26)
 endif()

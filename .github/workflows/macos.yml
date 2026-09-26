@@ -13,6 +13,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cargo-build:
+    name: cargo build / aarch64-apple-darwin
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install CMake
+        run: brew install cmake
+      - name: Build and test directly with Cargo
+        run: |
+          cargo build --locked
+          cargo build --release --locked
+          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo run -p kurt --example cpu --locked
+          cargo build -p kurt --example cpu --release --locked
+      - name: Run relocated CPU example without Cargo
+        run: |
+          mkdir -p "$RUNNER_TEMP/cargo-runtime"
+          cp target/release/examples/cpu target/release/libkurt_cpu.dylib "$RUNNER_TEMP/cargo-runtime/"
+          cd "$RUNNER_TEMP"
+          ./cargo-runtime/cpu
+
   host:
     name: host / aarch64-apple-darwin / llvm22
     runs-on: macos-15
@@ -44,8 +69,6 @@ jobs:
     needs: host
     runs-on: macos-15
     timeout-minutes: 120
-    env:
-      KUAI_RUNTIME_PRESET: release
     steps:
       - uses: actions/checkout@v7
         with:
@@ -113,8 +136,6 @@ jobs:
     needs: [host, vendor-cpu]
     runs-on: macos-15
     timeout-minutes: 120
-    env:
-      KUAI_RUNTIME_PRESET: release-cpu
     steps:
       - uses: actions/checkout@v7
         with:
@@ -137,4 +158,4 @@ jobs:
       - name: Test runtime bindings and safe Rust interface with CPU vendor
         run: |
           export DYLD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
