@@ -34,13 +34,40 @@ jobs:
               export PATH="/cargo/bin:$PATH"
               cargo build --locked
               cargo build --release --locked
-              cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+              cargo test -p kurt-sys -p kurt --locked
+              cargo test -p kurt-sys -p kurt --no-default-features --locked
+              cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
               cargo run -p kurt --example cpu --locked
-              cargo build -p kurt --example cpu --release --locked
-              mkdir -p /tmp/cargo-runtime
-              cp target/release/examples/cpu target/release/libkurt_cpu.so /tmp/cargo-runtime/
+              cargo xtask install --prefix /tmp/cargo-runtime
+              cargo xtask install --prefix /tmp/cargo-runtime --package kurt --example cpu
+              mv /tmp/cargo-runtime /tmp/relocated-runtime
               cd /tmp
-              ./cargo-runtime/cpu
+              ./relocated-runtime/bin/kuai --help
+              ./relocated-runtime/bin/cpu
+            '
+
+  cargo-cuda:
+    name: cargo install cpu + cuda / x86_64-unknown-linux-gnu / llvm22
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and install CPU and CUDA through Cargo
+        shell: bash
+        run: |
+          image="$(<.github/images/cuda.lock)"
+          [[ "$image" =~ ^ghcr\.io/yslib/kurt-build-cuda@sha256:[0-9a-f]{64}$ ]]
+          docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" \
+            -v "$PWD:/work" -v "$HOME/.cargo:/cargo" -v "$HOME/.rustup:/rustup:ro" \
+            -e CARGO_HOME=/cargo -e RUSTUP_HOME=/rustup -e CUDAARCHS=80 \
+            -e CMAKE_TOOLCHAIN_FILE=/work/kurt-cpp/cmake/toolchains/docker-cuda.cmake \
+            -w /work "$image" bash -euo pipefail -c '
+              export PATH="/cargo/bin:$PATH"
+              cargo xtask install --features cuda --prefix /tmp/kuai-runtime
+              /tmp/kuai-runtime/bin/kuai --help
             '
 
   host:
@@ -94,11 +121,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/kurt-host"
           tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
       - name: Build Rust workspace against installed host
-        run: cargo build --workspace --locked
+        run: cargo build --workspace --no-default-features --locked
       - name: Test host runtime and host-only behavior
         run: |
-          cargo test -p kurt-sys -p kurt --locked
-          cargo test -p kurt-sys --test host_only --locked -- --ignored
+          cargo test -p kurt-sys -p kurt --no-default-features --locked
+          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
 
   vendor-cpu:
     name: cpu / x86_64-unknown-linux-gnu / llvm22
@@ -223,4 +250,4 @@ jobs:
       - name: Test runtime bindings and safe Rust interface with CPU vendor
         run: |
           export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo test -p kurt-sys -p kurt --locked

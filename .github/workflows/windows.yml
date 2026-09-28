@@ -33,16 +33,19 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           cargo build --locked
           cargo build --release --locked
-          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys -p kurt --no-default-features --locked
+          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
           cargo run -p kurt --example cpu --locked
-          cargo build -p kurt --example cpu --release --locked
-      - name: Run relocated CPU example without Cargo
+      - name: Install and run without Cargo
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
-          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/cargo-runtime" | Out-Null
-          Copy-Item target/release/examples/cpu.exe,target/release/kurt_cpu.dll "$env:RUNNER_TEMP/cargo-runtime/"
+          cargo xtask install --prefix "$env:RUNNER_TEMP/cargo-runtime"
+          cargo xtask install --prefix "$env:RUNNER_TEMP/cargo-runtime" --package kurt --example cpu
+          Move-Item "$env:RUNNER_TEMP/cargo-runtime" "$env:RUNNER_TEMP/relocated-runtime"
           Set-Location $env:RUNNER_TEMP
-          & ./cargo-runtime/cpu.exe
+          & ./relocated-runtime/bin/kuai.exe --help
+          & ./relocated-runtime/bin/cpu.exe
 
   host:
     name: host / x86_64-pc-windows-msvc / msvc143
@@ -177,8 +180,8 @@ jobs:
           "CMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL_PREFIX" >> $env:GITHUB_ENV
           New-Item -ItemType Directory -Force $env:CMAKE_INSTALL_PREFIX | Out-Null
           tar -xzf "$env:RUNNER_TEMP/kurt-host.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
-          cargo test -p kurt-sys -p kurt --locked
-          cargo test -p kurt-sys --test host_only --locked -- --ignored
+          cargo test -p kurt-sys -p kurt --no-default-features --locked
+          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: kurt-vendor-cpu-x86_64-pc-windows-msvc-msvc143-release
@@ -188,4 +191,6 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           tar -xzf "$env:RUNNER_TEMP/kurt-vendor-cpu.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
           $env:PATH = "$env:CMAKE_INSTALL_PREFIX/bin;$env:PATH"
-          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo test -p kurt-sys -p kurt --locked
+          cargo xtask install --prefix $env:CMAKE_INSTALL_PREFIX
+          & "$env:CMAKE_INSTALL_PREFIX/bin/kuai.exe" --help

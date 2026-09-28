@@ -1,4 +1,4 @@
-#![cfg(kuai_runtime_cpu)]
+#![cfg(feature = "cpu")]
 
 use std::sync::Mutex;
 

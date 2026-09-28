@@ -87,7 +87,7 @@ fn wrong_kind_downcast_leaves_another_owner_usable() -> Result<()> {
     Ok(())
 }
 
-#[cfg(kuai_runtime_cpu)]
+#[cfg(feature = "cpu")]
 mod cpu {
     use super::*;
     use std::sync::Mutex;

@@ -119,8 +119,7 @@ search paths, see [kurt-sys](../crates/kurt-sys/README.md).
 Place plugins beside the executable when using the static host. Alternatively,
 set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) to the plugin
 installation's `lib/` directory; on Windows, add its `bin/` directory to `PATH`.
-A statically linked host needs no host shared library at runtime. Cargo builds
-and places the CPU plugin automatically.
+A statically linked host needs no host shared library at runtime. For Rust development and installation, see [kurt-sys](../crates/kurt-sys/README.md).
 
 TODO: Fully decouple plugins from the host implementation. Plugins currently
 include referenced host archive objects; future host global state could be

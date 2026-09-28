@@ -1,4 +1,5 @@
-//! Opt-in CUDA hardware coverage. This file compiles on CPU-only presets too.
+//! Opt-in CUDA hardware coverage.
+#![cfg(feature = "cuda")]
 
 use kurt::*;
 use kurt_sys as sys;
@@ -64,7 +65,7 @@ fn stream_identity(device: &KuDevice) -> usize {
 }
 
 #[test]
-#[ignore = "requires CUDA-enabled preset and hardware"]
+#[ignore = "requires an installed CUDA plugin and CUDA hardware"]
 fn owned_default_stream_has_the_same_identity_across_host_threads() -> Result<()> {
     let _guard = CUDA.lock().unwrap();
     let instance = KuInstance::new(Vendor::Cuda)?;
@@ -82,7 +83,7 @@ fn owned_default_stream_has_the_same_identity_across_host_threads() -> Result<()
 }
 
 #[test]
-#[ignore = "requires CUDA-enabled preset and hardware"]
+#[ignore = "requires an installed CUDA plugin and CUDA hardware"]
 fn allocation_upload_download_and_free_restore_host_device_selection() -> Result<()> {
     let _guard = CUDA.lock().unwrap();
     let instance = KuInstance::new(Vendor::Cuda)?;
@@ -125,7 +126,7 @@ fn allocation_upload_download_and_free_restore_host_device_selection() -> Result
 }
 
 #[test]
-#[ignore = "requires CUDA-enabled preset and hardware"]
+#[ignore = "requires an installed CUDA plugin and CUDA hardware"]
 fn final_tensor_and_instance_release_restore_selection_on_another_thread() -> Result<()> {
     let _guard = CUDA.lock().unwrap();
     let instance = KuInstance::new(Vendor::Cuda)?;
@@ -174,7 +175,7 @@ fn final_tensor_and_instance_release_restore_selection_on_another_thread() -> Re
 }
 
 #[test]
-#[ignore = "requires CUDA-enabled preset and hardware"]
+#[ignore = "requires an installed CUDA plugin and CUDA hardware"]
 fn mixed_device_nested_arrays_preserve_exact_devices() -> Result<()> {
     let _guard = CUDA.lock().unwrap();
     let probe = KuInstance::new(Vendor::Cuda)?;
@@ -226,8 +227,8 @@ fn mixed_device_nested_arrays_preserve_exact_devices() -> Result<()> {
 }
 
 #[test]
-#[cfg(kuai_runtime_cpu)]
-#[ignore = "requires release-all preset, CPU backend, and CUDA hardware"]
+#[cfg(feature = "cpu")]
+#[ignore = "requires CPU and CUDA plugins and CUDA hardware"]
 fn mixed_cpu_cuda_borrows_with_equal_numeric_ids_survive_parent_release() -> Result<()> {
     let _guard = CUDA.lock().unwrap();
     let cpu_instance = KuInstance::new(Vendor::Cpu)?;

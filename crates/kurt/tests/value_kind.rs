@@ -59,7 +59,7 @@ fn independent_kinds_and_erased_retention_preserve_native_identity() -> Result<(
     Ok(())
 }
 
-#[cfg(kuai_runtime_cpu)]
+#[cfg(feature = "cpu")]
 #[test]
 fn tensor_kind_and_erased_roundtrip_preserve_native_identity() -> Result<()> {
     use kurt::{KuInstance, KuTensor, Vendor};

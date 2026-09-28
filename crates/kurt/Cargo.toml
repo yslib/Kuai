@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "Rust interface to Kuai with intrusive native ownership and borrowed runtime views"
 
+[features]
+default = ["cpu"]
+cpu = ["kurt-sys/cpu"]
+cuda = ["kurt-sys/cuda"]
+
 [dependencies]
-kurt-sys = { path = "../kurt-sys" }
+kurt-sys = { path = "../kurt-sys", default-features = false }

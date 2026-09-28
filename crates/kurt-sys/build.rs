@@ -1,5 +1,4 @@
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -22,6 +21,14 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", library_dir.display());
     println!("cargo:rustc-link-lib=static=kurt");
     match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
+        "windows" => {
+            // CMake installs vendor DLLs in bin; Cargo adds OUT_DIR search paths
+            // to PATH when it runs binaries and tests.
+            println!(
+                "cargo:rustc-link-search=native={}",
+                prefix.join("bin").display()
+            );
+        }
         "macos" => println!("cargo:rustc-link-lib=c++"),
         "linux" => {
             println!("cargo:rustc-link-lib=stdc++");
@@ -44,47 +51,37 @@ fn build_runtime() -> PathBuf {
     for path in ["CMakeLists.txt", "cmake", "src", "vendor"] {
         println!("cargo:rerun-if-changed={}", source.join(path).display());
     }
-    for name in ["CMAKE_TOOLCHAIN_FILE", "CMAKE_GENERATOR", "CXX", "CXXFLAGS"] {
+    for name in [
+        "CMAKE_TOOLCHAIN_FILE",
+        "CMAKE_GENERATOR",
+        "CXX",
+        "CXXFLAGS",
+        "CUDACXX",
+        "CUDAARCHS",
+    ] {
         println!("cargo:rerun-if-env-changed={name}");
     }
 
-    build_cmake(&source, &prefix.join("build"), &prefix, profile);
-    build_cmake(
-        &source.join("vendor"),
-        &prefix.join("vendor-build"),
-        &prefix,
-        profile,
-    );
-
-    let (directory, library) = match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
-        "windows" => ("bin", "kurt_cpu.dll"),
-        "macos" => ("lib", "libkurt_cpu.dylib"),
-        "linux" => ("lib", "libkurt_cpu.so"),
-        target => panic!("unsupported Kurt target: {target}"),
-    };
-    let plugin = prefix.join(directory).join(library);
-    // OUT_DIR is <target>/<profile>/build/<package>/out, including --target builds.
-    let output = prefix.ancestors().nth(3).unwrap();
-    for directory in [
-        output.to_path_buf(),
-        output.join("deps"),
-        output.join("examples"),
-    ] {
-        fs::create_dir_all(&directory).unwrap();
-        let destination = directory.join(library);
-        fs::copy(&plugin, &destination).unwrap_or_else(|error| {
-            panic!(
-                "cannot copy {} to {}: {error}",
-                plugin.display(),
-                destination.display()
-            )
-        });
+    let vendors: Vec<_> = [("cpu", "CARGO_FEATURE_CPU"), ("cuda", "CARGO_FEATURE_CUDA")]
+        .into_iter()
+        .filter_map(|(vendor, feature)| env::var_os(feature).map(|_| vendor))
+        .collect();
+    build_cmake(&source, &prefix.join("build"), &prefix, profile, &[]);
+    if !vendors.is_empty() {
+        build_cmake(
+            &source.join("vendor"),
+            &prefix.join("vendor-build"),
+            &prefix,
+            profile,
+            &vendors,
+        );
     }
     prefix
 }
 
-fn build_cmake(source: &Path, build: &Path, prefix: &Path, profile: &str) {
-    run(Command::new("cmake")
+fn build_cmake(source: &Path, build: &Path, prefix: &Path, profile: &str, vendors: &[&str]) {
+    let mut configure = Command::new("cmake");
+    configure
         .arg("--fresh")
         .arg("-S")
         .arg(source)
@@ -94,7 +91,11 @@ fn build_cmake(source: &Path, build: &Path, prefix: &Path, profile: &str) {
         .arg(format!("-DCMAKE_PREFIX_PATH={}", prefix.display()))
         .arg(format!("-DCMAKE_INSTALL_PREFIX={}", prefix.display()))
         .arg("-DCMAKE_INSTALL_LIBDIR=lib")
-        .arg("-DBUILD_SHARED_LIBS=OFF"));
+        .arg("-DBUILD_SHARED_LIBS=OFF");
+    if !vendors.is_empty() {
+        configure.arg(format!("-DKURT_ENABLED_VENDORS={}", vendors.join(";")));
+    }
+    run(&mut configure);
     run(Command::new("cmake")
         .arg("--build")
         .arg(build)

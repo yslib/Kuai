@@ -28,15 +28,18 @@ jobs:
         run: |
           cargo build --locked
           cargo build --release --locked
-          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo test -p kurt-sys -p kurt --locked
+          cargo test -p kurt-sys -p kurt --no-default-features --locked
+          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
           cargo run -p kurt --example cpu --locked
-          cargo build -p kurt --example cpu --release --locked
-      - name: Run relocated CPU example without Cargo
+      - name: Install and run without Cargo
         run: |
-          mkdir -p "$RUNNER_TEMP/cargo-runtime"
-          cp target/release/examples/cpu target/release/libkurt_cpu.dylib "$RUNNER_TEMP/cargo-runtime/"
+          cargo xtask install --prefix "$RUNNER_TEMP/cargo-runtime"
+          cargo xtask install --prefix "$RUNNER_TEMP/cargo-runtime" --package kurt --example cpu
+          mv "$RUNNER_TEMP/cargo-runtime" "$RUNNER_TEMP/relocated-runtime"
           cd "$RUNNER_TEMP"
-          ./cargo-runtime/cpu
+          ./relocated-runtime/bin/kuai --help
+          ./relocated-runtime/bin/cpu
 
   host:
     name: host / aarch64-apple-darwin / llvm22
@@ -85,8 +88,8 @@ jobs:
           tar -xzf "$RUNNER_TEMP/kurt-host.tar.gz" -C "$RUNNER_TEMP/kurt-host"
       - name: Test host runtime and host-only behavior
         run: |
-          cargo test -p kurt-sys -p kurt --locked
-          cargo test -p kurt-sys --test host_only --locked -- --ignored
+          cargo test -p kurt-sys -p kurt --no-default-features --locked
+          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
 
   vendor-cpu:
     name: cpu / aarch64-apple-darwin / llvm22
@@ -158,4 +161,4 @@ jobs:
       - name: Test runtime bindings and safe Rust interface with CPU vendor
         run: |
           export DYLD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib"
-          cargo test -p kurt-sys -p kurt --features cpu-tests --locked
+          cargo test -p kurt-sys -p kurt --locked

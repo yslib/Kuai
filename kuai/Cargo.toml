@@ -3,7 +3,13 @@ name = "kuai"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["cpu"]
+cpu = ["kurt/cpu"]
+cuda = ["kurt/cuda"]
+
 [dependencies]
+kurt = { path = "../crates/kurt", default-features = false }
 syntax = { path = "../crates/kuai-syntax" }
 sema = { path = "../crates/kuai-sema" }
 driver = { path = "../crates/kuai-driver" }

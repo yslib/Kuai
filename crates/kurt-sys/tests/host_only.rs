@@ -7,7 +7,7 @@ use kurt_sys::*;
 use support::{Object, success, view};
 
 #[test]
-#[ignore = "requires a host-only installation without the CPU plugin"]
+#[ignore = "requires no CPU plugin in the runtime search path"]
 fn installed_host_works_without_cpu_vendor() {
     let input = ku_union_t {
         value: ku_union_value_t { i64: 42 },

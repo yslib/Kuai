@@ -5,47 +5,51 @@ Raw Rust bindings to the Kurt C API. For a safe Rust interface, use
 
 ## Build and run
 
-Build the host and optional CPU/CUDA plugins using the
-[kurt-cpp instructions](../../kurt-cpp/README.md). Use the default static host
-build. From the repository root, assemble an installation:
+Requires CMake 4.1+ and a C++26 compiler (MSVC uses `/std:c++latest`).
+From the repository root:
 
 ```bash
-export CMAKE_INSTALL_PREFIX="$PWD/kurt-cpp/install/runtime"
-cmake --install kurt-cpp/build/release --prefix "$CMAKE_INSTALL_PREFIX"
-# For CPU support:
-cmake --install kurt-cpp/build/release-cpu --prefix "$CMAKE_INSTALL_PREFIX"
+cargo build
+cargo run -p kurt --example cpu
+cargo test -p kurt-sys -p kurt
 ```
 
-For plugins, set the runtime library path for your platform:
+Cargo builds the static host and the default CPU plugin under its build output
+directory. Use `cargo run` and `cargo test` for development; Cargo supplies the
+plugin search path. Build scripts do not copy plugins beside executables.
+
+The `cpu` and `cuda` features select plugins and may be combined. CUDA currently
+requires Linux and the CUDA toolkit. See [kurt-cpp](../../kurt-cpp/README.md) for
+the compiler/toolchain setup. To build and test only the host:
 
 ```bash
-# Linux
-export LD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib:${LD_LIBRARY_PATH:-}"
-# macOS
-export DYLD_LIBRARY_PATH="$CMAKE_INSTALL_PREFIX/lib:${DYLD_LIBRARY_PATH:-}"
+cargo test -p kurt-sys -p kurt --no-default-features
 ```
 
-Then build or test against that installation:
+To consume an existing static host and matching plugins, set the standard
+`CMAKE_INSTALL_PREFIX` to their installation prefix. When running through Cargo,
+add the plugin directory to `LD_LIBRARY_PATH` (Linux), `DYLD_LIBRARY_PATH`
+(macOS), or `PATH` (Windows).
+
+## Install
 
 ```bash
-cargo build -p kurt-sys --locked
-KUAI_RUNTIME_PRESET=release-cpu cargo test -p kurt-sys --locked
+cargo xtask install --prefix dist
+# Install the CPU example instead of the Kuai CLI:
+cargo xtask install --prefix dist --package kurt --example cpu
 ```
 
-For host-only tests, point `CMAKE_INSTALL_PREFIX` to `kurt-cpp/install/release`
-and use `KUAI_RUNTIME_PRESET=release`. The statically linked host needs no
-runtime library path.
+This builds Release executables and installs them with the selected plugins in
+`dist/bin`. Keep that directory together when deploying. Use `--features cuda`
+to include CUDA, `--no-default-features` for host-only, or `--profile dev` for
+Debug. CUDA runtime libraries and the NVIDIA driver remain required on the
+runtime machine. `cargo install` alone does not install these plugins.
 
-On Windows, use the default `x86_64-pc-windows-msvc` Rust toolchain. After the
-MSVC builds above, run from the repository root in PowerShell:
+In the kurt-build CUDA image, use the existing toolchain and set the GPU target:
 
-```powershell
-$env:CMAKE_INSTALL_PREFIX = "$PWD/kurt-cpp/install/runtime"
-cmake --install kurt-cpp/build/release --prefix $env:CMAKE_INSTALL_PREFIX
-cmake --install kurt-cpp/build/release-cpu-windows-msvc --prefix $env:CMAKE_INSTALL_PREFIX
-$env:PATH = "$env:CMAKE_INSTALL_PREFIX/bin;$env:PATH"
-$env:KUAI_RUNTIME_PRESET = "release-cpu"
-cargo test -p kurt-sys -p kurt --locked
+```bash
+CMAKE_TOOLCHAIN_FILE="$PWD/kurt-cpp/cmake/toolchains/docker-cuda.cmake" \
+CUDAARCHS=80 cargo xtask install --prefix dist --features cuda
 ```
 
 ## Call the C API
@@ -88,15 +92,13 @@ cargo doc -p kurt-sys --no-deps --open
 
 ## Checks
 
-With the runtime paths set as above:
-
 ```bash
 cargo fmt -p kurt-sys --check
 cargo clippy -p kurt-sys --all-targets --locked -- -D warnings
 ```
 
-To check host-only operation, use the standalone host installation and run:
+To check host-only operation without plugins in the runtime search path:
 
 ```bash
-KUAI_RUNTIME_PRESET=release cargo test -p kurt-sys --test host_only --locked -- --ignored
+cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
 ```
