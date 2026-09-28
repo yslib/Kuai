@@ -20,7 +20,7 @@ jobs:
   cargo-build:
     name: cargo build / x86_64-pc-windows-msvc / msvc143
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,11 +32,11 @@ jobs:
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
           cargo build --locked
-          cargo build --release --locked
           cargo test -p kurt-sys -p kurt --locked
           cargo test -p kurt-sys -p kurt --no-default-features --locked
           cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
           cargo run -p kurt --example cpu --locked
+          cargo build --release --locked
       - name: Install and run without Cargo
         run: |
           $PSNativeCommandUseErrorActionPreference = $true

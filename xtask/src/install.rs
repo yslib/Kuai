@@ -146,20 +146,6 @@ fn install_artifacts(artifacts: &[PathBuf], bin: &Path) -> Result<(), Box<dyn Er
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn installing_an_existing_artifact_in_place_preserves_it() {
-        let directory = tempfile::tempdir().unwrap();
-        let plugin = directory.path().join("plugin");
-        fs::write(&plugin, b"native plugin contents").unwrap();
-        install_artifacts(std::slice::from_ref(&plugin), directory.path()).unwrap();
-        assert_eq!(fs::read(&plugin).unwrap(), b"native plugin contents");
-    }
-}
-
 fn cargo(root: &Path) -> Command {
     let mut command = Command::new(env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
     command.current_dir(root);
@@ -172,4 +158,18 @@ fn run(command: &mut Command) -> Result<Output, Box<dyn Error>> {
         return Err(format!("{command:?} failed with {}", output.status).into());
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn installing_an_existing_artifact_in_place_preserves_it() {
+        let directory = tempfile::tempdir().unwrap();
+        let plugin = directory.path().join("plugin");
+        fs::write(&plugin, b"native plugin contents").unwrap();
+        install_artifacts(std::slice::from_ref(&plugin), directory.path()).unwrap();
+        assert_eq!(fs::read(&plugin).unwrap(), b"native plugin contents");
+    }
 }

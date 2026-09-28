@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{self, Path, PathBuf};
 use std::process::Command;
 
 fn main() {
@@ -11,7 +11,9 @@ fn main() {
             prefix
         })
         .unwrap_or_else(build_runtime);
-    let prefix = prefix.canonicalize().unwrap_or_else(|error| {
+    // Preserve Cargo's path form: Windows canonicalization adds a verbatim prefix,
+    // which Cargo would filter out of its runtime DLL search paths.
+    let prefix = path::absolute(&prefix).unwrap_or_else(|error| {
         panic!(
             "cannot resolve host installation at {}: {error}",
             prefix.display()
@@ -92,6 +94,10 @@ fn build_cmake(source: &Path, build: &Path, prefix: &Path, profile: &str, vendor
         .arg(format!("-DCMAKE_INSTALL_PREFIX={}", prefix.display()))
         .arg("-DCMAKE_INSTALL_LIBDIR=lib")
         .arg("-DBUILD_SHARED_LIBS=OFF");
+    if env::var("CARGO_CFG_TARGET_ENV").unwrap() == "msvc" {
+        // Rust uses the release CRT even in debug builds; host and plugins must match.
+        configure.arg("-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL");
+    }
     if !vendors.is_empty() {
         configure.arg(format!("-DKURT_ENABLED_VENDORS={}", vendors.join(";")));
     }

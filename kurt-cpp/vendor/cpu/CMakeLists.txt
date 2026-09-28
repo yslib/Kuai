@@ -4,6 +4,8 @@ target_link_libraries(kurt_cpu
     PRIVATE kuai::kurt kuai::kurt_cpu_private)
 target_include_directories(kurt_cpu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private)
 target_compile_options(kurt_cpu PRIVATE
+    # Debug builtin dispatch instantiations exceed the default COFF section limit.
+    $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
     $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-fpermissive>)
 # some exclusive compile options for our targets
 set_target_properties(
