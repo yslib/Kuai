@@ -136,7 +136,7 @@ public:
         return apply(ku_output_side_t<OutputSpan>{}, input, output, resultFn);
     }
 
-private:
+    // NVCC requires kernel template argument types to be publicly accessible.
     template <typename Reader>
     struct MapAtFn {
         Reader m_input;
@@ -158,6 +158,7 @@ private:
         }
     };
 
+private:
     template <typename InputSpan, typename OutputSpan, typename ResultFn>
         requires(InputSpan::rank() == 0 && OutputSpan::rank() == 0)
     ku_status_t
@@ -226,7 +227,7 @@ private:
             auto first = makeCountingIterator(ku_size_t(0));
             auto reader = makeKuInputReader(input);
             algo::transform(m_device, first, first + 1, output.data_handle(),
-                            MapAtFn{reader, m_mapFn});
+                            MapAtFn<decltype(reader)>{reader, m_mapFn});
         } else {
             output() = m_mapFn(input());
         }
@@ -245,7 +246,8 @@ private:
             auto first = makeCountingIterator(ku_size_t(0));
             auto reader = makeKuInputReader(input);
             algo::transform(m_device, first, first + 1, output.data_handle(),
-                            MapAndFinalizeAtFn{reader, m_mapFn, resultFn});
+                            MapAndFinalizeAtFn<decltype(reader), std::decay_t<decltype(resultFn)>>{
+                                reader, m_mapFn, resultFn});
         } else {
             output() = resultFn(m_mapFn(input()));
         }

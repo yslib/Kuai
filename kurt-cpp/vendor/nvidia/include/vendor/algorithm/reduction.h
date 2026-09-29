@@ -14,7 +14,7 @@
 
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
-#include <cub/iterator/discard_output_iterator.cuh>
+#include <thrust/iterator/discard_iterator.h>
 
 namespace kuai::vendor::cuda {
 
@@ -123,7 +123,7 @@ ku_status_t map_reduce_by_key(const KuVendorContext<Vendor> &dc,
     const auto mappedFirst = makeTransformIterator(valueFirst, map);
     const auto length = keyLast - keyFirst;
     const auto stream = Vendor::nativeStream(dc.m_stream);
-    const auto discardedKeys = cub::DiscardOutputIterator<>{};
+    const auto discardedKeys = thrust::make_discard_iterator();
 
     return detail::invokeCub<Vendor>(dc, [&](void *temporary, std::size_t &temporaryBytes) {
         return cub::DeviceReduce::ReduceByKey(temporary, temporaryBytes, keyFirst, discardedKeys,

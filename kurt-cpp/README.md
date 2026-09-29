@@ -36,7 +36,7 @@ For Debug, use `debug-cpu` with `install/debug`.
 
 ## Build a CUDA plugin
 
-CUDA plugins target Linux. Run in the
+On Linux, run in the
 [kurt-build CUDA image](https://github.com/yslib/kurt-build), after building and
 installing the host there:
 
@@ -81,7 +81,19 @@ cmake --build build/release-cpu-windows-msvc --parallel 2
 cmake --install build/release-cpu-windows-msvc
 ```
 
-Windows CUDA is not supported yet.
+Windows CUDA support is experimental. Install CUDA Toolkit 13.2.0 and build
+against the same MSVC host installation:
+
+```powershell
+cmake -S vendor --preset release-cuda-windows-nvcc -G Ninja "-DCMAKE_PREFIX_PATH=$PWD/install/release"
+cmake --build build/release-cuda-windows-nvcc --parallel 2
+cmake --install build/release-cuda-windows-nvcc
+```
+
+The preset uses NVCC with MSVC and targets GPU architecture 80; override
+`CMAKE_CUDA_ARCHITECTURES` for your deployment GPU. CI checks compilation and
+installation without a GPU. GPU execution requires an NVIDIA driver and CUDA runtime
+libraries on the target machine.
 
 ## Use the host from CMake
 

@@ -89,7 +89,7 @@ struct KuArgCaster<ku_object_t, T> {
         if (scalar == nullptr) {
             return false;
         }
-        auto scalarValue = scalar->getIf<value_type>();
+        auto scalarValue = scalar->template getIf<value_type>();
         if (!scalarValue) {
             return false;
         }

@@ -80,20 +80,20 @@ check(cudaError_t error, const char *filename, const char *functionName, std::ui
 
 #define KU_DEV_CALL_CHECK(EXPR)                                                    \
     do {                                                                           \
-        ::kuai::vendor::cuda::detail::check(({ EXPR; }), __FILE__, __func__,       \
+        ::kuai::vendor::cuda::detail::check((EXPR), __FILE__, __func__,            \
                                             static_cast<std::uint32_t>(__LINE__)); \
     } while (0)
 
 #define KU_DEV_CALL_CHECK_WITH_LOG(EXPR)                                           \
     do {                                                                           \
-        ::kuai::vendor::cuda::detail::check(({ EXPR; }), __FILE__, __func__,       \
+        ::kuai::vendor::cuda::detail::check((EXPR), __FILE__, __func__,            \
                                             static_cast<std::uint32_t>(__LINE__)); \
     } while (0)
 
 #define KU_DEV_CALL_CHECK_KERNEL_LAUNCH_CHECK()     KU_DEV_CALL_CHECK(cudaGetLastError())
 #define KU_DEV_CALL_CHECK_KERNEL_LANUNCH_WITH_LOG() KU_DEV_CALL_CHECK_WITH_LOG(cudaGetLastError())
 #define KU_DEV_CALL_CHECK_KERNEL_LANUNCH_SYNC_CHECK() \
-    KU_DEV_CALL_CHECK(cudaDeviceSynchronize(); cudaGetLastError())
+    KU_DEV_CALL_CHECK((cudaDeviceSynchronize(), cudaGetLastError()))
 
 namespace kuai::vendor::cuda {
 

@@ -38,7 +38,7 @@ struct KuBinarySpanFn {
         apply(ku_output_side_t<decltype(output)>{}, span1, span2, output);
     }
 
-private:
+    // NVCC requires kernel template argument types to be publicly accessible.
     template <typename LeftReader, typename RightReader>
     struct ApplyFn {
         LeftReader  m_left;
@@ -50,6 +50,7 @@ private:
         }
     };
 
+private:
     template <typename InputSpan1, typename InputSpan2, typename OutputSpan>
     void apply(KuHostOutputTag, InputSpan1 span1, InputSpan2 span2, OutputSpan output) const {
         static_assert(InputSpan1::rank() == 0 && InputSpan2::rank() == 0 && OutputSpan::rank() == 0,
@@ -81,7 +82,7 @@ private:
         auto left = makeKuBroadcastReader(span1);
         auto right = makeKuBroadcastReader(span2);
         algo::transform(m_device, first, first + output.size(), output.data_handle(),
-                        ApplyFn{left, right, m_fn});
+                        ApplyFn<decltype(left), decltype(right)>{left, right, m_fn});
     }
 
     KuVendorContext<Vendor> m_device;

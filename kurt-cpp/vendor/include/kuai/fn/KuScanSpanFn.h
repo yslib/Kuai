@@ -135,11 +135,7 @@ public:
         return apply(ku_output_side_t<OutputSpan>{}, input, output, resultFn);
     }
 
-private:
-    template <typename InputSpan>
-    using accumulator_type =
-        decltype(MapFn::template initValue<std::remove_cv_t<typename InputSpan::value_type>>());
-
+    // NVCC requires kernel template argument types to be publicly accessible.
     template <typename Reader>
     struct ReadAtFn {
         Reader m_input;
@@ -148,6 +144,11 @@ private:
             return m_input[index];
         }
     };
+
+private:
+    template <typename InputSpan>
+    using accumulator_type =
+        decltype(MapFn::template initValue<std::remove_cv_t<typename InputSpan::value_type>>());
 
     template <typename InputSpan, typename OutputSpan>
     ku_status_t
@@ -226,7 +227,7 @@ private:
         auto count = makeCountingIterator(ku_size_t(0));
         if constexpr (InputRank == 0) {
             auto inputReader = makeKuInputReader(input);
-            auto first = makeTransformIterator(count, ReadAtFn{inputReader});
+            auto first = makeTransformIterator(count, ReadAtFn<decltype(inputReader)>{inputReader});
             auto outputFirst = makeOutputIterator(output.data_handle(), resultFn);
             return algo::inclusive_scan(m_device, first, first + output.size(), outputFirst,
                                         m_mapFn, m_reduceFn);

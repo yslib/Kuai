@@ -10,7 +10,6 @@ From the repository root:
 
 ```bash
 cargo build
-cargo run -p kurt --example cpu
 cargo test -p kurt-sys -p kurt
 ```
 
@@ -18,8 +17,8 @@ Cargo builds the static host and the default CPU plugin under its build output
 directory. Use `cargo run` and `cargo test` for development; Cargo supplies the
 plugin search path. Build scripts do not copy plugins beside executables.
 
-The `cpu` and `cuda` features select plugins and may be combined. CUDA currently
-requires Linux and the CUDA toolkit. See [kurt-cpp](../../kurt-cpp/README.md) for
+The `cpu` and `cuda` features select plugins and may be combined. CUDA requires
+Linux or Windows and the CUDA toolkit. See [kurt-cpp](../../kurt-cpp/README.md) for
 the compiler/toolchain setup. To build and test only the host:
 
 ```bash
@@ -35,8 +34,6 @@ add the plugin directory to `LD_LIBRARY_PATH` (Linux), `DYLD_LIBRARY_PATH`
 
 ```bash
 cargo xtask install --prefix dist
-# Install the CPU example instead of the Kuai CLI:
-cargo xtask install --prefix dist --package kurt --example cpu
 ```
 
 This builds Release executables and installs them with the selected plugins in
@@ -50,6 +47,16 @@ In the kurt-build CUDA image, use the existing toolchain and set the GPU target:
 ```bash
 CMAKE_TOOLCHAIN_FILE="$PWD/kurt-cpp/cmake/toolchains/docker-cuda.cmake" \
 CUDAARCHS=80 cargo xtask install --prefix dist --features cuda
+```
+
+Windows CUDA support is experimental; see the [toolchain setup](../../kurt-cpp/README.md#toolchains-and-presets).
+Install CUDA Toolkit 13.2.0 and use an x64 Developer PowerShell with Ninja available:
+
+```powershell
+$env:CMAKE_GENERATOR = "Ninja"
+$env:CMAKE_TOOLCHAIN_FILE = "$PWD/kurt-cpp/cmake/toolchains/windows-cuda-nvcc.cmake"
+$env:CUDAARCHS = "80"
+cargo xtask install --prefix dist --features cuda
 ```
 
 ## Call the C API

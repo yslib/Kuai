@@ -93,6 +93,21 @@
       "toolchainFile": "${sourceDir}/../cmake/toolchains/docker-cuda-nvcc.cmake"
     },
     {
+      "name": "release-cuda-windows-nvcc",
+      "inherits": "base",
+      "toolchainFile": "${sourceDir}/../cmake/toolchains/windows-cuda-nvcc.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "KURT_ENABLED_VENDORS": "cuda",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CUDA_ARCHITECTURES": "80"
+      }
+    },
+    {
       "name": "release-cpu-windows-msvc",
       "inherits": "release-cpu",
       "toolchainFile": "${sourceDir}/../cmake/toolchains/windows-msvc.cmake",
@@ -155,6 +170,12 @@
     {
       "name": "release-cuda-nvcc",
       "configurePreset": "release-cuda-nvcc",
+      "targets": ["kurt_cuda"],
+      "jobs": 64
+    },
+    {
+      "name": "release-cuda-windows-nvcc",
+      "configurePreset": "release-cuda-windows-nvcc",
       "targets": ["kurt_cuda"],
       "jobs": 64
     },
@@ -224,6 +245,13 @@
       "steps": [
         {"type": "configure", "name": "release-cuda-nvcc"},
         {"type": "build", "name": "release-cuda-nvcc"}
+      ]
+    },
+    {
+      "name": "release-cuda-windows-nvcc",
+      "steps": [
+        {"type": "configure", "name": "release-cuda-windows-nvcc"},
+        {"type": "build", "name": "release-cuda-windows-nvcc"}
       ]
     },
     {

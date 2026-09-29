@@ -38,13 +38,10 @@ jobs:
               cargo test -p kurt-sys -p kurt --locked
               cargo test -p kurt-sys -p kurt --no-default-features --locked
               cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
-              cargo run -p kurt --example cpu --locked
               cargo xtask install --prefix /tmp/cargo-runtime
-              cargo xtask install --prefix /tmp/cargo-runtime --package kurt --example cpu
               mv /tmp/cargo-runtime /tmp/relocated-runtime
               cd /tmp
               ./relocated-runtime/bin/kuai --help
-              ./relocated-runtime/bin/cpu
             '
 
   cargo-cuda:

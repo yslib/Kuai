@@ -9,9 +9,9 @@ list(APPEND CMAKE_MODULE_PATH
 include(KurtBuildOptions)
 
 set(KURT_ENABLED_VENDORS cpu CACHE STRING "Vendors to build (semicolon-separated)")
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(KURT_SUPPORTED_VENDORS cpu)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(KURT_SUPPORTED_VENDORS cpu cuda)
 else()
     message(FATAL_ERROR "Kurt vendors are not supported on target platform '${CMAKE_SYSTEM_NAME}'")

@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <format>
 #include <source_location>
 #include <string>
 #include <string_view>
@@ -30,18 +29,22 @@ inline void kuWriteFailure(std::string_view            kind,
                            std::string_view            detail,
                            const std::source_location &location) noexcept {
     try {
-#if defined(NDEBUG)
-        const auto diagnostic = detail.empty()
-                                    ? std::format("[kuai] {}\n", kind)
-                                    : std::format("[kuai] {}\n  detail: {}\n", kind, detail);
-#else
-        const auto diagnostic =
-            detail.empty()
-                ? std::format("[kuai] {}\n  location: {}:{}\n  function: {}\n", kind,
-                              location.file_name(), location.line(), location.function_name())
-                : std::format("[kuai] {}\n  detail: {}\n  location: {}:{}\n  function: {}\n", kind,
-                              detail, location.file_name(), location.line(),
-                              location.function_name());
+        std::string diagnostic = "[kuai] ";
+        diagnostic.append(kind);
+        diagnostic += '\n';
+        if (!detail.empty()) {
+            diagnostic += "  detail: ";
+            diagnostic.append(detail);
+            diagnostic += '\n';
+        }
+#if !defined(NDEBUG)
+        diagnostic += "  location: ";
+        diagnostic += location.file_name();
+        diagnostic += ':';
+        diagnostic += std::to_string(location.line());
+        diagnostic += "\n  function: ";
+        diagnostic += location.function_name();
+        diagnostic += '\n';
 #endif
         std::fwrite(diagnostic.data(), sizeof(char), diagnostic.size(), stderr);
     } catch (...) {
@@ -73,7 +76,7 @@ kuAssertImpl(bool                        condition,
         kuFailImpl("KU_ASSERT", expression, location);
     }
     try {
-        const auto detail = std::format("{} | message: {}", expression, message);
+        const auto detail = std::string(expression) + " | message: " + message;
         kuFailImpl("KU_ASSERT", detail.c_str(), location);
     } catch (...) {
         kuFailImpl("KU_ASSERT", expression, location);

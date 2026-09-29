@@ -32,8 +32,7 @@
 namespace kuai {
 template <typename Vendor, typename BinaryOp, typename TypeSeq = KuNonVoidPrimitiveTs>
 KuBuiltinResult BinaryBuiltin(KuContext &context, KuObject *lh, KuObject *rh) {
-    return KuBinaryFn<Vendor, TypeSeq>(context).template operator()(
-        *lh, *rh, KuBinarySpanFn(context, BinaryOp()));
+    return KuBinaryFn<Vendor, TypeSeq>(context)(*lh, *rh, KuBinarySpanFn(context, BinaryOp()));
 }
 
 } // namespace kuai

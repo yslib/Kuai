@@ -32,7 +32,7 @@ struct KuUnarySpanFn {
         apply(ku_output_side_t<decltype(output)>{}, input, output);
     }
 
-private:
+    // NVCC requires kernel template argument types to be publicly accessible.
     template <typename Reader>
     struct ApplyFn {
         Reader  m_input;
@@ -43,6 +43,7 @@ private:
         }
     };
 
+private:
     template <typename InputSpan, typename OutputSpan>
     void apply(KuHostOutputTag, InputSpan input, OutputSpan output) const {
         static_assert(InputSpan::rank() == 0 && OutputSpan::rank() == 0,
@@ -67,7 +68,7 @@ private:
         auto first = makeCountingIterator(ku_size_t(0));
         auto inputReader = makeKuBroadcastReader(input);
         algo::transform(m_device, first, first + output.size(), output.data_handle(),
-                        ApplyFn{inputReader, m_fn});
+                        ApplyFn<decltype(inputReader)>{inputReader, m_fn});
     }
 
     KuVendorContext<Vendor> m_device;

@@ -4,7 +4,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(MSVC)
     set(CMAKE_CXX_STANDARD 23)
     # The C API wrappers use __VA_OPT__, including when no toolchain file is set.
-    add_compile_options(/Zc:preprocessor)
+    add_compile_options(
+        $<$<COMPILE_LANGUAGE:CXX>:/Zc:preprocessor>
+        $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=/Zc:preprocessor>)
 else()
     set(CMAKE_CXX_STANDARD 26)
 endif()

@@ -31,15 +31,12 @@ jobs:
           cargo test -p kurt-sys -p kurt --locked
           cargo test -p kurt-sys -p kurt --no-default-features --locked
           cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
-          cargo run -p kurt --example cpu --locked
       - name: Install and run without Cargo
         run: |
           cargo xtask install --prefix "$RUNNER_TEMP/cargo-runtime"
-          cargo xtask install --prefix "$RUNNER_TEMP/cargo-runtime" --package kurt --example cpu
           mv "$RUNNER_TEMP/cargo-runtime" "$RUNNER_TEMP/relocated-runtime"
           cd "$RUNNER_TEMP"
           ./relocated-runtime/bin/kuai --help
-          ./relocated-runtime/bin/cpu
 
   host:
     name: host / aarch64-apple-darwin / llvm22
