@@ -1,5 +1,5 @@
 #include <kuai/core/KuArray.h>
-#include <kuai/kuai_c/KuCHandle.h>
+#include <kuai/core/KuCHandle.h>
 #include <kuai/kuai_c/ku_array.h>
 
 #include "kuai_c/KuCApiMethod.h"

@@ -1,8 +1,8 @@
 #include <memory>
 
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuDevice.h>
 #include <kuai/core/KuFrameContext.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_context.h>
 
 #include "kuai_c/KuCApiMethod.h"

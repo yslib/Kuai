@@ -1,5 +1,5 @@
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuCore.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_builtin.h>
 #include <kuai/kuai_c/ku_runtime.h>
 #include <kuai/runtime/KuInstance.h>

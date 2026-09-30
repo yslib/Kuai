@@ -1,5 +1,5 @@
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuObject.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_completion.h>
 #include <kuai/kuai_c/ku_object.h>
 #include <kuai/runtime/KuCompletion.h>

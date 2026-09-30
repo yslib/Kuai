@@ -1,5 +1,5 @@
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuScalar.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_scalar.h>
 
 #include "kuai_c/KuCApiMethod.h"

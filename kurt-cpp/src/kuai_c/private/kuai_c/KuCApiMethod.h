@@ -7,10 +7,10 @@
 #include <type_traits>
 #include <utility>
 
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuPointer.h>
 #include <kuai/core/KuRefCounted.h>
-#include <kuai/kuai_c/KuCHandle.h>
 
 namespace kuai::capi {
 

@@ -1,7 +1,7 @@
 #include <string_view>
 
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuString.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_string.h>
 
 #include "kuai_c/KuCApiMethod.h"

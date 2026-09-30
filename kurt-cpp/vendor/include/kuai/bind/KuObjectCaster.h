@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include <kuai/bind/KuArgCaster.h>
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuCallable.h>
 #include <kuai/core/KuContext.h>
 #include <kuai/core/KuDeviceData.h>
@@ -10,7 +11,6 @@
 #include <kuai/core/KuObject.h>
 #include <kuai/core/KuPointer.h>
 #include <kuai/core/KuScalar.h>
-#include <kuai/kuai_c/KuCHandle.h>
 
 namespace kuai::bind {
 

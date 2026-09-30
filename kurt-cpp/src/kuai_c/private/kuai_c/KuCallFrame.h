@@ -4,11 +4,11 @@
 #include <span>
 #include <utility>
 
+#include <kuai/core/KuCHandle.h>
 #include <kuai/core/KuCore.h>
 #include <kuai/core/KuFrameContext.h>
 #include <kuai/core/KuObject.h>
 #include <kuai/core/KuSmallBuffer.h>
-#include <kuai/kuai_c/KuCHandle.h>
 #include <kuai/kuai_c/ku_builtin.h>
 
 namespace kuai {
