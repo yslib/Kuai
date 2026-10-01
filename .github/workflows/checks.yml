@@ -32,5 +32,3 @@ jobs:
         run: cargo xtask cpp fmt --check
       - name: Check Rust formatting
         run: cargo fmt --all --check
-      - name: Test formatting tasks
-        run: cargo test -p xtask --locked

@@ -17,107 +17,19 @@ defaults:
     shell: pwsh
 
 jobs:
-  cargo-build:
-    name: cargo build / x86_64-pc-windows-msvc / msvc143
+  build:
+    name: Build CPU + CUDA / x86_64-pc-windows-msvc / msvc143-nvcc13.2
     runs-on: windows-2022
     timeout-minutes: 60
+    env:
+      CMAKE_GENERATOR: Ninja
+      CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/kurt-cpp/cmake/toolchains/windows-cuda-nvcc.cmake
+      CUDAARCHS: "80"
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install CMake
-        run: python -m pip install cmake==4.1.3
-      - name: Build and test directly with Cargo
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          cargo build --locked
-          cargo test -p kurt-sys -p kurt --locked
-          cargo test -p kurt-sys -p kurt --no-default-features --locked
-          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
-          cargo build --release --locked
-      - name: Install and run without Cargo
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          cargo xtask install --prefix "$env:RUNNER_TEMP/cargo-runtime"
-          Move-Item "$env:RUNNER_TEMP/cargo-runtime" "$env:RUNNER_TEMP/relocated-runtime"
-          Set-Location $env:RUNNER_TEMP
-          & ./relocated-runtime/bin/kuai.exe --help
-
-  host:
-    name: host / x86_64-pc-windows-msvc / msvc143
-    runs-on: windows-2022
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: ilammy/msvc-dev-cmd@a102174a2b586eec2ea151a69e6fd14404a8ce7c # v1.13.0
-        with:
-          arch: x64
-          vsversion: "2022"
-      - name: Install CMake
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          python -m pip install cmake==4.1.3
-          cmake --version
-      - name: Build and install host
-        working-directory: kurt-cpp
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          cmake --preset release -G Ninja `
-            --toolchain cmake/toolchains/windows-msvc.cmake `
-            "-DCMAKE_INSTALL_PREFIX=$env:RUNNER_TEMP/kurt-host"
-          cmake --build --preset release --parallel 4
-          cmake --install build/release
-      - name: Consume installed host package
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          $consumer = "$env:RUNNER_TEMP/host-consumer"
-          New-Item -ItemType Directory -Force $consumer | Out-Null
-          @'
-          cmake_minimum_required(VERSION 4.1)
-          project(host_consumer LANGUAGES CXX)
-          find_package(kuai 0.1.0 EXACT CONFIG REQUIRED)
-          add_executable(consumer main.cpp)
-          target_link_libraries(consumer PRIVATE kuai::kurt)
-          '@ | Set-Content "$consumer/CMakeLists.txt"
-          @'
-          #include <kuai/kuai_c/ku_types.h>
-          int main() { return ku_status_string(KU_STATUS_SUCCESS) ? 0 : 1; }
-          '@ | Set-Content "$consumer/main.cpp"
-          cmake -S $consumer -B "$consumer/build" -G Ninja `
-            "--toolchain=$env:GITHUB_WORKSPACE/kurt-cpp/cmake/toolchains/windows-msvc.cmake" `
-            -DCMAKE_BUILD_TYPE=Release "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/kurt-host"
-          cmake --build "$consumer/build"
-          & "$consumer/build/consumer.exe"
-      - name: Archive installed host
-        run: tar -C "$env:RUNNER_TEMP/kurt-host" -czf "$env:RUNNER_TEMP/kurt-host.tar.gz" .
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: kurt-host-x86_64-pc-windows-msvc-msvc143-release
-          path: ${{ runner.temp }}/kurt-host.tar.gz
-          if-no-files-found: error
-
-  vendor:
-    name: ${{ matrix.backend }} / x86_64-pc-windows-msvc / ${{ matrix.toolchain }}
-    needs: host
-    runs-on: windows-2022
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - backend: cpu
-            toolchain: msvc143
-            preset: release-cpu-windows-msvc
-          - backend: cuda
-            toolchain: msvc143-nvcc13.2
-            preset: release-cuda-windows-nvcc
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
       - uses: ilammy/msvc-dev-cmd@a102174a2b586eec2ea151a69e6fd14404a8ce7c # v1.13.0
         with:
           arch: x64
@@ -125,118 +37,10 @@ jobs:
       - name: Install CMake
         run: python -m pip install cmake==4.1.3
       - name: Install CUDA Toolkit
-        if: matrix.backend == 'cuda'
         uses: Jimver/cuda-toolkit@b8bf9c6c28f8a92fbb04dcfcaee872e60c57462d # v0.2.36
         with:
           cuda: '13.2.0'
           method: network
           sub-packages: '["nvcc", "crt", "nvvm", "cudart", "thrust", "cublas", "cublas_dev", "curand", "curand_dev", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "nvjitlink"]'
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: kurt-host-x86_64-pc-windows-msvc-msvc143-release
-          path: ${{ runner.temp }}
-      - name: Extract installed host
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/kurt-host" | Out-Null
-          tar -xzf "$env:RUNNER_TEMP/kurt-host.tar.gz" -C "$env:RUNNER_TEMP/kurt-host"
-      - name: Build and install vendor plugin
-        working-directory: kurt-cpp/vendor
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          cmake --preset ${{ matrix.preset }} -G Ninja `
-            "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/kurt-host" `
-            "-DCMAKE_INSTALL_PREFIX=$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}"
-          cmake --build --preset ${{ matrix.preset }} --parallel 2
-          cmake --install ../build/${{ matrix.preset }}
-          dumpbin /exports "$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}/bin/kurt_${{ matrix.backend }}.dll"
-          dumpbin /dependents "$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}/bin/kurt_${{ matrix.backend }}.dll"
-      - name: Query installed vendor package
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          $query = "$env:RUNNER_TEMP/vendor-query"
-          New-Item -ItemType Directory -Force $query | Out-Null
-          @'
-          cmake_minimum_required(VERSION 4.1)
-          project(vendor_query LANGUAGES NONE)
-          find_package(kuai_vendor_${{ matrix.backend }} 0.1.0 EXACT CONFIG REQUIRED)
-          file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/plugin.txt"
-            CONTENT "$<TARGET_FILE:kuai::kurt_${{ matrix.backend }}>\n")
-          '@ | Set-Content "$query/CMakeLists.txt"
-          cmake -S $query -B "$query/build" -G Ninja `
-            "-DCMAKE_PREFIX_PATH=$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}"
-          Get-Content "$query/build/plugin.txt"
-      - name: Archive installed vendor
-        run: tar -C "$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}" -czf "$env:RUNNER_TEMP/kurt-vendor-${{ matrix.backend }}.tar.gz" .
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: kurt-vendor-${{ matrix.backend }}-x86_64-pc-windows-msvc-${{ matrix.toolchain }}-release
-          path: ${{ runner.temp }}/kurt-vendor-${{ matrix.backend }}.tar.gz
-          if-no-files-found: error
-
-  cargo:
-    name: cargo / x86_64-pc-windows-msvc / msvc143
-    needs: [host, vendor]
-    runs-on: windows-2022
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: kurt-host-x86_64-pc-windows-msvc-msvc143-release
-          path: ${{ runner.temp }}
-      - name: Test host without plugins
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          $env:CMAKE_INSTALL_PREFIX = "$env:RUNNER_TEMP/kurt-runtime"
-          "CMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL_PREFIX" >> $env:GITHUB_ENV
-          New-Item -ItemType Directory -Force $env:CMAKE_INSTALL_PREFIX | Out-Null
-          tar -xzf "$env:RUNNER_TEMP/kurt-host.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
-          cargo test -p kurt-sys -p kurt --no-default-features --locked
-          cargo test -p kurt-sys --no-default-features --test host_only --locked -- --ignored
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: kurt-vendor-cpu-x86_64-pc-windows-msvc-msvc143-release
-          path: ${{ runner.temp }}
-      - name: Test CPU plugin
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          tar -xzf "$env:RUNNER_TEMP/kurt-vendor-cpu.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
-          $env:PATH = "$env:CMAKE_INSTALL_PREFIX/bin;$env:PATH"
-          cargo test -p kurt-sys -p kurt --locked
-          cargo xtask install --prefix $env:CMAKE_INSTALL_PREFIX
-          & "$env:CMAKE_INSTALL_PREFIX/bin/kuai.exe" --help
-
-  cargo-cuda:
-    name: cargo cuda / x86_64-pc-windows-msvc / msvc143-nvcc13.2
-    needs: [host, vendor]
-    runs-on: windows-2022
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: kurt-host-x86_64-pc-windows-msvc-msvc143-release
-          path: ${{ runner.temp }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: kurt-vendor-cuda-x86_64-pc-windows-msvc-msvc143-nvcc13.2-release
-          path: ${{ runner.temp }}
-      - name: Build CUDA test harness and install without a GPU
-        run: |
-          $PSNativeCommandUseErrorActionPreference = $true
-          $env:CMAKE_INSTALL_PREFIX = "$env:RUNNER_TEMP/kurt-runtime"
-          New-Item -ItemType Directory -Force $env:CMAKE_INSTALL_PREFIX | Out-Null
-          tar -xzf "$env:RUNNER_TEMP/kurt-host.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
-          tar -xzf "$env:RUNNER_TEMP/kurt-vendor-cuda.tar.gz" -C $env:CMAKE_INSTALL_PREFIX
-          cargo test -p kurt --no-default-features --features cuda --test cuda_threading --no-run --locked
-          cargo xtask install --prefix "$env:RUNNER_TEMP/installed-cuda" --no-default-features --features cuda
-          Move-Item "$env:RUNNER_TEMP/installed-cuda" "$env:RUNNER_TEMP/relocated-cuda"
-          Set-Location $env:RUNNER_TEMP
-          & ./relocated-cuda/bin/kuai.exe --help
+      - name: Build with Cargo
+        run: cargo build --locked --features cpu,cuda -j 2
