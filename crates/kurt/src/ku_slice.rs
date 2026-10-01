@@ -74,7 +74,9 @@ impl KuArc<KuSlice> {
         };
         let mut raw = ptr::null_mut();
         // SAFETY: the descriptor is valid and the runtime copies its values.
-        check(unsafe { sys::ku_slice_create(&input, &mut raw) })?;
+        check(unsafe {
+            sys::ku_object_create(sys::KU_OBJECT_SLICE, (&raw const input).cast(), &mut raw)
+        })?;
         // SAFETY: success supplies one owned slice with the valid input
         // descriptor, whose explicit step is nonzero by its Rust type.
         unsafe {

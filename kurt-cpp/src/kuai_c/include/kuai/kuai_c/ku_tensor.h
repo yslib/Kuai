@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+/*
+ * ku_object_create(KU_OBJECT_TENSOR, ...) creates an owning contiguous column-major tensor.
+ * device must be live and non-NULL; its instance must outlive the tensor.
+ * ndim must be in [0, 8]. shape may be NULL only when ndim is zero. strides may be
+ * NULL for the canonical layout; when supplied, it must describe that same canonical
+ * layout in element units. Non-NULL arrays must be readable for ndim entries.
+ */
 typedef struct ku_tensor_create_desc_t {
     ku_device_t         device;
     ku_primitive_type_t primitive_type;
@@ -37,15 +44,6 @@ typedef struct ku_tensor_info_t {
  * Pointer-valued fields inside descriptors retain their individual
  * semantic contracts and may still be validated at runtime.
  */
-/*
- * Creates an owning contiguous column-major kuai tensor on desc->device.
- * ndim must be in [0, 8]. shape may be NULL only when ndim is zero. strides may be
- * NULL for the canonical layout; when supplied, it must describe that same canonical
- * layout in element units. The returned object has KU_OBJECT_TENSOR kind, owns one reference,
- * and must be released with ku_object_release().
- */
-ku_status_t ku_tensor_create(const ku_tensor_create_desc_t *desc, ku_object_t *out);
-
 /*
  * Returns KU_STATUS_SUCCESS and the tensor's native type, rank, shape, and actual strides.
  * For positive rank, shape and strides are non-NULL immutable arrays of ndim entries in

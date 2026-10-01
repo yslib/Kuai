@@ -59,7 +59,9 @@ impl KuArc<KuScalar> {
         let input = value.into().raw();
         let mut raw = ptr::null_mut();
         // SAFETY: the payload matches its tag; input and output are valid.
-        check(unsafe { sys::ku_scalar_create(&input, &mut raw) })?;
+        check(unsafe {
+            sys::ku_object_create(sys::KU_OBJECT_SCALAR, (&raw const input).cast(), &mut raw)
+        })?;
         // SAFETY: success supplies one independent scalar with valid payload.
         unsafe {
             let owned: OwnedRaw<'static> = OwnedRaw::new(raw);

@@ -8,11 +8,14 @@ extern "C" {
 #endif
 
 /*
- * Creates an immutable array from count borrowed, non-NULL object handles. The array retains
- * every element and returns one owned object reference. items itself follows the non-NULL
- * pointer contract even when count is zero.
+ * ku_object_create(KU_OBJECT_ARRAY, ...) retains each of count borrowed elements.
+ * items must be non-NULL and readable for count handles, even when count is zero.
+ * Non-NULL elements must be live; a NULL element returns KU_STATUS_INVALID_ARGUMENT.
  */
-ku_status_t ku_array_create(const ku_object_t *items, ku_size_t count, ku_object_t *out);
+typedef struct ku_array_create_desc_t {
+    const ku_object_t *items;
+    ku_size_t          count;
+} ku_array_create_desc_t;
 
 ku_status_t ku_array_get_size(ku_object_t array, ku_size_t *out);
 

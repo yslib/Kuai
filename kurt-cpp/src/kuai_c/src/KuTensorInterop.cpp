@@ -111,21 +111,6 @@ ku_status_t KuTensorCreateBuilder::create(KuDevice                      &device,
 
 } // namespace kuai
 
-extern "C" ku_status_t ku_tensor_create(const ku_tensor_create_desc_t *desc, ku_object_t *out) {
-    KU_ASSERT(desc != nullptr, "ku_tensor_create requires a non-null descriptor");
-    KU_ASSERT(desc->device != nullptr, "ku_tensor_create requires a non-null device");
-    KU_ASSERT(out != nullptr, "ku_tensor_create requires a non-null output slot");
-    *out = nullptr;
-    ku_sp<kuai::KuTensor> tensor;
-    const auto            status =
-        kuai::KuTensorCreateBuilder::create(*kuai::capi::fromHandle(desc->device), *desc, tensor);
-    if (status == KU_STATUS_SUCCESS) {
-        KU_ASSERT(tensor != nullptr, "successful device tensor creation must return a tensor");
-        *out = kuai::capi::toHandle<ku_object_t>(tensor.detach());
-    }
-    return status;
-}
-
 extern "C" ku_status_t ku_tensor_get_info(ku_object_t tensor, ku_tensor_info_t *out) {
     KU_ASSERT(tensor != nullptr, "ku_tensor_get_info requires a non-null tensor");
     KU_ASSERT(out != nullptr, "ku_tensor_get_info requires a non-null output slot");
@@ -183,12 +168,14 @@ extern "C" ku_status_t ku_tensor_create_from_host_async(const ku_tensor_create_d
     *outTensor = nullptr;
     *outCompletion = nullptr;
 
-    auto                 *device = kuai::capi::fromHandle(desc->device);
-    ku_sp<kuai::KuTensor> tensor;
-    const ku_status_t createStatus = kuai::KuTensorCreateBuilder::create(*device, *desc, tensor);
+    auto       *device = kuai::capi::fromHandle(desc->device);
+    ku_object_t rawTensor = nullptr;
+    const auto  createStatus = ku_object_create(KU_OBJECT_TENSOR, desc, &rawTensor);
     if (createStatus != KU_STATUS_SUCCESS) {
         return createStatus;
     }
+    ku_sp<kuai::KuTensor> tensor(kuai::capi::fromHandle(rawTensor)->as<kuai::KuTensor>(),
+                                 ku_adopt_ref);
     KU_ASSERT(tensor != nullptr, "successful device tensor creation must return a tensor");
     if (bytes != tensor->bytes()) {
         return KU_STATUS_INVALID_ARGUMENT;

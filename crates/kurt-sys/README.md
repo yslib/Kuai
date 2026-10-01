@@ -65,6 +65,10 @@ Import the C names from `kurt_sys`. Check each status before reading outputs,
 release owned handles, and keep instances alive while using their devices and
 objects. Asynchronous buffers must remain valid until completion.
 
+Create values with `ku_object_create(kind, descriptor, out)`, then use
+`ku_object_retain` and `ku_object_release` for shared ownership. The descriptor
+type must match the kind; this is a caller contract.
+
 ```rust
 use std::mem::MaybeUninit;
 use std::ptr;
@@ -75,11 +79,14 @@ let input = ku_union_t {
     tag: KU_PRIMITIVE_I64,
 };
 
-// SAFETY: the descriptor and output slots are valid; the payload matches its
-// tag. The owned object is released after reading its copied value.
+// SAFETY: KU_OBJECT_SCALAR selects ku_union_t. The descriptor and output slots
+// are valid, and the payload matches its tag. The owned object is released below.
 unsafe {
     let mut object = ptr::null_mut();
-    assert_eq!(ku_scalar_create(&input, &mut object), KU_STATUS_SUCCESS);
+    assert_eq!(
+        ku_object_create(KU_OBJECT_SCALAR, (&raw const input).cast(), &mut object),
+        KU_STATUS_SUCCESS,
+    );
     let mut output = MaybeUninit::uninit();
     let status = ku_scalar_get_value(object, output.as_mut_ptr());
     assert_eq!(ku_object_release(object), KU_STATUS_SUCCESS);

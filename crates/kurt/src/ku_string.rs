@@ -65,9 +65,12 @@ impl KuString {
 
 impl KuArc<KuString> {
     pub fn new(bytes: impl AsRef<[u8]>) -> Result<Self> {
+        let input = string_view(bytes.as_ref());
         let mut raw = ptr::null_mut();
         // SAFETY: even empty Rust slices have non-null data; the runtime copies it.
-        check(unsafe { sys::ku_string_create(string_view(bytes.as_ref()), &mut raw) })?;
+        check(unsafe {
+            sys::ku_object_create(sys::KU_OBJECT_STRING, (&raw const input).cast(), &mut raw)
+        })?;
         // SAFETY: success supplies one independent string with valid byte storage.
         unsafe {
             let owned: OwnedRaw<'static> = OwnedRaw::new(raw);

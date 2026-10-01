@@ -2,6 +2,9 @@ use std::ffi::c_void;
 
 use crate::types::*;
 
+/// Describes a contiguous column-major tensor for `ku_object_create`.
+/// The device must be live and non-null; its instance must outlive the tensor.
+/// Non-null shape/stride arrays must be readable for `ndim` entries.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct ku_tensor_create_desc_t {
@@ -38,11 +41,6 @@ pub struct ku_tensor_info_t {
 }
 
 unsafe extern "C" {
-    /// Creates a contiguous column-major tensor with one owned object reference.
-    pub fn ku_tensor_create(
-        desc: *const ku_tensor_create_desc_t,
-        out: *mut ku_object_t,
-    ) -> ku_status_t;
     /// Returns `KU_STATUS_SUCCESS` and the tensor's native type and actual layout.
     /// A non-tensor returns `KU_STATUS_TYPE_MISMATCH` and resets `primitive_type`
     /// to `KU_PRIMITIVE_NONE`, `ndim` to zero, and both pointers to null. Those

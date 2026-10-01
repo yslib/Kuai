@@ -15,15 +15,13 @@ enum {
     KU_SLICE_HAS_STEP = 1u << 2
 };
 
+/* Copied by ku_object_create(KU_OBJECT_SLICE, ...); an explicit step must be nonzero. */
 typedef struct ku_slice_desc_t {
     int64_t          start;
     int64_t          stop;
     int64_t          step;
     ku_slice_flags_t flags;
 } ku_slice_desc_t;
-
-/* Copies desc into a newly allocated immutable slice and returns one owned reference. */
-ku_status_t ku_slice_create(const ku_slice_desc_t *desc, ku_object_t *out);
 
 /* Copies the immutable slice descriptor into out. */
 ku_status_t ku_slice_get_value(ku_object_t slice, ku_slice_desc_t *out);

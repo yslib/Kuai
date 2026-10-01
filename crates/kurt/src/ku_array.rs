@@ -77,10 +77,16 @@ impl<'r> KuArray<'r> {
 impl<'r> KuArc<KuArray<'r>> {
     pub fn new(items: &[KuArc<KuObject<'r>>]) -> Result<Self> {
         let raw_items: Vec<_> = items.iter().map(NativeObject::as_raw).collect();
+        let input = sys::ku_array_create_desc_t {
+            items: raw_items.as_ptr(),
+            count: raw_items.len(),
+        };
         let mut raw = ptr::null_mut();
         // SAFETY: every input owns a live reference with dependencies in 'r.
         // The native array retains elements and copies this temporary pointer list.
-        check(unsafe { sys::ku_array_create(raw_items.as_ptr(), raw_items.len(), &mut raw) })?;
+        check(unsafe {
+            sys::ku_object_create(sys::KU_OBJECT_ARRAY, (&raw const input).cast(), &mut raw)
+        })?;
         // SAFETY: success returns one immutable array with the same dependencies.
         unsafe {
             let owned = OwnedRaw::<'r>::new(raw);
